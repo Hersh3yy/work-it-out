@@ -4,7 +4,7 @@ An intelligent workout companion API that combines natural language input with A
 
 ## Project Progress
 
-Progress
+Day 1:
 - [ ] Docker environment setup with PostgreSQL
 - [ ] Basic Laravel installation
 - [ ] JWT authentication implementation
@@ -12,6 +12,8 @@ Progress
 - [ ] User model with JWT configuration
 - [ ] Workout and exercise models with relationships
 - [ ] Basic test suite setup
+
+Day 2:
 - [ ] OpenAI integration
 - [ ] Workout parsing service
 - [ ] Input validation and sanitization
