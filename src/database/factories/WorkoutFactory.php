@@ -1,6 +1,4 @@
-// database/factories/WorkoutFactory.php
 <?php
-
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;

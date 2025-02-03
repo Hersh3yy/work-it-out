@@ -9,7 +9,7 @@ class WorkoutParserService
     public function parse(string $description)
     {
         $response = OpenAI::chat()->create([
-            'model' => 'gpt-4-1106-preview',
+            'model' => 'gpt-4o-mini',
             'messages' => [
                 [
                     'role' => 'system',

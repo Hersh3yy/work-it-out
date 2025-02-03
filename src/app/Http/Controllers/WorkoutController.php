@@ -8,11 +8,40 @@ use Illuminate\Http\Request;
 
 class WorkoutController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json([
-            'workouts' => Workout::with(['exerciseSets.exercise'])->latest()->get()
+        $query = Workout::with(['exerciseSets.exercise'])->latest();
+
+        // Validate pagination params
+        $request->validate([
+            'offset' => 'integer|min:0',
+            'limit' => 'integer|min:1|max:100',
+            'page' => 'integer|min:1',
+            'per_page' => 'integer|min:1|max:100'
         ]);
+
+        // If offset is provided, use offset/limit pagination
+        if ($request->has('offset')) {
+            $limit = $request->input('limit', 15);
+
+            $workouts = $query->offset($request->offset)
+                ->orderBy('created_at', 'desc')
+                ->limit($limit)
+                ->get();
+
+            return response()->json([
+                'data' => $workouts,
+                'meta' => [
+                    'offset' => (int) $request->offset,
+                    'limit' => (int) $limit,
+                    'total' => $query->count()
+                ]
+            ]);
+        }
+
+        // Otherwise use standard page-based pagination
+        $perPage = $request->input('per_page', 15);
+        return $query->paginate($perPage);
     }
 
     protected $workoutParser;
