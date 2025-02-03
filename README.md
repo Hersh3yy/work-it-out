@@ -178,7 +178,9 @@ Note: The free tier of OpenAI API has rate limits and usage quotas. Monitor your
 Access the auto-generated API documentation:
 - UI Documentation: http://localhost:8000/docs/api
 - OpenAPI Spec: http://localhost:8000/docs/api.json
-- Development Tools: http://localhost:8000/telescope
+
+Development Tools: http://localhost:8000/telescope
+
 
 ## Example Response Format
 
