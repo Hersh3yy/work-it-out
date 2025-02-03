@@ -91,6 +91,7 @@ cp src/.env.example src/.env
 ```env
 
 OPENAI_API_KEY=your_api_key_here
+OPENAI_ORGANIZATION-your-organization # optional
 ```
 
 4. Install dependencies and build:
@@ -102,7 +103,6 @@ docker compose build
 5. Setup application:
 ```bash
 docker compose run --rm api php artisan key:generate
-docker compose run --rm api php artisan install:api
 ```
 
 6. Start the application:
@@ -110,7 +110,7 @@ docker compose run --rm api php artisan install:api
 docker compose up -d
 ```
 
-7. Setup database:
+7. Setup database with seed data (optional):
 ```bash
 docker compose run --rm api php artisan migrate:fresh --seed
 ```
@@ -164,17 +164,7 @@ docker compose exec api php artisan test
    OPENAI_ORGANIZATION=org-... # Optional
    ```
 
-3. Install OpenAI package (already included in composer.json):
-   ```bash
-   docker compose exec api composer require openai-php/laravel
-   ```
-
-4. Generate configuration:
-   ```bash
-   docker compose exec api php artisan openai:install
-   ```
-
-5. Verify installation:
+3. Verify installation:
    ```bash
    # Create a workout to test OpenAI integration
    curl -X POST http://localhost:8000/api/workouts \
