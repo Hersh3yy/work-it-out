@@ -123,9 +123,7 @@ docker compose run --rm api php artisan migrate:fresh --seed
 - `GET /api/workouts/{id}` - Get a specific workout
 - `DELETE /api/workouts/{id}` - Delete a workout
 
-### Documentation & Development
 - `GET /docs/api` - API Documentation UI
-- `GET /docs/api.json` - OpenAPI specification
 - `GET /telescope` - Development debugging dashboard
 
 ### Example Usage
