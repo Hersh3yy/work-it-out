@@ -25,7 +25,7 @@ An intelligent workout companion API that transforms natural language workout de
 - [x] API documentation with Scramble
 
 ### Iteration 2 (Planned)
-- [ ] User authentication
+- [ ] User authentication and relations
 - [ ] Input validation
   - [ ] Workout description sanitization
   - [ ] Non-workout prompt filtering
@@ -89,12 +89,6 @@ cp src/.env.example src/.env
 
 3. Update src/.env with required settings:
 ```env
-DB_CONNECTION=pgsql
-DB_HOST=db
-DB_PORT=5432
-DB_DATABASE=workout
-DB_USERNAME=workout
-DB_PASSWORD=secret
 
 OPENAI_API_KEY=your_api_key_here
 ```
@@ -232,3 +226,6 @@ Access the auto-generated API documentation:
     }
 }
 ```
+
+
+![planned ERD (could chnage slightly)](https://github.com/Hersh3yy/work-it-out/blob/main/image.jpg?raw=true)
