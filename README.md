@@ -216,4 +216,4 @@ Access the auto-generated API documentation:
 ```
 
 
-![planned ERD (could chnage slightly)](https://github.com/Hersh3yy/work-it-out/blob/main/image.jpg?raw=true)
+![planned ERD (could chnage slightly)](https://github.com/Hersh3yy/work-it-out/blob/main/work-it-out.drawio.png?raw=true)
