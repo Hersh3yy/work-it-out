@@ -1,0 +1,35 @@
+# Version control
+.git
+.gitignore
+
+# Sail (Docker development environment — not needed in production image)
+vendor/laravel/sail
+compose.yaml
+compose.override.yaml
+
+# Dev tooling
+node_modules
+*.lock
+pint.json
+phpstan.neon*
+
+# Test artifacts
+.phpunit.result.cache
+coverage/
+
+# Environment files — injected by Coolify as secrets
+.env
+.env.*
+!.env.example
+
+# Local docs and IDE config
+.cursor
+.idea
+.vscode
+*.md
+!vendor/**/*.md
+
+# Compiled assets (not applicable — API-only)
+public/hot
+public/storage
+storage/*.key
