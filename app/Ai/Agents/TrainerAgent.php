@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
+use App\Enums\TrainerPersona;
 use App\Models\NutritionLog;
 use App\Models\User;
 use App\Models\WorkoutSession;
@@ -29,11 +30,15 @@ final class TrainerAgent implements Agent, Conversational
 {
     use Promptable, RemembersConversations;
 
-    public function __construct(private readonly User $user) {}
+    public function __construct(
+        private readonly User $user,
+        private readonly ?TrainerPersona $coachOverride = null,
+    ) {}
 
     public function instructions(): Stringable|string
     {
-        $personaPrompt = $this->user->trainer_persona->systemPrompt();
+        $persona       = $this->coachOverride ?? $this->user->trainer_persona;
+        $personaPrompt = $persona->systemPrompt();
         $contextJson   = json_encode($this->buildContext(), JSON_PRETTY_PRINT);
         $today         = now()->toDateString();
 

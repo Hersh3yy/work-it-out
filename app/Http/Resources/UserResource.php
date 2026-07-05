@@ -28,6 +28,11 @@ final class UserResource extends JsonResource
             'weekly_adherence_rate'  => $this->weekly_adherence_rate,
             'current_streak_days'    => $this->current_streak_days,
             'last_active_at'         => $this->last_active_at?->toIso8601String(),
+            'rpg'                    => [
+                'strength' => (int) ($this->rpg_strength ?? 1),
+                'stamina'  => (int) ($this->rpg_stamina  ?? 1),
+                'vitality' => (int) ($this->rpg_vitality ?? 1),
+            ],
             'created_at'             => $this->created_at?->toIso8601String(),
         ];
     }

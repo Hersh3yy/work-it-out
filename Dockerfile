@@ -17,24 +17,17 @@ RUN composer install \
 # ============================================================================
 # Stage 2: Final production image
 # ============================================================================
-FROM php:8.5-fpm-alpine AS production
+FROM php:8.4-fpm-alpine AS production
 
-# ─── System packages ─────────────────────────────────────────────────────────
+# ─── php-extension-installer (handles PECL + Alpine edge cases cleanly) ──────
+ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+
+# ─── System packages + PHP extensions ────────────────────────────────────────
 RUN apk add --no-cache \
-    nginx \
-    supervisor \
-    curl \
-    libpng-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
-    libzip-dev \
-    icu-dev \
-    oniguruma-dev \
-    libxml2-dev \
-    && docker-php-ext-configure gd \
-        --with-freetype \
-        --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
+        nginx \
+        supervisor \
+        curl \
+    && install-php-extensions \
         bcmath \
         gd \
         intl \
@@ -44,9 +37,7 @@ RUN apk add --no-cache \
         redis \
         sockets \
         xml \
-        zip \
-    && pecl install redis \
-    && docker-php-ext-enable redis
+        zip
 
 # ─── PHP configuration ───────────────────────────────────────────────────────
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/99-app.ini
@@ -66,12 +57,16 @@ COPY . .
 RUN mkdir -p storage/framework/{cache,sessions,views} \
     && mkdir -p bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache \
-    && php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache \
-    && php artisan event:cache
+    && chmod -R 775 storage bootstrap/cache
+
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 80
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Coolify and Docker Swarm use this to know when the app is ready.
+# /up is Laravel's built-in health endpoint (returns 200 when bootstrapped).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost/up || exit 1
+
+ENTRYPOINT ["/entrypoint.sh"]

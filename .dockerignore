@@ -2,14 +2,21 @@
 .git
 .gitignore
 
-# Sail (Docker development environment — not needed in production image)
-vendor/laravel/sail
+# Framework-generated caches (rebuilt by entrypoint with correct env/packages)
+bootstrap/cache/packages.php
+bootstrap/cache/services.php
+
+# Vendor is built in stage 1 (composer install --no-dev); exclude entirely
+# to prevent the host vendor (with dev deps) from overwriting it.
+vendor/
 compose.yaml
 compose.override.yaml
 
 # Dev tooling
 node_modules
-*.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 pint.json
 phpstan.neon*
 

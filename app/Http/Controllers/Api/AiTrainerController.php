@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Ai\Agents\TrainerAgent;
+use App\Enums\TrainerPersona;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
@@ -38,14 +40,21 @@ final class AiTrainerController extends Controller
         $request->validate([
             'message'         => ['required', 'string', 'max:1000'],
             'conversation_id' => ['nullable', 'string'],
+            'coach'           => ['nullable', Rule::enum(TrainerPersona::class)],
         ]);
 
         /** @var User $user */
         $user    = $request->user();
         $message = $request->string('message')->value();
 
+        $coachOverride = $request->filled('coach')
+            ? TrainerPersona::from($request->string('coach')->value())
+            : null;
+
+        $activePersona = $coachOverride ?? $user->trainer_persona;
+
         try {
-            $agent = new TrainerAgent($user);
+            $agent = new TrainerAgent($user, $coachOverride);
 
             $conversationId = $request->string('conversation_id')->value();
 
@@ -58,12 +67,11 @@ final class AiTrainerController extends Controller
             return response()->json([
                 'reply'           => (string) $response,
                 'conversation_id' => $response->conversationId,
+                'coach'           => $activePersona->value,
             ]);
         } catch (Throwable) {
-            $errorMessage = $user->trainer_persona->downMessage();
-
             return response()->json(
-                ['reply' => $errorMessage, 'conversation_id' => null],
+                ['reply' => $activePersona->downMessage(), 'conversation_id' => null],
                 Response::HTTP_SERVICE_UNAVAILABLE
             );
         }

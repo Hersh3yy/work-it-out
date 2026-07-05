@@ -2,11 +2,15 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AiTrainerController;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BodyWeightController;
+use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DiaryController;
 use App\Http\Controllers\Api\NutritionLogController;
+use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\SmartLogController;
 use App\Http\Controllers\Api\WorkoutSessionController;
 use Illuminate\Support\Facades\Route;
 
@@ -50,6 +54,19 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/trainer/chat', [AiTrainerController::class, 'chat'])
         ->middleware('throttle:trainer-chat');
 
+    // Smart natural-language log — AI parses, persists, and reacts in one call
+    Route::post('/log', [SmartLogController::class, 'store'])
+        ->middleware('throttle:trainer-chat');
+
+    // Coaches' diary
+    Route::get('/diary', [DiaryController::class, 'index']);
+
+    // AI-generated plans — rate-limited alongside trainer chat
+    Route::post('/plans/workout', [PlanController::class, 'workout'])
+        ->middleware('throttle:trainer-chat');
+    Route::post('/plans/meal', [PlanController::class, 'meal'])
+        ->middleware('throttle:trainer-chat');
+
     // Dashboard summary
-    Route::get('/dashboard', [\App\Http\Controllers\Api\DashboardController::class, 'index']);
+    Route::get('/dashboard', [DashboardController::class, 'index']);
 });

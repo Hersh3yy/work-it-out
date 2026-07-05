@@ -32,6 +32,9 @@ use Laravel\Sanctum\HasApiTokens;
     'weekly_adherence_rate',
     'current_streak_days',
     'last_active_at',
+    'rpg_strength',
+    'rpg_stamina',
+    'rpg_vitality',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
@@ -71,6 +74,24 @@ class User extends Authenticatable
     public function bodyWeightLogs(): HasMany
     {
         return $this->hasMany(BodyWeightLog::class);
+    }
+
+    /** @return HasMany<CustomRpgStat, $this> */
+    public function customRpgStats(): HasMany
+    {
+        return $this->hasMany(CustomRpgStat::class)->orderByDesc('last_updated_at');
+    }
+
+    /** @return HasMany<ActivityFeedback, $this> */
+    public function activityFeedbacks(): HasMany
+    {
+        return $this->hasMany(ActivityFeedback::class)->latest();
+    }
+
+    /** @return HasMany<DiaryEntry, $this> */
+    public function diaryEntries(): HasMany
+    {
+        return $this->hasMany(DiaryEntry::class)->latest();
     }
 
     /**
