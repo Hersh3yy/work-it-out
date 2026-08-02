@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
-use App\Ai\Agents\SmartLogAgent;
+use App\Contracts\Ai\SmartLogParser;
 use App\Http\Controllers\Controller;
 use App\Jobs\UpdateUserStats;
 use App\Models\ActivityFeedback;
+use App\Models\BodyWeightLog;
 use App\Models\CustomRpgStat;
 use App\Models\DiaryEntry;
+use App\Models\NutritionLog;
 use App\Models\User;
+use App\Models\WorkoutSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,6 +31,10 @@ use Throwable;
  */
 final class SmartLogController extends Controller
 {
+    public function __construct(
+        private readonly SmartLogParser $parser,
+    ) {}
+
     public function store(Request $request): JsonResponse
     {
         $request->validate([
@@ -35,25 +42,21 @@ final class SmartLogController extends Controller
         ]);
 
         /** @var User $user */
-        $user    = $request->user();
+        $user = $request->user();
         $message = $request->string('message')->value();
 
         try {
-            $agent    = new SmartLogAgent($user);
-            $response = $agent->forUser($user)->prompt($message);
-
-            /** @var array<string, mixed> $parsed */
-            $parsed = $response->structured();
-        } catch (Throwable $e) {
+            $parsed = $this->parser->parse($user, $message);
+        } catch (Throwable) {
             return response()->json(
                 ['message' => 'The AI log processor is temporarily unavailable. Please try again.'],
                 Response::HTTP_SERVICE_UNAVAILABLE
             );
         }
 
-        $loggable     = null;
+        $loggable = null;
         $loggableType = null;
-        $loggableId   = null;
+        $loggableId = null;
 
         // ── Persist the parsed structured data ───────────────────────────────
         switch ($parsed['log_type'] ?? 'general') {
@@ -61,7 +64,7 @@ final class SmartLogController extends Controller
                 $loggable = $this->persistWorkout($user, $parsed);
                 if ($loggable) {
                     $loggableType = $loggable->getMorphClass();
-                    $loggableId   = $loggable->getKey();
+                    $loggableId = $loggable->getKey();
                     UpdateUserStats::dispatch($user);
                 }
                 break;
@@ -70,7 +73,7 @@ final class SmartLogController extends Controller
                 $loggable = $this->persistMeal($user, $parsed);
                 if ($loggable) {
                     $loggableType = $loggable->getMorphClass();
-                    $loggableId   = $loggable->getKey();
+                    $loggableId = $loggable->getKey();
                 }
                 break;
 
@@ -78,28 +81,28 @@ final class SmartLogController extends Controller
                 $loggable = $this->persistBiometrics($user, $parsed);
                 if ($loggable) {
                     $loggableType = $loggable->getMorphClass();
-                    $loggableId   = $loggable->getKey();
+                    $loggableId = $loggable->getKey();
                 }
                 break;
         }
 
         // ── Coach feedback ────────────────────────────────────────────────────
         $feedback = ActivityFeedback::create([
-            'user_id'      => $user->id,
-            'loggable_type'=> $loggableType,
-            'loggable_id'  => $loggableId,
-            'raw_message'  => $message,
-            'log_summary'  => $parsed['summary'] ?? $message,
-            'lt_surge'     => $parsed['lt_surge_feedback'] ?? null,
-            'shen'         => $parsed['shen_feedback'] ?? null,
-            'latika'       => $parsed['latika_feedback'] ?? null,
+            'user_id' => $user->id,
+            'loggable_type' => $loggableType,
+            'loggable_id' => $loggableId,
+            'raw_message' => $message,
+            'log_summary' => $parsed['summary'] ?? $message,
+            'lt_surge' => $parsed['lt_surge_feedback'] ?? null,
+            'shen' => $parsed['shen_feedback'] ?? null,
+            'latika' => $parsed['latika_feedback'] ?? null,
         ]);
 
         // ── Diary entry ───────────────────────────────────────────────────────
         $diary = DiaryEntry::create([
-            'user_id'              => $user->id,
+            'user_id' => $user->id,
             'activity_feedback_id' => $feedback->id,
-            'content'              => $parsed['diary_text'] ?? $parsed['summary'],
+            'content' => $parsed['diary_text'] ?? $parsed['summary'],
         ]);
 
         // ── RPG stat updates ──────────────────────────────────────────────────
@@ -107,54 +110,54 @@ final class SmartLogController extends Controller
         $this->applyCustomRpgStat($user, $parsed);
 
         return response()->json([
-            'log_type'    => $parsed['log_type'],
-            'summary'     => $parsed['summary'],
-            'feedback'    => [
-                'id'       => $feedback->id,
+            'log_type' => $parsed['log_type'],
+            'summary' => $parsed['summary'],
+            'feedback' => [
+                'id' => $feedback->id,
                 'lt_surge' => $feedback->lt_surge,
-                'shen'     => $feedback->shen,
-                'latika'   => $feedback->latika,
+                'shen' => $feedback->shen,
+                'latika' => $feedback->latika,
             ],
-            'diary'       => [
-                'id'      => $diary->id,
+            'diary' => [
+                'id' => $diary->id,
                 'content' => $diary->content,
             ],
-            'rpg'         => $rpgSnapshot,
+            'rpg' => $rpgSnapshot,
             'loggable_id' => $loggableId,
         ], Response::HTTP_CREATED);
     }
 
     // ── Private persistence helpers ───────────────────────────────────────────
 
-    private function persistWorkout(User $user, array $parsed): ?\App\Models\WorkoutSession
+    private function persistWorkout(User $user, array $parsed): ?WorkoutSession
     {
         $session = $user->workoutSessions()->create([
-            'logged_at'         => now(),
-            'duration_minutes'  => $parsed['duration_minutes'] ?? null,
-            'perceived_exertion'=> $parsed['perceived_exertion'] ?? null,
-            'energy_level'      => $parsed['energy_level'] ?? null,
-            'notes'             => $parsed['workout_notes'] ?? null,
+            'logged_at' => now(),
+            'duration_minutes' => $parsed['duration_minutes'] ?? null,
+            'perceived_exertion' => $parsed['perceived_exertion'] ?? null,
+            'energy_level' => $parsed['energy_level'] ?? null,
+            'notes' => $parsed['workout_notes'] ?? null,
             'completed_planned' => false,
         ]);
 
         $exercises = $parsed['exercises'] ?? [];
         foreach ($exercises as $index => $ex) {
             $session->exerciseEntries()->create([
-                'exercise_name'    => $ex['exercise_name'] ?? 'Unknown',
-                'sets'             => $ex['sets'] ?? null,
-                'reps'             => $ex['reps'] ?? null,
-                'weight_kg'        => $ex['weight_kg'] ?? null,
+                'exercise_name' => $ex['exercise_name'] ?? 'Unknown',
+                'sets' => $ex['sets'] ?? null,
+                'reps' => $ex['reps'] ?? null,
+                'weight_kg' => $ex['weight_kg'] ?? null,
                 'duration_seconds' => $ex['duration_seconds'] ?? null,
-                'distance_meters'  => $ex['distance_meters'] ?? null,
-                'notes'            => $ex['notes'] ?? null,
-                'sort_order'       => $index,
+                'distance_meters' => $ex['distance_meters'] ?? null,
+                'notes' => $ex['notes'] ?? null,
+                'sort_order' => $index,
             ]);
         }
 
         return $session;
     }
 
-    private function persistMeal(User $user, array $parsed): ?\App\Models\NutritionLog
+    private function persistMeal(User $user, array $parsed): ?NutritionLog
     {
         if (empty($parsed['food_name'])) {
             return null;
@@ -164,14 +167,14 @@ final class SmartLogController extends Controller
             'logged_at' => now(),
             'meal_type' => $parsed['meal_type'] ?? 'snack',
             'food_name' => $parsed['food_name'],
-            'calories'  => $parsed['calories'] ?? null,
+            'calories' => $parsed['calories'] ?? null,
             'protein_g' => $parsed['protein_g'] ?? null,
-            'carbs_g'   => $parsed['carbs_g'] ?? null,
-            'fat_g'     => $parsed['fat_g'] ?? null,
+            'carbs_g' => $parsed['carbs_g'] ?? null,
+            'fat_g' => $parsed['fat_g'] ?? null,
         ]);
     }
 
-    private function persistBiometrics(User $user, array $parsed): ?\App\Models\BodyWeightLog
+    private function persistBiometrics(User $user, array $parsed): ?BodyWeightLog
     {
         $weightKg = $parsed['weight_kg_stat'] ?? null;
 
@@ -200,12 +203,12 @@ final class SmartLogController extends Controller
         $clamp = static fn (int $current, int $delta): int => min(100, max(1, $current + max(0, min(5, $delta))));
 
         $strength = $clamp($user->rpg_strength, (int) ($parsed['rpg_strength_delta'] ?? 0));
-        $stamina  = $clamp($user->rpg_stamina, (int) ($parsed['rpg_stamina_delta'] ?? 0));
+        $stamina = $clamp($user->rpg_stamina, (int) ($parsed['rpg_stamina_delta'] ?? 0));
         $vitality = $clamp($user->rpg_vitality, (int) ($parsed['rpg_vitality_delta'] ?? 0));
 
         $user->update([
             'rpg_strength' => $strength,
-            'rpg_stamina'  => $stamina,
+            'rpg_stamina' => $stamina,
             'rpg_vitality' => $vitality,
         ]);
 
@@ -231,9 +234,9 @@ final class SmartLogController extends Controller
 
         if ($existing) {
             $existing->update([
-                'value'           => min(100, $existing->value + 5),
-                'level'           => $existing->level + 1,
-                'change_reason'   => $parsed['rpg_stat_reason'] ?? null,
+                'value' => min(100, $existing->value + 5),
+                'level' => $existing->level + 1,
+                'change_reason' => $parsed['rpg_stat_reason'] ?? null,
                 'last_updated_at' => now(),
             ]);
         } else {
@@ -244,13 +247,13 @@ final class SmartLogController extends Controller
             }
 
             CustomRpgStat::create([
-                'user_id'         => $user->id,
-                'name'            => $statName,
-                'value'           => 50,
-                'level'           => 1,
-                'unit'            => 'score',
-                'category'        => $parsed['rpg_stat_category'] ?? 'strength',
-                'change_reason'   => $parsed['rpg_stat_reason'] ?? null,
+                'user_id' => $user->id,
+                'name' => $statName,
+                'value' => 50,
+                'level' => 1,
+                'unit' => 'score',
+                'category' => $parsed['rpg_stat_category'] ?? 'strength',
+                'change_reason' => $parsed['rpg_stat_reason'] ?? null,
                 'last_updated_at' => now(),
             ]);
         }

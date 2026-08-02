@@ -27,18 +27,25 @@ final class SmartLogAgent implements Agent, HasStructuredOutput
 {
     use Promptable;
 
-    public function __construct(private readonly User $user) {}
+    /**
+     * @param  array<string, mixed>  $personalRecords
+     */
+    public function __construct(
+        private readonly User $user,
+        private readonly array $personalRecords = [],
+    ) {}
 
     public function instructions(): string
     {
-        $today   = now()->toDateString();
+        $today = now()->toDateString();
         $profile = json_encode([
-            'name'          => $this->user->name,
-            'primary_goal'  => $this->user->primary_goal?->value,
-            'experience'    => $this->user->experience_level?->value,
-            'rpg_strength'  => $this->user->rpg_strength,
-            'rpg_stamina'   => $this->user->rpg_stamina,
-            'rpg_vitality'  => $this->user->rpg_vitality,
+            'name' => $this->user->name,
+            'primary_goal' => $this->user->primary_goal?->value,
+            'experience' => $this->user->experience_level?->value,
+            'rpg_strength' => $this->user->rpg_strength,
+            'rpg_stamina' => $this->user->rpg_stamina,
+            'rpg_vitality' => $this->user->rpg_vitality,
+            'personal_records' => $this->personalRecords,
         ], JSON_PRETTY_PRINT);
 
         return <<<INSTRUCTIONS
@@ -59,6 +66,7 @@ Your tasks:
 
 Rules:
 - Do NOT invent data the user did not provide.
+- The personal_records in the profile are the user's REAL computed records (max lifts, best run, sport history). Compare new logs against them: if a log beats a record, say so explicitly in the coach reactions using the exact numbers.
 - Exercise sets/reps/weight should come directly from the text.
 - Calorie/macro values are estimates if not stated explicitly — mark them nullable.
 - For workouts with multiple exercises, parse each exercise into the exercises array.
@@ -71,13 +79,13 @@ INSTRUCTIONS;
     public function schema(JsonSchema $schema): array
     {
         $exerciseItem = $schema->object([
-            'exercise_name'    => $schema->string()->required(),
-            'sets'             => $schema->integer()->nullable(),
-            'reps'             => $schema->integer()->nullable(),
-            'weight_kg'        => $schema->number()->nullable(),
+            'exercise_name' => $schema->string()->required(),
+            'sets' => $schema->integer()->nullable(),
+            'reps' => $schema->integer()->nullable(),
+            'weight_kg' => $schema->number()->nullable(),
             'duration_seconds' => $schema->integer()->nullable(),
-            'distance_meters'  => $schema->number()->nullable(),
-            'notes'            => $schema->string()->nullable(),
+            'distance_meters' => $schema->number()->nullable(),
+            'notes' => $schema->string()->nullable(),
         ]);
 
         return [
@@ -91,44 +99,44 @@ INSTRUCTIONS;
                 ->required(),
 
             // ── Workout fields ────────────────────────────────────────────────
-            'duration_minutes'   => $schema->integer()->nullable(),
+            'duration_minutes' => $schema->integer()->nullable(),
             'perceived_exertion' => $schema->integer()->nullable()
                 ->description('Rate of perceived exertion 1–10'),
-            'energy_level'       => $schema->integer()->nullable()
+            'energy_level' => $schema->integer()->nullable()
                 ->description('Self-reported energy level 1–5'),
-            'workout_notes'      => $schema->string()->nullable(),
-            'exercises'          => $schema->array()->items($exerciseItem),
+            'workout_notes' => $schema->string()->nullable(),
+            'exercises' => $schema->array()->items($exerciseItem),
 
             // ── Meal fields ───────────────────────────────────────────────────
-            'meal_type'          => $schema->string()
+            'meal_type' => $schema->string()
                 ->enum(['breakfast', 'lunch', 'dinner', 'snack', 'supplement'])
                 ->nullable(),
-            'food_name'          => $schema->string()->nullable(),
-            'calories'           => $schema->integer()->nullable(),
-            'protein_g'          => $schema->number()->nullable(),
-            'carbs_g'            => $schema->number()->nullable(),
-            'fat_g'              => $schema->number()->nullable(),
+            'food_name' => $schema->string()->nullable(),
+            'calories' => $schema->integer()->nullable(),
+            'protein_g' => $schema->number()->nullable(),
+            'carbs_g' => $schema->number()->nullable(),
+            'fat_g' => $schema->number()->nullable(),
 
             // ── Biometrics fields ─────────────────────────────────────────────
-            'weight_kg_stat'     => $schema->number()->nullable(),
+            'weight_kg_stat' => $schema->number()->nullable(),
 
             // ── Coach reactions ───────────────────────────────────────────────
-            'lt_surge_feedback'  => $schema->string()->required(),
-            'shen_feedback'      => $schema->string()->required(),
-            'latika_feedback'    => $schema->string()->required(),
-            'diary_text'         => $schema->string()->required(),
+            'lt_surge_feedback' => $schema->string()->required(),
+            'shen_feedback' => $schema->string()->required(),
+            'latika_feedback' => $schema->string()->required(),
+            'diary_text' => $schema->string()->required(),
 
             // ── RPG deltas ────────────────────────────────────────────────────
             'rpg_strength_delta' => $schema->integer()->required(),
-            'rpg_stamina_delta'  => $schema->integer()->required(),
+            'rpg_stamina_delta' => $schema->integer()->required(),
             'rpg_vitality_delta' => $schema->integer()->required(),
 
             // ── Custom RPG stat ───────────────────────────────────────────────
-            'rpg_stat_name'      => $schema->string()->nullable(),
-            'rpg_stat_category'  => $schema->string()
+            'rpg_stat_name' => $schema->string()->nullable(),
+            'rpg_stat_category' => $schema->string()
                 ->enum(['strength', 'stamina', 'vitality'])
                 ->nullable(),
-            'rpg_stat_reason'    => $schema->string()->nullable(),
+            'rpg_stat_reason' => $schema->string()->nullable(),
         ];
     }
 }

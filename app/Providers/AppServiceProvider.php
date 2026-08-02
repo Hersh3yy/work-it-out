@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Ai\SdkPlanGenerator;
+use App\Ai\SdkSmartLogParser;
+use App\Ai\SdkTrainerChat;
+use App\Contracts\Ai\NutritionParser;
+use App\Contracts\Ai\PlanGenerator;
+use App\Contracts\Ai\SmartLogParser;
+use App\Contracts\Ai\TrainerChat;
+use App\Services\NutritionParserService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -11,7 +19,15 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public function register(): void {}
+    public function register(): void
+    {
+        // Ports → adapters. Swap any binding for a fake in tests
+        // (see tests/Fakes) or a different provider in production.
+        $this->app->bind(TrainerChat::class, SdkTrainerChat::class);
+        $this->app->bind(PlanGenerator::class, SdkPlanGenerator::class);
+        $this->app->bind(SmartLogParser::class, SdkSmartLogParser::class);
+        $this->app->bind(NutritionParser::class, NutritionParserService::class);
+    }
 
     public function boot(): void
     {

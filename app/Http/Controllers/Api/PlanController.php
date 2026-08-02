@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
-use App\Ai\Agents\PlanAgent;
+use App\Contracts\Ai\PlanGenerator;
+use App\Enums\PlanType;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -14,13 +15,17 @@ use Throwable;
 
 final class PlanController extends Controller
 {
+    public function __construct(
+        private readonly PlanGenerator $planner,
+    ) {}
+
     /**
      * Generate a personalised weekly workout plan.
      * Rate-limited alongside trainer chat (20/hr per user).
      */
     public function workout(Request $request): JsonResponse
     {
-        return $this->generate($request, 'workout');
+        return $this->generate($request, PlanType::Workout);
     }
 
     /**
@@ -29,23 +34,20 @@ final class PlanController extends Controller
      */
     public function meal(Request $request): JsonResponse
     {
-        return $this->generate($request, 'meal');
+        return $this->generate($request, PlanType::Meal);
     }
 
-    private function generate(Request $request, string $type): JsonResponse
+    private function generate(Request $request, PlanType $type): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
 
         try {
-            $agent    = new PlanAgent($user, $type);
-            $response = $agent->forUser($user)->prompt(
-                "Generate my {$type} plan for this week."
-            );
+            $plan = $this->planner->generate($user, $type);
 
             return response()->json([
-                'type' => $type,
-                'plan' => (string) $response,
+                'type' => $type->value,
+                'plan' => $plan,
             ]);
         } catch (Throwable) {
             return response()->json(

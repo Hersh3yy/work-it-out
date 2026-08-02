@@ -19,7 +19,7 @@ it('returns an AI trainer response via faked SDK', function (): void {
 
 it('returns persona down-message when AI is unavailable', function (): void {
     // No fake registered: agent will throw when it can't reach Msty in test env
-    $user = User::factory()->asGeneral()->create();
+    $user = User::factory()->asLtSurge()->create();
 
     $response = $this->actingAs($user, 'sanctum')
         ->postJson('/api/trainer/chat', ['message' => 'What should I train today?']);

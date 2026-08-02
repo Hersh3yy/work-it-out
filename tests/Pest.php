@@ -1,6 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
+use App\Contracts\Ai\NutritionParser;
+use App\Contracts\Ai\PlanGenerator;
+use App\Contracts\Ai\SmartLogParser;
+use App\Contracts\Ai\TrainerChat;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Fakes\FakeNutritionParser;
+use Tests\Fakes\FakePlanGenerator;
+use Tests\Fakes\FakeSmartLogParser;
+use Tests\Fakes\FakeTrainerChat;
 use Tests\TestCase;
 
 /*
@@ -44,7 +54,39 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/*
+| One-line helpers to swap any AI port for its in-memory fake. Each returns
+| the fake instance so tests can queue replies and assert recorded calls.
+*/
+
+function fakeTrainerChat(?FakeTrainerChat $fake = null): FakeTrainerChat
 {
-    // ..
+    $fake ??= new FakeTrainerChat;
+    app()->instance(TrainerChat::class, $fake);
+
+    return $fake;
+}
+
+function fakePlanGenerator(?FakePlanGenerator $fake = null): FakePlanGenerator
+{
+    $fake ??= new FakePlanGenerator;
+    app()->instance(PlanGenerator::class, $fake);
+
+    return $fake;
+}
+
+function fakeSmartLogParser(?FakeSmartLogParser $fake = null): FakeSmartLogParser
+{
+    $fake ??= FakeSmartLogParser::workout();
+    app()->instance(SmartLogParser::class, $fake);
+
+    return $fake;
+}
+
+function fakeNutritionParser(?FakeNutritionParser $fake = null): FakeNutritionParser
+{
+    $fake ??= new FakeNutritionParser;
+    app()->instance(NutritionParser::class, $fake);
+
+    return $fake;
 }

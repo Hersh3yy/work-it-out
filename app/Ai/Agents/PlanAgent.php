@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
+use App\Enums\PlanType;
 use App\Enums\TrainerPersona;
 use App\Models\User;
+use App\Services\Profile\ProfileIntakeReport;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Promptable;
 
@@ -21,38 +23,61 @@ final class PlanAgent implements Agent
 {
     use Promptable;
 
+    /**
+     * @param  array<string, mixed>  $personalRecords
+     */
     public function __construct(
         private readonly User $user,
-        private readonly string $planType,
+        private readonly PlanType $planType,
+        private readonly array $personalRecords = [],
+        private readonly ?ProfileIntakeReport $intake = null,
     ) {}
 
     public function instructions(): string
     {
         $profile = json_encode([
-            'name'               => $this->user->name,
-            'experience_level'   => $this->user->experience_level?->value,
-            'primary_goal'       => $this->user->primary_goal?->value,
-            'goal_description'   => $this->user->goal_description,
-            'training_days'      => $this->user->training_days_per_week,
-            'current_weight_kg'  => $this->user->current_weight_kg,
-            'target_weight_kg'   => $this->user->target_weight_kg,
+            'name' => $this->user->name,
+            'experience_level' => $this->user->experience_level?->value,
+            'primary_goal' => $this->user->primary_goal?->value,
+            'goal_description' => $this->user->goal_description,
+            'training_days' => $this->user->training_days_per_week,
+            'current_weight_kg' => $this->user->current_weight_kg,
+            'target_weight_kg' => $this->user->target_weight_kg,
+            'personal_records' => $this->personalRecords,
         ], JSON_PRETTY_PRINT);
+
+        $profile .= $this->intakeNotes();
 
         $coach = $this->user->trainer_persona;
 
         return match ($this->planType) {
-            'workout' => $this->workoutInstructions($profile, $coach),
-            'meal'    => $this->mealInstructions($profile),
-            default   => throw new \InvalidArgumentException("Unknown plan type: {$this->planType}"),
+            PlanType::Workout => $this->workoutInstructions($profile, $coach),
+            PlanType::Meal => $this->mealInstructions($profile),
         };
+    }
+
+    /**
+     * When the profile has gaps, tell the model to state its assumptions
+     * instead of silently guessing.
+     */
+    private function intakeNotes(): string
+    {
+        if ($this->intake === null || $this->intake->isComplete()) {
+            return '';
+        }
+
+        $missing = implode(', ', array_keys($this->intake->missing));
+
+        return "\n\nNOTE: The following profile fields are missing: {$missing}. "
+            .'Where a missing field affects the plan, choose a sensible default and state the assumption explicitly at the top of the plan.';
     }
 
     private function workoutInstructions(string $profile, TrainerPersona $coach): string
     {
         $coachStyle = match ($coach) {
             TrainerPersona::LtSurge => 'Write this as a strict military training order from Lt. Surge. Use markdown with bold headers and mission-style language.',
-            TrainerPersona::Shen    => 'Write this as a performance training programme from Shen. Use markdown with clean headers. Include heart-rate zones and progressive loading notes.',
-            TrainerPersona::Latika  => 'Write this as a holistic weekly movement practice from Latika. Use markdown. Balance intensity with recovery and mention breathing/mindfulness cues.',
+            TrainerPersona::Shen => 'Write this as a performance training programme from Shen. Use markdown with clean headers. Include heart-rate zones and progressive loading notes.',
+            TrainerPersona::Latika => 'Write this as a holistic weekly movement practice from Latika. Use markdown. Balance intensity with recovery and mention breathing/mindfulness cues.',
         };
 
         return <<<INSTRUCTIONS

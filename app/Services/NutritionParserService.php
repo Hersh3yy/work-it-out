@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Ai\Agents\NutritionParserAgent;
+use App\Contracts\Ai\NutritionParser;
 use Throwable;
 
 /**
  * Wraps the NutritionParserAgent to provide a safe, fallback-capable
  * interface for converting free-text food descriptions into macro data.
  */
-final class NutritionParserService
+final class NutritionParserService implements NutritionParser
 {
     /**
      * Parse a free-text food description into structured macro data.
@@ -27,21 +28,21 @@ final class NutritionParserService
             $result = NutritionParserAgent::make()->prompt($rawText);
 
             return [
-                'food_name'  => (string) ($result['food_name'] ?? $rawText),
-                'calories'   => isset($result['calories']) ? (int) $result['calories'] : null,
-                'protein_g'  => isset($result['protein_g']) ? (float) $result['protein_g'] : null,
-                'carbs_g'    => isset($result['carbs_g']) ? (float) $result['carbs_g'] : null,
-                'fat_g'      => isset($result['fat_g']) ? (float) $result['fat_g'] : null,
-                'meal_type'  => $result['meal_type'] ?? null,
+                'food_name' => (string) ($result['food_name'] ?? $rawText),
+                'calories' => isset($result['calories']) ? (int) $result['calories'] : null,
+                'protein_g' => isset($result['protein_g']) ? (float) $result['protein_g'] : null,
+                'carbs_g' => isset($result['carbs_g']) ? (float) $result['carbs_g'] : null,
+                'fat_g' => isset($result['fat_g']) ? (float) $result['fat_g'] : null,
+                'meal_type' => $result['meal_type'] ?? null,
             ];
         } catch (Throwable) {
             return [
-                'food_name'  => $rawText,
-                'calories'   => null,
-                'protein_g'  => null,
-                'carbs_g'    => null,
-                'fat_g'      => null,
-                'meal_type'  => null,
+                'food_name' => $rawText,
+                'calories' => null,
+                'protein_g' => null,
+                'carbs_g' => null,
+                'fat_g' => null,
+                'meal_type' => null,
             ];
         }
     }
