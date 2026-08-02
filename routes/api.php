@@ -35,6 +35,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::put('/profile', [ProfileController::class, 'update']);
     Route::put('/profile/trainer', [ProfileController::class, 'updateTrainer']);
+    Route::get('/profile/intake', [ProfileController::class, 'intake']);
 
     // Workouts
     Route::apiResource('workouts', WorkoutSessionController::class)

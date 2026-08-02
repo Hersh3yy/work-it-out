@@ -11,7 +11,9 @@ use App\Contracts\Ai\NutritionParser;
 use App\Contracts\Ai\PlanGenerator;
 use App\Contracts\Ai\SmartLogParser;
 use App\Contracts\Ai\TrainerChat;
+use App\Contracts\Profile\ProfileIntake;
 use App\Services\NutritionParserService;
+use App\Services\Profile\ProfileIntakeService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -27,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PlanGenerator::class, SdkPlanGenerator::class);
         $this->app->bind(SmartLogParser::class, SdkSmartLogParser::class);
         $this->app->bind(NutritionParser::class, NutritionParserService::class);
+        $this->app->bind(ProfileIntake::class, ProfileIntakeService::class);
     }
 
     public function boot(): void
