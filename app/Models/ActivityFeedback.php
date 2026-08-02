@@ -12,18 +12,26 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 /**
  * The three-coach reaction to a logged activity.
  *
- * @property int         $id
- * @property int         $user_id
+ * @property int $id
+ * @property int $user_id
  * @property string|null $loggable_type
- * @property int|null    $loggable_id
+ * @property int|null $loggable_id
  * @property string|null $raw_message
- * @property string      $log_summary
+ * @property string $log_summary
  * @property string|null $lt_surge
  * @property string|null $shen
  * @property string|null $latika
  */
 final class ActivityFeedback extends Model
 {
+    /**
+     * Laravel treats "feedback" as uncountable and would resolve the table
+     * name to "activity_feedback", but the migration created the plural.
+     *
+     * @var string
+     */
+    protected $table = 'activity_feedbacks';
+
     /** @var list<string> */
     protected $fillable = [
         'user_id',

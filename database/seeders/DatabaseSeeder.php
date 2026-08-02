@@ -7,8 +7,6 @@ namespace Database\Seeders;
 use App\Enums\ExperienceLevel;
 use App\Enums\PrimaryGoal;
 use App\Enums\TrainerPersona;
-use App\Models\BodyWeightLog;
-use App\Models\NutritionLog;
 use App\Models\User;
 use App\Models\WorkoutSession;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -21,17 +19,17 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $demo = User::factory()->create([
-            'name'                   => 'Ruby Demo',
-            'email'                  => 'demo@trainwithruby.app',
-            'password'               => 'password',
-            'trainer_persona'        => TrainerPersona::General->value,
-            'experience_level'       => ExperienceLevel::Intermediate->value,
+            'name' => 'Ruby Demo',
+            'email' => 'demo@trainwithruby.app',
+            'password' => 'password',
+            'trainer_persona' => TrainerPersona::LtSurge->value,
+            'experience_level' => ExperienceLevel::Intermediate->value,
             'training_days_per_week' => 4,
-            'primary_goal'           => PrimaryGoal::BuildMuscle->value,
-            'goal_description'       => 'I want to squat 140kg by December',
-            'goal_deadline'          => now()->endOfYear()->toDateString(),
-            'current_weight_kg'      => 82.5,
-            'target_weight_kg'       => 85.0,
+            'primary_goal' => PrimaryGoal::BuildMuscle->value,
+            'goal_description' => 'I want to squat 140kg by December',
+            'goal_deadline' => now()->endOfYear()->toDateString(),
+            'current_weight_kg' => 82.5,
+            'target_weight_kg' => 85.0,
         ]);
 
         $this->seedWorkouts($demo);
@@ -64,14 +62,14 @@ class DatabaseSeeder extends Seeder
 
             /** @var WorkoutSession $session */
             $session = $user->workoutSessions()->create([
-                'logged_at'          => $day->setTime(7, 0),
-                'duration_minutes'   => rand(45, 75),
+                'logged_at' => $day->setTime(7, 0),
+                'duration_minutes' => rand(45, 75),
                 'perceived_exertion' => rand(6, 9),
-                'energy_level'       => rand(3, 5),
-                'completed_planned'  => $completed,
-                'notes'              => match ($i) {
-                    0       => 'Felt strong today. New squat PR incoming.',
-                    3       => 'Shoulder felt tight during OHP. Backed off weight.',
+                'energy_level' => rand(3, 5),
+                'completed_planned' => $completed,
+                'notes' => match ($i) {
+                    0 => 'Felt strong today. New squat PR incoming.',
+                    3 => 'Shoulder felt tight during OHP. Backed off weight.',
                     default => null,
                 },
             ]);
@@ -81,10 +79,10 @@ class DatabaseSeeder extends Seeder
                 foreach (array_slice($exercises, 0, 4) as $sort => [$name, $sets, $reps, $weight]) {
                     $session->exerciseEntries()->create([
                         'exercise_name' => $name,
-                        'sets'          => $sets,
-                        'reps'          => $reps,
-                        'weight_kg'     => $weight,
-                        'sort_order'    => $sort,
+                        'sets' => $sets,
+                        'reps' => $reps,
+                        'weight_kg' => $weight,
+                        'sort_order' => $sort,
                     ]);
                 }
             }
@@ -111,10 +109,10 @@ class DatabaseSeeder extends Seeder
                     }, 0),
                     'meal_type' => $mealType,
                     'food_name' => $foodName,
-                    'calories'  => $calories,
+                    'calories' => $calories,
                     'protein_g' => $protein,
-                    'carbs_g'   => $carbs,
-                    'fat_g'     => $fat,
+                    'carbs_g' => $carbs,
+                    'fat_g' => $fat,
                 ]);
             }
         }

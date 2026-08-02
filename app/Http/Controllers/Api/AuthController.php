@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\TrainerPersona;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
@@ -19,10 +20,10 @@ final class AuthController extends Controller
     public function register(RegisterRequest $request): JsonResponse
     {
         $user = User::create([
-            'name'            => $request->string('name')->value(),
-            'email'           => $request->string('email')->lower()->value(),
-            'password'        => $request->string('password')->value(),
-            'trainer_persona' => $request->string('trainer_persona', 'general')->value(),
+            'name' => $request->string('name')->value(),
+            'email' => $request->string('email')->lower()->value(),
+            'password' => $request->string('password')->value(),
+            'trainer_persona' => $request->enum('trainer_persona', TrainerPersona::class) ?? TrainerPersona::LtSurge,
         ]);
 
         $token = $user->createToken(
@@ -30,7 +31,7 @@ final class AuthController extends Controller
         )->plainTextToken;
 
         return response()->json([
-            'user'  => new UserResource($user),
+            'user' => new UserResource($user),
             'token' => $token,
         ], Response::HTTP_CREATED);
     }
@@ -44,13 +45,13 @@ final class AuthController extends Controller
         }
 
         /** @var User $user */
-        $user  = Auth::user();
+        $user = Auth::user();
         $token = $user->createToken(
             $request->string('device_name', 'flutter-app')->value()
         )->plainTextToken;
 
         return response()->json([
-            'user'  => new UserResource($user),
+            'user' => new UserResource($user),
             'token' => $token,
         ]);
     }
