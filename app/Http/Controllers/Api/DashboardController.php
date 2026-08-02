@@ -4,14 +4,20 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Contracts\Stats\PersonalRecords;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BodyWeightLogResource;
+use App\Http\Resources\CustomRpgStatResource;
 use App\Http\Resources\WorkoutSessionResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 final class DashboardController extends Controller
 {
+    public function __construct(
+        private readonly PersonalRecords $records,
+    ) {}
+
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -25,10 +31,10 @@ final class DashboardController extends Controller
         $todayNutrition = $user->nutritionLogs()->today()->get();
 
         $todayMacros = [
-            'calories'  => (int) $todayNutrition->sum('calories'),
+            'calories' => (int) $todayNutrition->sum('calories'),
             'protein_g' => round((float) $todayNutrition->sum('protein_g'), 1),
-            'carbs_g'   => round((float) $todayNutrition->sum('carbs_g'), 1),
-            'fat_g'     => round((float) $todayNutrition->sum('fat_g'), 1),
+            'carbs_g' => round((float) $todayNutrition->sum('carbs_g'), 1),
+            'fat_g' => round((float) $todayNutrition->sum('fat_g'), 1),
         ];
 
         $currentWeight = $user->bodyWeightLogs()
@@ -36,10 +42,17 @@ final class DashboardController extends Controller
             ->first();
 
         return response()->json([
-            'week_stats'      => $user->weeklyStats(),
+            'week_stats' => $user->weeklyStats(),
             'recent_sessions' => WorkoutSessionResource::collection($recentSessions),
-            'today_macros'    => $todayMacros,
-            'current_weight'  => $currentWeight ? new BodyWeightLogResource($currentWeight) : null,
+            'today_macros' => $todayMacros,
+            'current_weight' => $currentWeight ? new BodyWeightLogResource($currentWeight) : null,
+            'personal_records' => $this->records->for($user),
+            'rpg' => [
+                'strength' => (int) $user->rpg_strength,
+                'stamina' => (int) $user->rpg_stamina,
+                'vitality' => (int) $user->rpg_vitality,
+            ],
+            'custom_stats' => CustomRpgStatResource::collection($user->customRpgStats),
         ]);
     }
 }

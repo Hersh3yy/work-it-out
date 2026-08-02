@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\NutritionLogController;
 use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SmartLogController;
+use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\WorkoutSessionController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,6 +37,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::put('/profile', [ProfileController::class, 'update']);
     Route::put('/profile/trainer', [ProfileController::class, 'updateTrainer']);
     Route::get('/profile/intake', [ProfileController::class, 'intake']);
+
+    // Real computed stats: personal records + RPG snapshot
+    Route::get('/stats', [StatsController::class, 'index']);
 
     // Workouts
     Route::apiResource('workouts', WorkoutSessionController::class)
