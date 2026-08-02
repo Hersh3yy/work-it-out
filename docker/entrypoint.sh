@@ -2,12 +2,33 @@
 set -e
 
 # ---------------------------------------------------------------------------
+# APP_URL guard — Laravel uses this for EVERY artisan command (SetRequestForConsole).
+# A malformed value (missing scheme, spaces, bad host) crashes boot with:
+#   "Invalid URI: Host is malformed."
+# ---------------------------------------------------------------------------
+case "${APP_URL:-}" in
+    http://*|https://*)
+        if ! echo "$APP_URL" | grep -qE '^https?://[^/[:space:]]+'; then
+            echo "WARNING: APP_URL looks invalid ('$APP_URL'). Using http://localhost"
+            export APP_URL=http://localhost
+        fi
+        ;;
+    *)
+        echo "WARNING: APP_URL is missing or has no scheme ('${APP_URL:-<empty>}'). Using http://localhost"
+        export APP_URL=http://localhost
+        ;;
+esac
+
+# ---------------------------------------------------------------------------
 # APP_KEY guard — generate one if not set.
-# Without a key, all encrypted values (sessions, tokens) are broken silently.
+# Use PHP directly (not `artisan key:generate`) so we don't need Laravel to
+# boot first. In Coolify, also set APP_KEY in env vars so it persists across
+# redeploys — otherwise sessions/tokens reset every restart.
 # ---------------------------------------------------------------------------
 if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "base64:" ]; then
-    echo "==> APP_KEY is not set — generating a fresh key..."
-    php artisan key:generate --force --no-interaction
+    export APP_KEY="base64:$(php -r 'echo base64_encode(random_bytes(32));')"
+    echo "==> Generated APP_KEY for this container run."
+    echo "    Set APP_KEY in Coolify env to persist it across redeploys."
 fi
 
 # ---------------------------------------------------------------------------
