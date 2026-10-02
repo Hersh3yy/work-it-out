@@ -10,11 +10,12 @@
 **What it is** · The real backend for Hiren's AI fitness app: log workouts/meals in plain language, three AI coaches parse it and react in character, and an RPG stat sheet grows from your logged data. API-only (no UI) — a Nuxt or Flutter frontend comes later. Goal behind it: help Hiren cut fat / build muscle at 105kg, and maybe become a product.
 **This is the backend of record.** The `koala/ai-fitness-coaches-&-tracker` React+Express repo was a throwaway Google AI Studio visualization of the idea, not the plan. Build here.
 **Stack** · Laravel 13 · PHP 8.3 · `laravel/ai` SDK (provider-agnostic) · Sanctum bearer auth · MySQL 8 · Redis (queue/cache) · Pest 4 tests · Docker (Sail-style compose) · Pint
+**Goal right now** · Hiren wants to use it from the weekend of 2026-10-03 to gamify two weeks of fat loss and muscle gain. Realistic: the Telegram log loop running from the laptop (poll mode, no deploy) after M0, M1, M2.1 and a minimal M5+M6; that is 4 to 5 focused sittings, not one day.
 **Status** · 🟡 planned, not yet hardened — well-architected (ports/adapters, enums, FormRequests, Resources, contract tests) with the full plan in `PLAN.md`. Not yet bulletproof: two probable fatals in the SDK adapters (unverified until `vendor/` is installed), the adherence bug on the AI-log path, the smart-log write isn't transactional, the app runs in UTC for a user in Amsterdam, several endpoints are untested, and the seeder can't exercise every endpoint. Not run locally in this checkout yet.
 **Repo** · git@github.com:Hersh3yy/work-it-out.git · working on `master` (branch for changes; merge to `master` only when sure)
 **Hosting** · designed for Coolify/VPS (see `.env.example` production block); nothing deployed yet. Heed the VAMS VPS lessons: never expose service ports, rotate keys.
-**ClickUp** · not linked
-**Last assessed** · 2026-09-27
+**ClickUp** · not linked yet. Needs `CLICKUP_API_KEY` in the shell and a list id here as `<!-- clickup_list:ID -->`; then `node ~/.claude/skills/project-map/scripts/clickup-sync.mjs PROJECT.md`
+**Last assessed** · 2026-10-02
 
 ---
 
@@ -102,9 +103,18 @@ Data model (all user-scoped, ULIDs on the log tables): `users` (profile + goals 
 
 ## Roadmap — near future
 
-<!-- The full plan with acceptance tests per step is PLAN.md (one file: where we are, end-user description, architecture, milestones, scenarios). This list mirrors its milestones; tick a milestone here when its release gate passes. Green light needed before any code change. -->
+<!-- The full plan with acceptance tests per step is PLAN.md. Tick a milestone here when its release gate passes. Green light needed before any code change. -->
 
-- [ ] M0 Sync, green baseline, CI: push from the personal computer, pull here, commit PROJECT.md + docs, `make test`, verify the three SDK claims, GitHub Actions, deploy branch <!-- id:n1 -->
+What the backend must do, in Hiren's words (2026-10-02), and where each lives:
+- take logs and activities and turn them into an overall profile: exists (`POST /api/log`, RPG, PRs, dashboard); hardened in M2
+- suggestions from history: Shen `/next` (rules in M5, model in M8)
+- feedback: exists (three coach reactions per log); over Telegram from M6
+- understand the user's high-level plan and ask questions when info is missing, capped per day: intake exists (one question per coach reply, `TrainerAgent::intakeRules`); the daily cap and short/long-term goals are new, item n12
+- accept Telegram and support a frontend: M5/M6 and M10/M12
+
+Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, M2.1, then M5.1 to M5.3 with only log, weight, `/next`, `/undo`, then M6.1 with `channel:telegram:poll`. Skip budget, hardening and deploy until after the weekend.
+
+- [ ] M0 Sync, green baseline, CI: push from the personal computer, pull here, `make test`, verify the three SDK claims, GitHub Actions, deploy branch <!-- id:n1 -->
 - [ ] M1 Day-one blockers: fix the two SDK adapter fatals, validate and cap the structured payload, model name reaches the provider, one place reports AI failures <!-- id:n2 -->
 - [ ] M2 Bulletproof the write path: `RecordSmartLog` + `RevertSmartLog` in transactions, adherence fix, null diary, same-day merge, exercise aliases, timezone Europe/Amsterdam, numbers as numbers, DiaryResource, login/register limiters <!-- id:n3 -->
 - [ ] M3 Remove nutrition entirely (decided 2026-09-27), Latika rewritten to recovery/mobility/longevity <!-- id:n4 -->
@@ -115,6 +125,7 @@ Data model (all user-scoped, ULIDs on the log tables): `users` (profile + goals 
 - [ ] M8 Shen next-move with the model on top of the rules path; compact coach context <!-- id:n9 -->
 - [ ] M9 Intake gaps for the contract: `asked_field`, skip state, `GET /api/coaches` <!-- id:n10 -->
 - [ ] M10 API contract: Resources everywhere, one envelope, idempotency keys, OpenAPI with drift test, exported fixtures. RELEASE 3 <!-- id:n11 -->
+- [ ] Coach questions with a daily cap: the coach may ask at most N intake or goal questions per day (config), tracks what was asked, and captures short-term and long-term goals (new fields) so answers over chat persist. Lands with M7 or M9 <!-- id:n12 -->
 
 ## Roadmap — far future
 
@@ -130,6 +141,13 @@ Data model (all user-scoped, ULIDs on the log tables): `users` (profile + goals 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-02 — map update before the weekend
+- Hiren wants to use it from the weekend: gamify two weeks of fat loss and muscle gain. Restated the five backend duties and mapped each to the plan; added n12 (coach questions capped per day, short and long-term goals persisted).
+- Wrote the honest weekend cut: M0, M1, M2.1, minimal M5 and M6 in poll mode from the laptop. Four to five sittings. Not one day.
+- Repo check: `master` equals `origin/master` at 8ff7ec4 (docs commit from 2026-09-27). No code pushed from the other machine since.
+- ClickUp not synced: no `CLICKUP_API_KEY` in this shell and no list for this project yet. Script and convention documented in the ClickUp line above.
+- No code changed. Awaiting green light to start M0.
 
 ### 2026-09-25 to 27 — planning sprint (no code)
 - Hiren set the rules: no coding for two days, plan and simulate; backend is the priority; the backend must be usable solely through a chat channel (Telegram is a legitimate first choice); Flutter is the optimistic client, Nuxt 4 the fallback; always design patterns, one UI library, atomic design; the React mock is Google-generated and is NOT direction (Hiren hates React); nutrition likely out of v1 (delete vs hide still his call); watch integration and RAG material are later.
