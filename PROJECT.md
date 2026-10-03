@@ -15,7 +15,7 @@
 **Repo** · git@github.com:Hersh3yy/work-it-out.git · working on `master` (branch for changes; merge to `master` only when sure)
 **Hosting** · designed for Coolify/VPS (see `.env.example` production block); nothing deployed yet. Heed the VAMS VPS lessons: never expose service ports, rotate keys.
 **ClickUp** · not linked yet. Needs `CLICKUP_API_KEY` in the shell and a list id here as `<!-- clickup_list:ID -->`; then `node ~/.claude/skills/project-map/scripts/clickup-sync.mjs PROJECT.md`
-**Last assessed** · 2026-10-02
+**Last assessed** · 2026-10-03
 
 ---
 
@@ -141,6 +141,11 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-03 — handoff to the other laptop
+- Everything pushed: `master` at this commit, tree clean. Pick up with `git pull`, then read `CLAUDE.md`, this file, `PLAN.md`. First work item is M0 (n1): `make up`, `composer install`, `make fresh`, `make test`, verify the three SDK claims, record the red list here.
+- Still open from Hiren: green light to start M0; `CLICKUP_API_KEY` and a ClickUp list id for the sync; answers to the open questions in `PLAN.md` section 8 (coach reply length, streak definition, Shen buckets, Gemini billing, voice before or after the app, Android or iOS).
+- No code changed.
 
 ### 2026-10-02 — map update before the weekend
 - Hiren wants to use it from the weekend: gamify two weeks of fat loss and muscle gain. Restated the five backend duties and mapped each to the plan; added n12 (coach questions capped per day, short and long-term goals persisted).
