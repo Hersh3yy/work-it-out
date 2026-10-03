@@ -7,8 +7,8 @@ use App\Services\NutritionParserService;
 use Laravel\Ai\Ai;
 
 it('falls back gracefully when the AI is unreachable', function (): void {
-    // No fake agent registered: NutritionParserService catches any Throwable and
-    // returns the raw text as food_name with null macros.
+    Ai::fakeAgent(NutritionParserAgent::class, fn () => throw new RuntimeException('provider down'));
+
     $raw = 'Some weird food input';
     $result = app(NutritionParserService::class)->parse($raw);
 

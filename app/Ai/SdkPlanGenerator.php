@@ -13,6 +13,9 @@ use App\Models\User;
 
 /**
  * Laravel AI SDK adapter for the PlanGenerator port.
+ *
+ * PlanAgent is a one-shot agent (no RemembersConversations), so it is
+ * prompted directly; there is no forUser() on it.
  */
 final readonly class SdkPlanGenerator implements PlanGenerator
 {
@@ -30,9 +33,7 @@ final readonly class SdkPlanGenerator implements PlanGenerator
             intake: $this->intake->report($user),
         );
 
-        $response = $agent->forUser($user)->prompt(
-            "Generate my {$type->value} plan for this week."
-        );
+        $response = $agent->prompt("Generate my {$type->value} plan for this week.");
 
         return (string) $response;
     }

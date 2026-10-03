@@ -4,20 +4,23 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Ai\Agents\TrainerAgent;
 use App\Contracts\Ai\TrainerChat;
 use App\Enums\TrainerPersona;
+use App\Exceptions\AiUnavailable;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\Ai\AiCall;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
-use Throwable;
 
 final class AiTrainerController extends Controller
 {
     public function __construct(
         private readonly TrainerChat $trainer,
+        private readonly AiCall $ai,
     ) {}
 
     /**
@@ -60,21 +63,25 @@ final class AiTrainerController extends Controller
         try {
             $conversationId = $request->string('conversation_id')->value();
 
-            $reply = $this->trainer->send(
+            $reply = $this->ai->run($user, TrainerAgent::class, fn () => $this->trainer->send(
                 user: $user,
                 message: $message,
                 conversationId: $conversationId !== '' ? $conversationId : null,
                 coach: $coachOverride,
-            );
+            ));
 
             return response()->json([
                 'reply' => $reply->reply,
                 'conversation_id' => $reply->conversationId,
                 'coach' => $reply->coach->value,
             ]);
-        } catch (Throwable) {
+        } catch (AiUnavailable) {
             return response()->json(
-                ['reply' => $activePersona->downMessage(), 'conversation_id' => null],
+                [
+                    'reply' => $activePersona->downMessage(),
+                    'conversation_id' => null,
+                    'coach' => $activePersona->value,
+                ],
                 Response::HTTP_SERVICE_UNAVAILABLE
             );
         }

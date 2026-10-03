@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Ai\Agents\SmartLogAgent;
 use App\Contracts\Ai\SmartLogParser;
+use App\Exceptions\AiUnavailable;
 use App\Http\Controllers\Controller;
 use App\Jobs\UpdateUserStats;
 use App\Models\ActivityFeedback;
@@ -14,10 +16,10 @@ use App\Models\DiaryEntry;
 use App\Models\NutritionLog;
 use App\Models\User;
 use App\Models\WorkoutSession;
+use App\Services\Ai\AiCall;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Throwable;
 
 /**
  * Processes a single natural-language log message.
@@ -33,6 +35,7 @@ final class SmartLogController extends Controller
 {
     public function __construct(
         private readonly SmartLogParser $parser,
+        private readonly AiCall $ai,
     ) {}
 
     public function store(Request $request): JsonResponse
@@ -46,8 +49,8 @@ final class SmartLogController extends Controller
         $message = $request->string('message')->value();
 
         try {
-            $parsed = $this->parser->parse($user, $message);
-        } catch (Throwable) {
+            $parsed = $this->ai->run($user, SmartLogAgent::class, fn (): array => $this->parser->parse($user, $message));
+        } catch (AiUnavailable) {
             return response()->json(
                 ['message' => 'The AI log processor is temporarily unavailable. Please try again.'],
                 Response::HTTP_SERVICE_UNAVAILABLE

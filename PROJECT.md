@@ -11,13 +11,22 @@
 **This is the backend of record.** The `koala/ai-fitness-coaches-&-tracker` React+Express repo was a throwaway Google AI Studio visualization of the idea, not the plan. Build here.
 **Stack** · Laravel 13 · PHP 8.3 · `laravel/ai` SDK (provider-agnostic) · Sanctum bearer auth · MySQL 8 · Redis (queue/cache) · Pest 4 tests · Docker (Sail-style compose) · Pint
 **Goal right now** · Hiren wants to use it from the weekend of 2026-10-03 to gamify two weeks of fat loss and muscle gain. Realistic: the Telegram log loop running from the laptop (poll mode, no deploy) after M0, M1, M2.1 and a minimal M5+M6; that is 4 to 5 focused sittings, not one day.
-**Status** · 🟡 M0 done: runs locally, suite green (39 tests, 131 assertions), CI added, audit clean after updating 5 packages. Two adapter fatals now confirmed (M1 next) — well-architected (ports/adapters, enums, FormRequests, Resources, contract tests) with the full plan in `PLAN.md`. Not yet bulletproof: two probable fatals in the SDK adapters (unverified until `vendor/` is installed), the adherence bug on the AI-log path, the smart-log write isn't transactional, the app runs in UTC for a user in Amsterdam, several endpoints are untested, and the seeder can't exercise every endpoint. Not run locally in this checkout yet.
+**Status** · 🟡 M0 and M1 done: runs locally, the two SDK adapter fatals fixed, payload validated at the boundary, every AI call goes through `AiCall`, suite green (46 tests, 153 assertions), CI green, audit clean. Live call against a local model still unverified (Msty was not running). M2 next — well-architected (ports/adapters, enums, FormRequests, Resources, contract tests) with the full plan in `PLAN.md`. Not yet bulletproof: two probable fatals in the SDK adapters (unverified until `vendor/` is installed), the adherence bug on the AI-log path, the smart-log write isn't transactional, the app runs in UTC for a user in Amsterdam, several endpoints are untested, and the seeder can't exercise every endpoint. Not run locally in this checkout yet.
 **Repo** · git@github.com:Hersh3yy/work-it-out.git · working on `master` (branch for changes; merge to `master` only when sure)
 **Hosting** · designed for Coolify/VPS (see `.env.example` production block); nothing deployed yet. Heed the VAMS VPS lessons: never expose service ports, rotate keys.
 **ClickUp** · not linked yet. Needs `CLICKUP_API_KEY` in the shell and a list id here as `<!-- clickup_list:ID -->`; then `node ~/.claude/skills/project-map/scripts/clickup-sync.mjs PROJECT.md`
 **Last assessed** · 2026-10-03
 
 ---
+
+## Start here (next session, any machine)
+
+1. `git pull`. Read this file, then `PLAN.md`. The diary below says what happened last.
+2. Get the stack up (commands under Run it). If `composer install` inside the container dies with exit 137, install on the host and `docker cp vendor/. work-it-out-app-1:/var/www/html/vendor/`.
+3. `php artisan test --compact` must print 46 passed before touching anything.
+4. First unticked milestone is M2 (PLAN.md section 5): extract `RecordSmartLog` and `RevertSmartLog`, fix adherence, same-day merge, exercise aliases, timezone, numbers as numbers, DiaryResource, login limiters. Branch `m2-write-path`. Every step has its test named in PLAN.md.
+5. Before the first live AI call in dev: open Msty Studio, load `mlx-community/granite-3.3-2b-instruct-4bit`, check `curl -s localhost:11973/v1/models`. Then `make register-test`, grab the token, `POST /api/log` with free text. If Msty has no `/v1/responses`, switch `AI_DEFAULT_PROVIDER` to `openrouter` pointed at Msty (PLAN.md M1.2 note).
+6. Work to the milestone gate, run `pint` and the suite, push the branch, wait for CI, fast-forward `master`, append a diary entry here, push.
 
 ## Run it
 
@@ -40,7 +49,7 @@ The core loop is built and mostly correct: register (Sanctum), fill a profile, l
 
 | Sev | Issue | Where |
 |---|---|---|
-| critical (confirmed 2026-10-03) | `SdkSmartLogParser.php:26` calls `->forUser()->prompt()->structured()` and `SdkPlanGenerator.php:33` calls `->forUser()`. In `vendor/laravel/ai` 0.8.x `forUser()` exists only on the `RemembersConversations` trait, which `SmartLogAgent` and `PlanAgent` do not use, and no `structured()` method exists; `StructuredAgentResponse::toArray()` is the real one. Every AI log and plan call fatals today. Tests pass only because the fakes bypass these adapters. Fix is M1 | `app/Ai/SdkSmartLogParser.php:26`, `app/Ai/SdkPlanGenerator.php:33` |
+| fixed in M1 (2026-10-03) | `SdkSmartLogParser` and `SdkPlanGenerator` called `->forUser()` and `->structured()` which do not exist on one-shot agents; now `->prompt()->toArray()` and `->prompt()`, covered by `SdkAdaptersTest` through the SDK's own agent fake | `app/Ai/SdkSmartLogParser.php:26`, `app/Ai/SdkPlanGenerator.php:33` |
 | serious | App timezone is UTC while Hiren logs from Amsterdam: a 00:30 local log lands on yesterday, a Monday 00:30 log in last week, streak and adherence day boundaries shift | `config/app.php:68`, `Jobs/UpdateUserStats.php:82` |
 | serious | Free-text logs fragment: two messages from one gym visit make two sessions, and "bench", "Bench Press", "benchpress" become three PRs | `SmartLogController.php:134-146`, `Services/Stats/PersonalRecordService.php:59` |
 | serious | AI-logged workouts hardcode `completed_planned=false`; adherence only counts `true`, so logging via AI always shows 0% adherence | `SmartLogController.php:140`, `Jobs/UpdateUserStats.php` |
@@ -115,7 +124,7 @@ What the backend must do, in Hiren's words (2026-10-02), and where each lives:
 Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, M2.1, then M5.1 to M5.3 with only log, weight, `/next`, `/undo`, then M6.1 with `channel:telegram:poll`. Skip budget, hardening and deploy until after the weekend.
 
 - [x] M0 Sync, green baseline, CI: suite green, SDK claims verified (fatals confirmed), GitHub Actions, deploy branch. Done 2026-10-03 <!-- id:n1 -->
-- [ ] M1 Day-one blockers: fix the two SDK adapter fatals, validate and cap the structured payload, model name reaches the provider, one place reports AI failures <!-- id:n2 -->
+- [x] M1 Day-one blockers: adapters fixed, payload validated and capped, model name per provider in `config/ai.php`, `AiCall` reports every failure. Done 2026-10-03 <!-- id:n2 -->
 - [ ] M2 Bulletproof the write path: `RecordSmartLog` + `RevertSmartLog` in transactions, adherence fix, null diary, same-day merge, exercise aliases, timezone Europe/Amsterdam, numbers as numbers, DiaryResource, login/register limiters <!-- id:n3 -->
 - [ ] M3 Remove nutrition entirely (decided 2026-09-27), Latika rewritten to recovery/mobility/longevity <!-- id:n4 -->
 - [ ] M4 Simulate: factories + deterministic two-user seeder, streak on read, HTTP scenario suite (PLAN.md section 6) <!-- id:n5 -->
@@ -141,6 +150,13 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-03 — M1 done (branch m1-adapters)
+- `SdkSmartLogParser`: `->prompt($message)->toArray()`, then validation at the boundary: `log_type` in the enum and a non-empty `summary` or `AiUnavailable`; summary 255, coach lines 600, diary 1000, stat name 60, reason 255, stat category whitelisted. `SdkPlanGenerator`: `->prompt()` without `forUser()`. `SmartLogAgent` no longer sends the user's name.
+- `config/ai.php`: dead top-level `model` removed; `models.text.default` and `cheapest` on the openai and gemini providers read `AI_TEXT_MODEL` (the SDK reads `providers.*.models.text.*`, verified in `GeminiProvider.php:95` and `OpenAiProvider.php:93`); `conversations.generate_title` false so a new thread is one call. `APP_TRAINER_DEFAULT_PERSONA` removed from `.env.example` (never read).
+- `App\Services\Ai\AiCall::run(User, string $agent, Closure)`: `report()` plus one `logger()->error('AI call failed', [user_id, provider, agent, error])` line, never the prompt text; rethrows `AiUnavailable`. The three controllers use it; the chat 503 now carries `coach`.
+- Tests: `SdkAdaptersTest` (real adapters through `Ai::fakeAgent`: workout persists, plan generates with zero conversations, junk payload is a 503 with zero rows, 300-char stat name stored at 60), `AiOutageLoggingTest`, `AiConfigTest`. The two tests that hit the network (`TrainerAgentTest`, `NutritionParserServiceTest`) now use a throwing fake. 46 passed, 153 assertions.
+- Not done: a live call against Msty (not running on this machine). First thing next session, see Start here.
 
 ### 2026-10-03 — M0 done (branch m0-baseline)
 - Green light from Hiren: work to a milestone, then push. 45 minutes.

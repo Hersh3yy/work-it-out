@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Ai\Agents\TrainerAgent;
+use App\Enums\TrainerPersona;
 use App\Models\User;
 use Laravel\Ai\Ai;
 
@@ -18,14 +19,18 @@ it('returns an AI trainer response via faked SDK', function (): void {
 });
 
 it('returns persona down-message when AI is unavailable', function (): void {
-    // No fake registered: agent will throw when it can't reach Msty in test env
+    Ai::fakeAgent(TrainerAgent::class, fn () => throw new RuntimeException('provider down'));
+
     $user = User::factory()->asLtSurge()->create();
 
-    $response = $this->actingAs($user, 'sanctum')
-        ->postJson('/api/trainer/chat', ['message' => 'What should I train today?']);
-
-    // Either success (if somehow reachable) or graceful degradation
-    expect($response->status())->toBeIn([200, 503]);
+    $this->actingAs($user, 'sanctum')
+        ->postJson('/api/trainer/chat', ['message' => 'What should I train today?'])
+        ->assertStatus(503)
+        ->assertJson([
+            'reply' => TrainerPersona::LtSurge->downMessage(),
+            'conversation_id' => null,
+            'coach' => 'lt_surge',
+        ]);
 });
 
 it('validates message max length', function (): void {

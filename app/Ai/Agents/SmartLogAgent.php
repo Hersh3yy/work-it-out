@@ -39,7 +39,6 @@ final class SmartLogAgent implements Agent, HasStructuredOutput
     {
         $today = now()->toDateString();
         $profile = json_encode([
-            'name' => $this->user->name,
             'primary_goal' => $this->user->primary_goal?->value,
             'experience' => $this->user->experience_level?->value,
             'rpg_strength' => $this->user->rpg_strength,

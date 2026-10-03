@@ -17,17 +17,11 @@ return [
 
     'default' => env('AI_DEFAULT_PROVIDER', 'openai'),
 
-    /*
-    |--------------------------------------------------------------------------
-    | Default Model
-    |--------------------------------------------------------------------------
-    |
-    | The default model used for text generation. For local Msty MLX set this
-    | to your loaded model ID. Swap to a cloud model ID for production.
-    |
-    */
+    'conversations' => [
+        // One call per new thread: do not spend a second call naming it.
+        'generate_title' => false,
+    ],
 
-    'model' => env('AI_TEXT_MODEL'),
     'default_for_images' => 'gemini',
     'default_for_audio' => 'openai',
     'default_for_transcription' => 'openai',
@@ -110,6 +104,12 @@ return [
             'driver' => 'gemini',
             'key' => env('GEMINI_API_KEY'),
             'url' => env('GEMINI_URL', 'https://generativelanguage.googleapis.com/v1beta/'),
+            'models' => [
+                'text' => [
+                    'default' => env('AI_TEXT_MODEL', 'gemini-2.5-flash'),
+                    'cheapest' => env('AI_TEXT_MODEL', 'gemini-2.5-flash'),
+                ],
+            ],
         ],
 
         'groq' => [
@@ -142,6 +142,12 @@ return [
             // Disable server-side storage: Msty does not support it, and we use
             // the AI SDK's RemembersConversations trait for conversation persistence.
             'store' => false,
+            'models' => [
+                'text' => [
+                    'default' => env('AI_TEXT_MODEL'),
+                    'cheapest' => env('AI_TEXT_MODEL'),
+                ],
+            ],
         ],
 
         'openrouter' => [
