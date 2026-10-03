@@ -14,10 +14,10 @@ final class BodyWeightLogResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'         => $this->id,
-            'logged_at'  => $this->logged_at->toDateString(),
-            'weight_kg'  => $this->weight_kg,
-            'notes'      => $this->notes,
+            'id' => $this->id,
+            'logged_at' => $this->logged_at->toDateString(),
+            'weight_kg' => $this->weight_kg,
+            'notes' => $this->notes,
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

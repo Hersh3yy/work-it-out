@@ -11,7 +11,7 @@
 **This is the backend of record.** The `koala/ai-fitness-coaches-&-tracker` React+Express repo was a throwaway Google AI Studio visualization of the idea, not the plan. Build here.
 **Stack** · Laravel 13 · PHP 8.3 · `laravel/ai` SDK (provider-agnostic) · Sanctum bearer auth · MySQL 8 · Redis (queue/cache) · Pest 4 tests · Docker (Sail-style compose) · Pint
 **Goal right now** · Hiren wants to use it from the weekend of 2026-10-03 to gamify two weeks of fat loss and muscle gain. Realistic: the Telegram log loop running from the laptop (poll mode, no deploy) after M0, M1, M2.1 and a minimal M5+M6; that is 4 to 5 focused sittings, not one day.
-**Status** · 🟡 planned, not yet hardened — well-architected (ports/adapters, enums, FormRequests, Resources, contract tests) with the full plan in `PLAN.md`. Not yet bulletproof: two probable fatals in the SDK adapters (unverified until `vendor/` is installed), the adherence bug on the AI-log path, the smart-log write isn't transactional, the app runs in UTC for a user in Amsterdam, several endpoints are untested, and the seeder can't exercise every endpoint. Not run locally in this checkout yet.
+**Status** · 🟡 M0 done: runs locally, suite green (39 tests, 131 assertions), CI added, audit clean after updating 5 packages. Two adapter fatals now confirmed (M1 next) — well-architected (ports/adapters, enums, FormRequests, Resources, contract tests) with the full plan in `PLAN.md`. Not yet bulletproof: two probable fatals in the SDK adapters (unverified until `vendor/` is installed), the adherence bug on the AI-log path, the smart-log write isn't transactional, the app runs in UTC for a user in Amsterdam, several endpoints are untested, and the seeder can't exercise every endpoint. Not run locally in this checkout yet.
 **Repo** · git@github.com:Hersh3yy/work-it-out.git · working on `master` (branch for changes; merge to `master` only when sure)
 **Hosting** · designed for Coolify/VPS (see `.env.example` production block); nothing deployed yet. Heed the VAMS VPS lessons: never expose service ports, rotate keys.
 **ClickUp** · not linked yet. Needs `CLICKUP_API_KEY` in the shell and a list id here as `<!-- clickup_list:ID -->`; then `node ~/.claude/skills/project-map/scripts/clickup-sync.mjs PROJECT.md`
@@ -40,7 +40,7 @@ The core loop is built and mostly correct: register (Sanctum), fill a profile, l
 
 | Sev | Issue | Where |
 |---|---|---|
-| critical (unverified) | `SdkSmartLogParser.php:26` calls `->forUser()->prompt()->structured()` and `SdkPlanGenerator.php:33` calls `->forUser()` on agents that are not Conversational; `NutritionParserService.php:28-36` uses the working form (`->prompt()->toArray()`). If confirmed, every AI log and plan call fatals today | `app/Ai/SdkSmartLogParser.php:26`, `app/Ai/SdkPlanGenerator.php:33` |
+| critical (confirmed 2026-10-03) | `SdkSmartLogParser.php:26` calls `->forUser()->prompt()->structured()` and `SdkPlanGenerator.php:33` calls `->forUser()`. In `vendor/laravel/ai` 0.8.x `forUser()` exists only on the `RemembersConversations` trait, which `SmartLogAgent` and `PlanAgent` do not use, and no `structured()` method exists; `StructuredAgentResponse::toArray()` is the real one. Every AI log and plan call fatals today. Tests pass only because the fakes bypass these adapters. Fix is M1 | `app/Ai/SdkSmartLogParser.php:26`, `app/Ai/SdkPlanGenerator.php:33` |
 | serious | App timezone is UTC while Hiren logs from Amsterdam: a 00:30 local log lands on yesterday, a Monday 00:30 log in last week, streak and adherence day boundaries shift | `config/app.php:68`, `Jobs/UpdateUserStats.php:82` |
 | serious | Free-text logs fragment: two messages from one gym visit make two sessions, and "bench", "Bench Press", "benchpress" become three PRs | `SmartLogController.php:134-146`, `Services/Stats/PersonalRecordService.php:59` |
 | serious | AI-logged workouts hardcode `completed_planned=false`; adherence only counts `true`, so logging via AI always shows 0% adherence | `SmartLogController.php:140`, `Jobs/UpdateUserStats.php` |
@@ -114,7 +114,7 @@ What the backend must do, in Hiren's words (2026-10-02), and where each lives:
 
 Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, M2.1, then M5.1 to M5.3 with only log, weight, `/next`, `/undo`, then M6.1 with `channel:telegram:poll`. Skip budget, hardening and deploy until after the weekend.
 
-- [ ] M0 Sync, green baseline, CI: push from the personal computer, pull here, `make test`, verify the three SDK claims, GitHub Actions, deploy branch <!-- id:n1 -->
+- [x] M0 Sync, green baseline, CI: suite green, SDK claims verified (fatals confirmed), GitHub Actions, deploy branch. Done 2026-10-03 <!-- id:n1 -->
 - [ ] M1 Day-one blockers: fix the two SDK adapter fatals, validate and cap the structured payload, model name reaches the provider, one place reports AI failures <!-- id:n2 -->
 - [ ] M2 Bulletproof the write path: `RecordSmartLog` + `RevertSmartLog` in transactions, adherence fix, null diary, same-day merge, exercise aliases, timezone Europe/Amsterdam, numbers as numbers, DiaryResource, login/register limiters <!-- id:n3 -->
 - [ ] M3 Remove nutrition entirely (decided 2026-09-27), Latika rewritten to recovery/mobility/longevity <!-- id:n4 -->
@@ -141,6 +141,16 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-03 — M0 done (branch m0-baseline)
+- Green light from Hiren: work to a milestone, then push. 45 minutes.
+- Ran it: Docker stack up (app, mysql, redis, mailpit), `composer install` in the container was OOM-killed (exit 137), so vendor was installed on the host with Herd PHP 8.5 and copied into the container's `vendor-data` volume with `docker cp`. `migrate:fresh --seed` ok. API on :8088. Container runs PHP 8.4.26, Laravel 13.34.
+- `php artisan test` on the host (sqlite): 39 passed, 131 assertions, all green. Note: green only because every AI port is faked.
+- Vendor findings: (a) `forUser()` lives only in `Laravel\Ai\Concerns\RemembersConversations`; `SmartLogAgent` and `PlanAgent` do not use it, so `SdkSmartLogParser.php:26` and `SdkPlanGenerator.php:33` fatal. No `structured()` method anywhere; use `->prompt()->toArray()` like `NutritionParserService`. (b) `fakeAgent(string $agent, Closure|array $responses = [])` on `InteractsWithFakeAgents`, returns a `FakeTextGateway`; arrays and closures both accepted. (c) Gemini store and file gateways send the key as header `x-goog-api-key`, not in the URL; the text gateway was not read, verify in M6 before trusting the log scrubber.
+- Msty: nothing listening on localhost:11973. Hiren must open Msty Studio and load the Granite model before any live AI call in dev.
+- M0.3: `.github/workflows/test.yml` (composer install, audit, pint, pest on PHP 8.4), `tests/Unit` now bound to the Laravel TestCase, the two ExampleTests replaced by `tests/Unit/PlumbingTest.php`. Pint had 54 files out of style; formatted (whitespace and `declare(strict_types=1)` only), suite still green. `composer audit` found 25 advisories in 5 packages (guzzle, psr7, framework 13.15, commonmark, flysystem); updated them (framework 13.15 to 13.34), audit now clean, suite green.
+- Deploy branch created from master so Coolify never deploys on every push.
+- Not done: ClickUp (no key, no list). Msty live call. M1 is next.
 
 ### 2026-10-03 — handoff to the other laptop
 - Everything pushed: `master` at this commit, tree clean. Pick up with `git pull`, then read `CLAUDE.md`, this file, `PLAN.md`. First work item is M0 (n1): `make up`, `composer install`, `make fresh`, `make test`, verify the three SDK claims, record the red list here.

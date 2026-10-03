@@ -10,10 +10,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * AI-synthesised diary entry — one per smart-log event.
  *
- * @property int         $id
- * @property int         $user_id
- * @property int|null    $activity_feedback_id
- * @property string      $content
+ * @property int $id
+ * @property int $user_id
+ * @property int|null $activity_feedback_id
+ * @property string $content
  */
 final class DiaryEntry extends Model
 {

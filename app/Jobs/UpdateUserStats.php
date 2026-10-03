@@ -32,8 +32,8 @@ final class UpdateUserStats implements ShouldQueue
 
         $user->update([
             'weekly_adherence_rate' => $this->computeWeeklyAdherenceRate($user),
-            'current_streak_days'   => $this->computeStreakDays($user),
-            'last_active_at'        => $this->computeLastActiveAt($user),
+            'current_streak_days' => $this->computeStreakDays($user),
+            'last_active_at' => $this->computeLastActiveAt($user),
         ]);
     }
 
@@ -78,8 +78,8 @@ final class UpdateUserStats implements ShouldQueue
             return 0;
         }
 
-        $streak  = 0;
-        $check   = today();
+        $streak = 0;
+        $check = today();
 
         // If today has no session, start checking from yesterday.
         if (! in_array($check->toDateString(), $sessionDates, true)) {

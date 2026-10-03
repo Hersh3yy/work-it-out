@@ -15,10 +15,10 @@ class BodyWeightLogFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id'   => User::factory(),
+            'user_id' => User::factory(),
             'logged_at' => fake()->dateTimeBetween('-60 days', 'now')->format('Y-m-d'),
             'weight_kg' => fake()->randomFloat(1, 65, 100),
-            'notes'     => null,
+            'notes' => null,
         ];
     }
 }

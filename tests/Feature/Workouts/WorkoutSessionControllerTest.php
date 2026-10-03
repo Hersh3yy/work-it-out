@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Jobs\UpdateUserStats;
-use App\Models\ExerciseEntry;
 use App\Models\User;
 use App\Models\WorkoutSession;
 use Illuminate\Support\Facades\Queue;
@@ -16,12 +15,12 @@ it('stores a workout session with nested exercise entries in a transaction', fun
     $user = User::factory()->create();
 
     $payload = [
-        'logged_at'          => now()->toIso8601String(),
-        'duration_minutes'   => 60,
+        'logged_at' => now()->toIso8601String(),
+        'duration_minutes' => 60,
         'perceived_exertion' => 7,
-        'energy_level'       => 4,
-        'completed_planned'  => true,
-        'exercises'          => [
+        'energy_level' => 4,
+        'completed_planned' => true,
+        'exercises' => [
             ['exercise_name' => 'Barbell Squat', 'sets' => 5, 'reps' => 5, 'weight_kg' => 100.0],
             ['exercise_name' => 'Deadlift',      'sets' => 4, 'reps' => 3, 'weight_kg' => 120.0],
         ],
@@ -42,7 +41,7 @@ it('stores a workout session with nested exercise entries in a transaction', fun
 });
 
 it('returns only the authenticated user sessions', function (): void {
-    $user  = User::factory()->create();
+    $user = User::factory()->create();
     $other = User::factory()->create();
 
     WorkoutSession::factory()->for($user)->count(3)->create();
@@ -55,7 +54,7 @@ it('returns only the authenticated user sessions', function (): void {
 });
 
 it('soft-deletes a workout session', function (): void {
-    $user    = User::factory()->create();
+    $user = User::factory()->create();
     $session = WorkoutSession::factory()->for($user)->create();
 
     $this->actingAs($user, 'sanctum')
@@ -66,8 +65,8 @@ it('soft-deletes a workout session', function (): void {
 });
 
 it('cannot access another user workout session', function (): void {
-    $user    = User::factory()->create();
-    $other   = User::factory()->create();
+    $user = User::factory()->create();
+    $other = User::factory()->create();
     $session = WorkoutSession::factory()->for($other)->create();
 
     $this->actingAs($user, 'sanctum')

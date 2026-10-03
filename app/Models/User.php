@@ -10,6 +10,7 @@ use App\Enums\TrainerPersona;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -45,16 +46,16 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at'      => 'datetime',
-            'password'               => 'hashed',
-            'trainer_persona'        => TrainerPersona::class,
-            'experience_level'       => ExperienceLevel::class,
-            'primary_goal'           => PrimaryGoal::class,
-            'goal_deadline'          => 'date',
-            'target_weight_kg'       => 'decimal:2',
-            'current_weight_kg'      => 'decimal:2',
-            'weekly_adherence_rate'  => 'decimal:2',
-            'last_active_at'         => 'datetime',
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'trainer_persona' => TrainerPersona::class,
+            'experience_level' => ExperienceLevel::class,
+            'primary_goal' => PrimaryGoal::class,
+            'goal_deadline' => 'date',
+            'target_weight_kg' => 'decimal:2',
+            'current_weight_kg' => 'decimal:2',
+            'weekly_adherence_rate' => 'decimal:2',
+            'last_active_at' => 'datetime',
         ];
     }
 
@@ -97,9 +98,9 @@ class User extends Authenticatable
     /**
      * Last 7 days of workout sessions, eager-loaded with exercise entries.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, WorkoutSession>
+     * @return Collection<int, WorkoutSession>
      */
-    public function recentWorkouts(): \Illuminate\Database\Eloquent\Collection
+    public function recentWorkouts(): Collection
     {
         return $this->workoutSessions()
             ->with('exerciseEntries')
@@ -122,9 +123,9 @@ class User extends Authenticatable
 
         return [
             'sessions_this_week' => $sessions->count(),
-            'adherence_rate'     => $this->weekly_adherence_rate,
-            'streak'             => $this->current_streak_days,
-            'total_volume_kg'    => round($totalVolume, 2),
+            'adherence_rate' => $this->weekly_adherence_rate,
+            'streak' => $this->current_streak_days,
+            'total_volume_kg' => round($totalVolume, 2),
         ];
     }
 }

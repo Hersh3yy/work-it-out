@@ -35,8 +35,8 @@ class NutritionLog extends Model
             'logged_at' => 'datetime',
             'meal_type' => MealType::class,
             'protein_g' => 'decimal:1',
-            'carbs_g'   => 'decimal:1',
-            'fat_g'     => 'decimal:1',
+            'carbs_g' => 'decimal:1',
+            'fat_g' => 'decimal:1',
         ];
     }
 

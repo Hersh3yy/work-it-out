@@ -15,12 +15,12 @@ class WorkoutSessionFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id'           => User::factory(),
-            'logged_at'         => fake()->dateTimeBetween('-30 days', 'now'),
-            'duration_minutes'  => fake()->numberBetween(20, 90),
+            'user_id' => User::factory(),
+            'logged_at' => fake()->dateTimeBetween('-30 days', 'now'),
+            'duration_minutes' => fake()->numberBetween(20, 90),
             'perceived_exertion' => fake()->numberBetween(5, 9),
-            'energy_level'      => fake()->numberBetween(2, 5),
-            'notes'             => fake()->optional(0.4)->sentence(),
+            'energy_level' => fake()->numberBetween(2, 5),
+            'notes' => fake()->optional(0.4)->sentence(),
             'completed_planned' => fake()->boolean(80),
         ];
     }

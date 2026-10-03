@@ -6,9 +6,9 @@ use App\Models\User;
 
 it('registers a new user and returns a token', function (): void {
     $response = $this->postJson('/api/auth/register', [
-        'name'                  => 'Ruby Test',
-        'email'                 => 'ruby@test.com',
-        'password'              => 'password',
+        'name' => 'Ruby Test',
+        'email' => 'ruby@test.com',
+        'password' => 'password',
         'password_confirmation' => 'password',
     ]);
 
@@ -21,7 +21,7 @@ it('logs in with valid credentials and returns a token', function (): void {
     $user = User::factory()->create(['password' => 'password']);
 
     $response = $this->postJson('/api/auth/login', [
-        'email'    => $user->email,
+        'email' => $user->email,
         'password' => 'password',
     ]);
 
@@ -33,7 +33,7 @@ it('returns 401 for invalid login credentials', function (): void {
     User::factory()->create(['email' => 'test@example.com']);
 
     $this->postJson('/api/auth/login', [
-        'email'    => 'test@example.com',
+        'email' => 'test@example.com',
         'password' => 'wrong-password',
     ])->assertUnauthorized();
 });
@@ -48,9 +48,9 @@ it('returns the authenticated user profile', function (): void {
 });
 
 it('logs out and revokes the token', function (): void {
-    $user       = User::factory()->create();
-    $newToken   = $user->createToken('test');
-    $plainText  = $newToken->plainTextToken;
+    $user = User::factory()->create();
+    $newToken = $user->createToken('test');
+    $plainText = $newToken->plainTextToken;
 
     $this->withToken($plainText)
         ->postJson('/api/auth/logout')

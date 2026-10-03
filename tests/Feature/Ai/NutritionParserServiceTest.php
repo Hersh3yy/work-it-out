@@ -9,7 +9,7 @@ use Laravel\Ai\Ai;
 it('falls back gracefully when the AI is unreachable', function (): void {
     // No fake agent registered: NutritionParserService catches any Throwable and
     // returns the raw text as food_name with null macros.
-    $raw    = 'Some weird food input';
+    $raw = 'Some weird food input';
     $result = app(NutritionParserService::class)->parse($raw);
 
     expect($result['food_name'])->toBe($raw)
@@ -20,12 +20,12 @@ it('falls back gracefully when the AI is unreachable', function (): void {
 it('uses faked agent response to fill macro fields', function (): void {
     Ai::fakeAgent(NutritionParserAgent::class, [
         json_encode([
-            'food_name'  => '3 scrambled eggs',
-            'calories'   => 210,
-            'protein_g'  => 18.0,
-            'carbs_g'    => 1.0,
-            'fat_g'      => 15.0,
-            'meal_type'  => 'breakfast',
+            'food_name' => '3 scrambled eggs',
+            'calories' => 210,
+            'protein_g' => 18.0,
+            'carbs_g' => 1.0,
+            'fat_g' => 15.0,
+            'meal_type' => 'breakfast',
         ]),
     ]);
 

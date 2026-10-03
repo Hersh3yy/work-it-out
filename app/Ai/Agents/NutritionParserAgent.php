@@ -37,12 +37,12 @@ INSTRUCTIONS;
     public function schema(JsonSchema $schema): array
     {
         return [
-            'food_name'  => $schema->string()->required(),
-            'calories'   => $schema->integer()->nullable(),
-            'protein_g'  => $schema->number()->nullable(),
-            'carbs_g'    => $schema->number()->nullable(),
-            'fat_g'      => $schema->number()->nullable(),
-            'meal_type'  => $schema->string()->nullable(),
+            'food_name' => $schema->string()->required(),
+            'calories' => $schema->integer()->nullable(),
+            'protein_g' => $schema->number()->nullable(),
+            'carbs_g' => $schema->number()->nullable(),
+            'fat_g' => $schema->number()->nullable(),
+            'meal_type' => $schema->string()->nullable(),
         ];
     }
 }

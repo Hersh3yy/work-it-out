@@ -14,15 +14,15 @@ final class ExerciseEntryResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'               => $this->id,
-            'exercise_name'    => $this->exercise_name,
-            'sets'             => $this->sets,
-            'reps'             => $this->reps,
-            'weight_kg'        => $this->weight_kg,
+            'id' => $this->id,
+            'exercise_name' => $this->exercise_name,
+            'sets' => $this->sets,
+            'reps' => $this->reps,
+            'weight_kg' => $this->weight_kg,
             'duration_seconds' => $this->duration_seconds,
-            'distance_meters'  => $this->distance_meters,
-            'notes'            => $this->notes,
-            'sort_order'       => $this->sort_order,
+            'distance_meters' => $this->distance_meters,
+            'notes' => $this->notes,
+            'sort_order' => $this->sort_order,
         ];
     }
 }

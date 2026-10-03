@@ -27,12 +27,12 @@ final class BodyWeightController extends Controller
             ->orderBy('logged_at')
             ->get(['logged_at', 'weight_kg'])
             ->map(fn ($log): array => [
-                'date'      => $log->logged_at->toDateString(),
+                'date' => $log->logged_at->toDateString(),
                 'weight_kg' => (float) $log->weight_kg,
             ]);
 
         return response()->json([
-            'logs'       => BodyWeightLogResource::collection($logs),
+            'logs' => BodyWeightLogResource::collection($logs),
             'chart_data' => $chartData,
         ]);
     }

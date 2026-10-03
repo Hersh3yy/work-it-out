@@ -18,10 +18,10 @@ final class UpdateProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'                 => ['sometimes', 'required', 'string', 'max:255'],
-            'email'                => ['sometimes', 'required', 'string', 'email', 'max:255', "unique:users,email,{$this->user()->id}"],
-            'current_password'     => ['required_with:password', 'current_password'],
-            'password'             => ['nullable', 'confirmed', Password::defaults()],
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'email' => ['sometimes', 'required', 'string', 'email', 'max:255', "unique:users,email,{$this->user()->id}"],
+            'current_password' => ['required_with:password', 'current_password'],
+            'password' => ['nullable', 'confirmed', Password::defaults()],
         ];
     }
 }

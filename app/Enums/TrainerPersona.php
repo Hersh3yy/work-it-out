@@ -27,8 +27,8 @@ enum TrainerPersona: string
     {
         return match ($this) {
             self::LtSurge => 'Lt. Surge',
-            self::Shen    => 'Shen',
-            self::Latika  => 'Latika',
+            self::Shen => 'Shen',
+            self::Latika => 'Latika',
         };
     }
 
@@ -36,8 +36,8 @@ enum TrainerPersona: string
     {
         return match ($this) {
             self::LtSurge => 'strength',
-            self::Shen    => 'stamina',
-            self::Latika  => 'vitality',
+            self::Shen => 'stamina',
+            self::Latika => 'vitality',
         };
     }
 
@@ -107,8 +107,8 @@ PROMPT,
     {
         return match ($this) {
             self::LtSurge => 'Systems down, Soldier. Try again.',
-            self::Shen    => 'Connection interrupted — systems will be back online shortly.',
-            self::Latika  => 'I\'m temporarily unavailable. Please try again in a moment.',
+            self::Shen => 'Connection interrupted — systems will be back online shortly.',
+            self::Latika => 'I\'m temporarily unavailable. Please try again in a moment.',
         };
     }
 }

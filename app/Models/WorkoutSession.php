@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'notes',
     'completed_planned',
 ])]
-class WorkoutSession extends \Illuminate\Database\Eloquent\Model
+class WorkoutSession extends Model
 {
     /** @use HasFactory<WorkoutSessionFactory> */
     use HasFactory, HasUlids, SoftDeletes;
@@ -30,7 +31,7 @@ class WorkoutSession extends \Illuminate\Database\Eloquent\Model
     protected function casts(): array
     {
         return [
-            'logged_at'        => 'datetime',
+            'logged_at' => 'datetime',
             'completed_planned' => 'boolean',
         ];
     }

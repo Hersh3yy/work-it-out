@@ -6,16 +6,16 @@ namespace App\Enums;
 
 enum ExperienceLevel: string
 {
-    case Beginner     = 'beginner';
+    case Beginner = 'beginner';
     case Intermediate = 'intermediate';
-    case Advanced     = 'advanced';
+    case Advanced = 'advanced';
 
     public function label(): string
     {
         return match ($this) {
-            self::Beginner     => 'Beginner',
+            self::Beginner => 'Beginner',
             self::Intermediate => 'Intermediate',
-            self::Advanced     => 'Advanced',
+            self::Advanced => 'Advanced',
         };
     }
 }
