@@ -179,11 +179,31 @@ Already flat by design: one structured call per log that returns facts only (no 
 - (2026-10-04) Fast track: Hiren texts the bot from the gym first, everything else after. v0 is the Telegram loop by long polling (`channel:telegram:poll`), first from the laptop, then as one worker on a Coolify VPS (polling needs no public webhook). The webhook, budget and the rest of M5/M6 harden it afterwards. Nutrition is not in this phase (M3 waits). WhatsApp may follow Telegram; the chat core (`HandleInboundMessage`) is provider-agnostic.
 - (2026-10-04) Three doors, one log path. Telegram, WhatsApp (later) and the app (soon, some people will use only the app) all log through the same actions: `RecordSmartLog`, `AnswerOpenQuestion`, `RevertSmartLog`, and get the same receipt (`SmartLogResult`). The chat core `HandleInboundMessage` is provider-agnostic; the app door is `POST /api/log`, `POST /api/log/{log}/answer`, `POST /api/log/{log}/skip`, `DELETE /api/log/{log}`. A feature that exists on one door and not the others is a bug.
 - (2026-10-04) Simulate before testing live. Hiren stores real messages in `tests/Evals/messages.txt` and replays them with `php artisan log:simulate --file=...` (the exact chat path, no phone). Live gym use waits until the plan below is done; the laptop-awake setup is not a concern yet.
-- (2026-10-04) Persistence: the DigitalOcean managed Postgres cluster that VAMS runs on (Postgres 17.11, region ams3, verified reachable 2026-10-04) becomes Feetness's database, in its own database `feetness` with its own user, never VAMS's `main`. Dev switches from MySQL to Postgres so dev and production are one engine; SQLite stays for the fast suite; the MySQL CI job becomes a Postgres job. Why: managed daily backups and point-in-time recovery, TLS and an IP allow-list come with it, nothing to back up or lock down on the VPS that was cryptojacked, the cluster is already paid for, and Feetness has no MySQL-specific SQL. Exit path stays open: a `pg_dump | pg_restore` of a few hundred rows moves it into a Coolify Postgres later if the cluster fee is not worth it once VAMS has left.
+- (2026-10-04) Persistence for now: Postgres in Docker, locally. Dev moves from MySQL to Postgres; SQLite stays for the fast suite. Where production data lives is one of the architecture decisions below. Putting Feetness's data in VAMS's DigitalOcean cluster was considered and dropped the same day: work-it-out is its own backend.
 - (2026-10-04) No own knowledge base (RAG) for now. Domain knowledge lives as structured data in PHP (exercise taxonomy, progression rules) plus a short coach handbook in the prompt. Revisit when `ai_usage` shows a gap.
 - A sitting is one focused evening. No code without Hiren's green light; branch, merge to `master` when the milestone gate passes.
 
 ---
+
+### Architecture decisions still open (2026-10-04)
+
+Hiren wants to step back and settle what the final product uses before more building. Evidence from his real gym messages, run through the parser on gemini-3.5-flash-lite:
+
+- "My squat just now was 90 90 95 85 85 ... This weekend I go to a friend's house to do 100" was stored as five separate Squat entries with no reps and one question that fills only the first. The data model has one weight per exercise, but real sessions have a different weight per set. The comment ("been on 90 for weeks") and the plan ("100 this weekend") were dropped completely.
+- "90 / 90 / 95 / 85 / 85" as one message, then "5x5 today": the first was stored as a body weight of 90 kg (a wrong fact written to the profile), the second as a general log asking which exercise. A log can span several messages; the parser sees one message at a time.
+- "I did deadlift: 90 x3 x 5" became 3 sets of 5 without asking, though 5 sets of 3 is just as likely.
+
+Decisions, each with a current lean:
+
+1. Doors: Telegram, WhatsApp, and an app, all on one API (decided).
+2. Data model granularity: per set (exercise, then sets with weight and reps each). Lean: yes; the squat message needs it, and real strength stats (estimated 1RM, per-area strength) are computed from sets.
+3. Conversation context: the parser sees the last few messages of the open session, or the user must say everything in one message. Lean: context window of the open session.
+4. What happens to non-log content (feelings, plans like "100 this weekend"): drop, keep as a note on the log, or capture as a goal the user confirms. Lean: note on the log now, goals only after the user confirms.
+5. Ambiguity policy: ask on anything with two readings (90 x3 x5), and never treat a bare number as body weight. Lean: yes.
+6. The app: PWA (Nuxt) or native (Flutter). Lean: decide when app-only users are real; the API stays client-agnostic.
+7. Production data and hosting: Postgres on the Coolify VPS (self-run backups) or a managed Postgres. Lean: open.
+8. Accounts across doors: one user, several linked chat identities, app login by email. Lean: yes, already the shape.
+9. Stats: RPG, real metrics, or both, behind `StatSheet`. Lean: decide after usage.
 
 ## 5. The plan
 
@@ -231,18 +251,14 @@ Backend M0 to M10: about 33 sittings, 43 with buffer. Release 1 is the end of M6
 - `RevertSmartLog` reverses one log completely (session or added entries, diary, weight). Every number is computed, so undo has nothing else to restore. `RecordBodyWeight` action. Routes: `DELETE /api/log/{log}`, `DELETE /api/body-weight/{log}`. Test: `RevertSmartLogTest`: undo restores strength, adherence and records; cross-user is 404.
 - One sitting of correctness: `APP_TIMEZONE=Europe/Amsterdam`; cast `training_days_per_week` to int; floats not strings in `UserResource`, `BodyWeightLogResource`, `ExerciseEntryResource`, `weeklyStats`; `DiaryResource` without `raw_message`; lowercase email on login and before the unique check; conversation ownership check in `AiTrainerController`; `login` (5/min) and `register` (3/hour) limiters. Test: `TimezoneTest` (a Monday 00:30 log counts today and this week), `ProfileShapeTest` (numbers are numbers), `DiaryTest`, `ConversationOwnershipTest`, six wrong logins give 429.
 
-### v0 deploy: the polling bot on a Coolify VPS, data in the DO cluster (2.5)
+### v0 deploy: the polling bot on a Coolify VPS (2.5)
 
-A slice of M6 so Hiren can text from the gym without the laptop. Polling needs no public webhook, so the attack surface is the HTTP API only. The database is the managed DigitalOcean Postgres (section 4), so the VPS runs the app, a queue worker, the poller and Redis, and holds no data.
+A slice of M6 so Hiren can text from the gym without the laptop. Polling needs no public webhook, so the attack surface is the HTTP API only. Waits for the architecture decisions in section 4 (where production data lives).
 
 - Postgres first, locally (0.5, code): `pdo_pgsql` in both Dockerfiles; compose runs `postgres:17-alpine` instead of MySQL with `docker/postgres/init.sql` creating the `testing` database; `.env.example` DB block on `pgsql` with `DB_SSLMODE`; `phpunit.pgsql.xml` and `make test-pg` replace the MySQL pair; the CI job becomes `pest-pgsql`. Test: the full suite green on SQLite and on Postgres; `make fresh` seeds on Postgres.
-- Hiren in the DO panel (10 minutes, human-only): check the cluster's plan and monthly price; create database `feetness` and user `feetness_app`; confirm whether `hiren-devs-strapi` still uses this cluster (a `hiren-strapi` role exists); trusted sources: add the VPS IP when it exists, review what is allow-listed today (this laptop reached the cluster, so the list is not empty) and remove what is not needed; note the CA certificate for `sslmode=verify-full`.
-- Production env (Coolify, secrets only there): `DB_CONNECTION=pgsql`, `DB_HOST`=the cluster host, `DB_PORT=25060`, `DB_DATABASE=feetness`, `DB_SSLMODE=require` (`verify-full` once the CA is in the image). The entrypoint refuses to start in production when `DB_SSLMODE` is `disable` or `prefer`. Test: `ProductionGuardsTest` for the entrypoint's variable checks.
-- Backups: DO's daily backup and point-in-time recovery cover the data. Restore drill before release: restore a DO backup to a fork, point the dev stack at it, see the phone-logged sessions. Weekly `pg_dump` to a bucket is optional, not a release gate.
-
 - Image: the production `Dockerfile` runs php-fpm plus two supervisord programs, `queue:work` and `channel:telegram:poll` (exactly one poller; `numprocs=1`, autorestart). `/up` for the container healthcheck. `php artisan` entrypoint runs `migrate --force` once. Test: `docker build` succeeds; `docker run` in production mode with an empty `APP_KEY`, `TELEGRAM_BOT_TOKEN` or AI key exits naming the missing variable.
 - Gate on the API: registration fails closed in production unless `REGISTRATION_INVITE_CODE` matches; `login` 5/min and `register` 3/hour limiters; `trustProxies` for Coolify's proxy. Test: `ProxyAndGateTest` (register without the code is 403 in production, login limiter gives 429).
-- Host and Coolify (`docs/deploy-coolify.md`): VPS with SSH key only, ufw (and the note that published Docker ports bypass it), fail2ban, unattended upgrades, Coolify 2FA; app and Redis with empty Ports Mappings, no database on the host; env block (APP_KEY, the DO Postgres variables, Redis, `TELEGRAM_BOT_TOKEN`, `AI_LOG_PROVIDER` and its key, `REGISTRATION_INVITE_CODE`); deploy from the `deploy` branch. Smoke from the laptop: `/up` 200, `nc -zv HOST 3306 5432 6379 9000` all refused, `ss -tlnp` on the host shows only 22, 80, 443, logs show no key or token. Then from the phone: `/start` after `channel:link`, a log, a weight, a question answered, `/undo`; a second Telegram account gets silence.
+- Host and Coolify (`docs/deploy-coolify.md`): VPS with SSH key only, ufw (and the note that published Docker ports bypass it), fail2ban, unattended upgrades, Coolify 2FA; app, Postgres and Redis with empty Ports Mappings; env block (APP_KEY, the Postgres variables, Redis, `TELEGRAM_BOT_TOKEN`, `AI_LOG_PROVIDER` and its key, `REGISTRATION_INVITE_CODE`); deploy from the `deploy` branch. Smoke from the laptop: `/up` 200, `nc -zv HOST 3306 5432 6379 9000` all refused, `ss -tlnp` on the host shows only 22, 80, 443, logs show no key or token. Then from the phone: `/start` after `channel:link`, a log, a weight, a question answered, `/undo`; a second Telegram account gets silence.
 - The previous VPS was cryptojacked through php-fpm:9000: the `zzz-app.conf` override (php-fpm on 127.0.0.1 only) and the port checks above are release gates, not suggestions.
 
 ### M3 Remove nutrition (1)

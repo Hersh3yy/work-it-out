@@ -152,6 +152,11 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-10-04 (late, 2) — VAMS idea dropped; real messages; architecture first
+- Hiren: work-it-out is its own backend, so no VAMS database; local Postgres in Docker for now; he wants to settle high-level architecture before more building. PLAN.md section 4 updated, v0 deploy waits on it.
+- Ran three of his real gym messages through the parser (gemini-3.5-flash-lite). Findings recorded in PLAN.md "Architecture decisions still open": no per-set data model (a 90/90/95/85/85 squat became five entries), multi-message logs not connected (bare numbers became a 90 kg body weight), comments and plans dropped, "90 x3 x5" not questioned. All test rows undone.
+- His screenshot of the message parser flow did not come through.
+
 ### 2026-10-04 (late) — persistence plan: the DO Postgres cluster
 - Hiren asked to use VAMS's production database as Feetness's persistence. `VAMS/.env` holds a commented-out production block for a DigitalOcean managed Postgres (host `db-postgresql-ams3-40945-…`, port 25060, database `main`); VAMS dev runs a local Postgres and its `coolify` branch runs its own `postgres:16-alpine`, so VAMS is leaving the cluster. Verified read-only from this laptop: Postgres 17.11, `main` has 24 tables, the VAMS user cannot create databases, roles include `doadmin` (createdb) and `hiren-strapi`. Credentials were read inside the shell only and never printed.
 - Decision written into PLAN.md section 4 and the v0 deploy milestone: Feetness gets its own database and user on that cluster, dev moves to Postgres, SQLite stays for tests, CI MySQL job becomes Postgres, the VPS holds no data. Human-only steps for Hiren listed in the milestone (create db and user in the DO panel, check price, confirm whether Strapi still uses the cluster, tighten trusted sources).
