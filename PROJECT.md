@@ -152,6 +152,11 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-10-04 (night) — first live parse
+- Hiren pasted a Gemini key. `AI_LOG_PROVIDER=gemini` in the local `.env`; dev chat and plan stay on Msty. First call failed with 404: "models/gemini-2.5-flash is no longer available to new users" (the model is still listed by the API, but new keys cannot call it). The SDK's own defaults are `gemini-3.5-flash` and `gemini-3.1-flash-lite`; the log job now runs `gemini-3.5-flash-lite`, config fallbacks and `.env.example` updated from 2.5 to 3.5.
+- `log:simulate --user=43 "bench 3x8 80, then incline db 3x10"` → "Logged: Bench Press 3x8 @ 80 kg, incline db 3x10 / What weight was used for the incline db press?"; then "30" → "Updated: incline db 3x10 @ 30 kg" with no AI call. The whole loop is verified against a real model for the first time. "incline db" kept Hiren's spelling (no alias); the next log with the same key reuses it.
+- Dev DB was empty after the earlier wipe; Hiren's user is id 43 (`channel:link` created it). MySQL auto-increment did not reset.
+
 ### 2026-10-04 (evening) — regroup: three doors, simulate first, v0 next
 - Hiren: Telegram, WhatsApp and soon app-only users must all log the same way; he will store real messages and simulate gym time rather than test live now; gh is authenticated; asked about Gemini free limits and DeepSeek.
 - CI was red on `pest-mysql` with all tests passing: `php artisan test` already adds `--configuration=phpunit.xml`, the second flag made Pest warn and exit 1. Makefile and CI now call `vendor/bin/pest --configuration=phpunit.mysql.xml`.
