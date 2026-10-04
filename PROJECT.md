@@ -152,6 +152,11 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-10-04 (late) — persistence plan: the DO Postgres cluster
+- Hiren asked to use VAMS's production database as Feetness's persistence. `VAMS/.env` holds a commented-out production block for a DigitalOcean managed Postgres (host `db-postgresql-ams3-40945-…`, port 25060, database `main`); VAMS dev runs a local Postgres and its `coolify` branch runs its own `postgres:16-alpine`, so VAMS is leaving the cluster. Verified read-only from this laptop: Postgres 17.11, `main` has 24 tables, the VAMS user cannot create databases, roles include `doadmin` (createdb) and `hiren-strapi`. Credentials were read inside the shell only and never printed.
+- Decision written into PLAN.md section 4 and the v0 deploy milestone: Feetness gets its own database and user on that cluster, dev moves to Postgres, SQLite stays for tests, CI MySQL job becomes Postgres, the VPS holds no data. Human-only steps for Hiren listed in the milestone (create db and user in the DO panel, check price, confirm whether Strapi still uses the cluster, tighten trusted sources).
+- Blocked by the permission classifier: scanning the other projects' `.env` files for the cluster host and admin credentials. Left as questions for Hiren.
+
 ### 2026-10-04 (night) — first live parse
 - Hiren pasted a Gemini key. `AI_LOG_PROVIDER=gemini` in the local `.env`; dev chat and plan stay on Msty. First call failed with 404: "models/gemini-2.5-flash is no longer available to new users" (the model is still listed by the API, but new keys cannot call it). The SDK's own defaults are `gemini-3.5-flash` and `gemini-3.1-flash-lite`; the log job now runs `gemini-3.5-flash-lite`, config fallbacks and `.env.example` updated from 2.5 to 3.5.
 - `log:simulate --user=43 "bench 3x8 80, then incline db 3x10"` → "Logged: Bench Press 3x8 @ 80 kg, incline db 3x10 / What weight was used for the incline db press?"; then "30" → "Updated: incline db 3x10 @ 30 kg" with no AI call. The whole loop is verified against a real model for the first time. "incline db" kept Hiren's spelling (no alias); the next log with the same key reuses it.
