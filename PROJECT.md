@@ -21,17 +21,16 @@
 
 ## Start here (next session, any machine)
 
-1. `git pull`. Read this file, then `PLAN.md`. The diary below says what happened last.
-2. Get the stack up (commands under Run it). If `composer install` inside the container dies with exit 137, install on the host and `docker cp vendor/. work-it-out-app-1:/var/www/html/vendor/`.
-3. `php artisan test --compact` must print 46 passed before touching anything.
-4. First unticked milestone is M2 (PLAN.md section 5): extract `RecordSmartLog` and `RevertSmartLog`, fix adherence, same-day merge, exercise aliases, timezone, numbers as numbers, DiaryResource, login limiters. Branch `m2-write-path`. Every step has its test named in PLAN.md.
-5. Before the first live AI call in dev: open Msty Studio, load `mlx-community/granite-3.3-2b-instruct-4bit`, check `curl -s localhost:11973/v1/models`. Then `make register-test`, grab the token, `POST /api/log` with free text. If Msty has no `/v1/responses`, switch `AI_DEFAULT_PROVIDER` to `openrouter` pointed at Msty (PLAN.md M1.2 note).
-6. Work to the milestone gate, run `pint` and the suite, push the branch, wait for CI, fast-forward `master`, append a diary entry here, push.
+1. `git pull` on branch `m2-write-path`. Read this file, then `PLAN.md` (section 4 holds every decision from 2026-10-04, section 5 "Next, in order" holds the build order). The diary below says what happened last.
+2. `make up`, then `make test` (SQLite) and the engine suite (MySQL today, Postgres after the Foundation step). Both must be green before touching anything.
+3. Real parsing needs `GEMINI_API_KEY` and `AI_LOG_PROVIDER=gemini`, `AI_LOG_MODEL=gemini-3.5-flash-lite` in `.env` (gemini-2.5 is retired for new keys), then `docker compose up -d --force-recreate app`. Try it: `docker compose exec app php artisan log:simulate --user=<id> "bench 3x8 80"`.
+4. Next work item: "Next, in order" step 1 (Foundation) in PLAN.md section 5.
+5. Work to the gate, `pint`, both suites, push the branch, CI green, diary entry here.
 
 ## Run it
 
 ```bash
-cd "/Users/hirenbudhrani/Documents/koala/work-it-out"
+cd work-it-out   # ~/Code/feetness/work-it-out on the work laptop
 cp .env.example .env
 make up                 # docker compose: app + mysql + redis + mailpit
 docker compose exec app composer install
@@ -126,6 +125,9 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [x] M0 Sync, green baseline, CI: suite green, SDK claims verified (fatals confirmed), GitHub Actions, deploy branch. Done 2026-10-03 <!-- id:n1 -->
 - [x] M1 Day-one blockers: adapters fixed, payload validated and capped, model name per provider in `config/ai.php`, `AiCall` reports every failure. Done 2026-10-03 <!-- id:n2 -->
 - [ ] M2 Facts-only write path. Done: test safety, facts-only parse with questions, `activity_logs`, `RecordSmartLog`, `RevertSmartLog`, answers on both doors, `StatSheet` port, chat core + Telegram polling, `log:simulate`, one model per job. Left: timezone Europe/Amsterdam, numbers as numbers everywhere, DiaryResource, login/register limiters, conversation ownership. RPG from rules parked <!-- id:n3 -->
+- [ ] Foundation: PHP 8.5, Postgres locally, `LogType` and `ChatProvider` enums, `LogRecorded` observer <!-- id:n14 -->
+- [ ] Interpreter: classify, parse, named rules, polite help for not understood, `log:parse` dry run, prompt examples and retry <!-- id:n15 -->
+- [ ] Sets and conversation: per-set storage, conversation window, max two questions, `/edit` <!-- id:n16 -->
 - [ ] v0 deploy: the polling bot as one supervisord worker on a Coolify VPS, registration closed in production, host checklist, smoke from the phone (PLAN.md "v0 deploy") <!-- id:n13 -->
 - [ ] M3 Remove nutrition entirely (decided 2026-09-27; waits until after v0), Latika rewritten to recovery/mobility/longevity <!-- id:n4 -->
 - [ ] M4 Simulate: factories + deterministic two-user seeder, streak on read, HTTP scenario suite (PLAN.md section 6), prompting practices and a live eval set of real messages <!-- id:n5 -->
@@ -151,6 +153,10 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-04 (late, 7) — classifier, Jev, modern PHP; plan consolidated
+- Hiren asked about classifiers and Jev, and whether the code is modern PHP 8.5 and Laravel 13. Jev checked on typesafe.ai: real, typed answers with calibrated confidence, cheap and fast, but early access behind a waitlist with no public API; planned as a future adapter behind the classify port. Runtime is PHP 8.4 in Docker and CI (`composer.json` `^8.3`), so 8.5 features are not usable yet; log type and provider are string literals in several places.
+- PLAN.md: section 3 redrawn as mermaid (three doors and one core, the interpreter pipeline, the profile as a clay blob), decisions (classifier first, Jev candidate, PHP 8.5 and enums), "Next, in order" (Foundation, Interpreter, Sets and conversation). PROJECT.md: Start here rewritten for this laptop and the current state, roadmap items n14 to n16.
 
 ### 2026-10-04 (late, 6) — observer yes, builder no, named rules, unknown input
 - Hiren: Observer yes, Builder no, Specification renamed to named rules with a plain explanation; nonsense input must get a respectful reply listing what works. Verified today "rainbow butterfly" is stored as a general log ("Noted: rainbow butterfly"), undone. PLAN.md: `unknown` log type and reply, prompt practices in plain words (in place vs missing).

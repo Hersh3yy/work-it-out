@@ -80,38 +80,70 @@ Bot:    Removed: Bench Press 3x8 @80kg, Incline DB Press 3x10 @30kg. Stats resto
 
 ## 3. How it works
 
-### Two doors, one core
+### Three doors, one core (redrawn 2026-10-04 from Hiren's sketches)
 
-Telegram and the app are two driving adapters. Both build the same commands. The core never imports a request type or a Telegram array. Adding WhatsApp later is one more box on the left; adding the app is zero new boxes, it uses the HTTP door.
+Telegram, WhatsApp (later) and an app message widget are doors. All of them reach the same conversation layer and the same actions. A parsed message goes two places: the log (facts) and the profile (computed stats, confirmed goals, notes that cite their message). Coaches read both and speak on request. A daily check-in may ask one question to fill a gap in the profile.
+
+```mermaid
+flowchart TB
+  subgraph doors [Doors]
+    TG([Telegram])
+    WA([WhatsApp, later])
+    APP([App message widget])
+  end
+  CI([Daily check-in, one question])
+  CONV([Conversation: session memory, max 2 questions, then /edit])
+  INT([Interpreter: classify, parse, named rules])
+  LOG[(Log: sessions, sets, notes; one piece per message)]
+  PROF[(Profile: goals you confirmed, computed stats, notes citing messages)]
+  COACH([Coaches, on request])
+  REPLY([Reply: receipt, question, help, coach])
+  TG <--> CONV
+  WA <-.-> CONV
+  APP <--> CONV
+  CI -.-> CONV
+  CONV --> INT
+  INT -->|facts| LOG
+  LOG -->|LogRecorded event| PROF
+  LOG --> COACH
+  PROF --> COACH
+  COACH --> REPLY
+  INT -->|question or help| REPLY
+  REPLY --> CONV
+```
+
+### The interpreter, step by step
 
 ```mermaid
 flowchart LR
-  subgraph doors [Doors]
-    TG[Telegram bot<br/>webhook adapter]
-    HTTP[HTTP API<br/>Sanctum, for the app]
-  end
-  subgraph core [Application core]
-    CMD[Commands<br/>LogActivity, LogBodyWeight, AskCoach, NextMove, RevertLog]
-    DOM[Domain<br/>WorkoutSession, ExerciseEntry, BodyWeightLog, RPG, TrainerPersona]
-    EVT[Events<br/>ActivityLogged]
-    PORTS[Outbound ports<br/>SmartLogParser, TrainerChat, PlanGenerator, ChatChannel]
-  end
-  subgraph tools [Tools]
-    AI[laravel/ai adapters<br/>Gemini prod, Msty local]
-    TC[TelegramChannel<br/>sendMessage]
-    DB[(MySQL)]
-    Q[Queue, Redis]
-  end
-  TG -->|dispatches| CMD
-  HTTP -->|dispatches| CMD
-  CMD --> DOM --> EVT
-  PORTS -->|parse, chat, plan| AI
-  PORTS -->|reply| TC
-  DOM -->|persists| DB
-  EVT -->|queued listeners| Q
+  M([Message plus last 1 or 2 messages of the session]) --> C{Classify}
+  C -->|command, bare answer| R1([Rules, no AI])
+  C -->|workout, weight| P([Parse to facts])
+  C -->|goal or info about you| G([Propose, user confirms])
+  C -->|question for a coach| Q([Coach])
+  C -->|not understood| H([Polite help reply, nothing saved])
+  P --> N{Named rules}
+  N -->|two readings or a gap| A([Ask, max 2 per log])
+  N -->|clear| S([Record facts])
 ```
 
-### The first refactor: the controller
+Classify is plain rules first (commands, "104.5kg", a bare number right after a question), then a model for the rest. The classify step sits behind its own port, so a fast typed classifier (Jev, see section 4) can replace the model there without touching the parser.
+
+### The profile is a clay blob
+
+```mermaid
+flowchart TB
+  L1[1. About you: what you entered]
+  L2[2. Goals you confirmed]
+  L3[3. The log: every set, your notes; each piece traces to its message]
+  L4[4. Computed stats: per exercise e1RM, best set, volume; per area strength ratios]
+  L5[5. Interpretations: AI notes, each citing its messages, deletable]
+  L3 --> L4
+  L3 --> L5
+  L5 -.->|only after you say yes| L2
+```
+
+### The first refactor: the controller (done 2026-10-04: `RecordSmartLog`, `HandleInboundMessage`)
 
 Today everything after parsing lives inside `SmartLogController`. A Telegram handler cannot call an HTTP controller. Move it once into a command handler both doors reach; the controller becomes validation plus one dispatch.
 
@@ -200,6 +232,9 @@ Already flat by design: one structured call per log that returns facts only (no 
 - (2026-10-04) Three doors, one log path. Telegram, WhatsApp (later) and the app (soon, some people will use only the app) all log through the same actions: `RecordSmartLog`, `AnswerOpenQuestion`, `RevertSmartLog`, and get the same receipt (`SmartLogResult`). The chat core `HandleInboundMessage` is provider-agnostic; the app door is `POST /api/log`, `POST /api/log/{log}/answer`, `POST /api/log/{log}/skip`, `DELETE /api/log/{log}`. A feature that exists on one door and not the others is a bug.
 - (2026-10-04) Simulate before testing live. Hiren stores real messages in `tests/Evals/messages.txt` and replays them with `php artisan log:simulate --file=...` (the exact chat path, no phone). Live gym use waits until the plan below is done; the laptop-awake setup is not a concern yet.
 - (2026-10-04) Persistence for now: Postgres in Docker, locally. Dev moves from MySQL to Postgres; SQLite stays for the fast suite. Where production data lives is one of the architecture decisions below. Putting Feetness's data in VAMS's DigitalOcean cluster was considered and dropped the same day: work-it-out is its own backend.
+- (2026-10-04) Classifier first. The interpreter becomes classify, then parse, then named rules. Classify sorts a message into workout, body weight, answer, goal or info, coach question, command, or not understood; rules catch the obvious ones without AI, a model does the rest. "Not understood" replies with what works and saves nothing. Easier to test (one label per message) and cheaper (only workouts and weights reach the parser).
+- (2026-10-04) Jev (TypeSafe AI, a "System One" model: typed answers with calibrated confidence, 70 to 500 ms, $0.042 per million input tokens, output free) is a candidate for the classify step. Early access with a waitlist and no public API or SDK yet (checked on typesafe.ai 2026-10-04), so the classify step is a port and the first adapter is the current model.
+- (2026-10-04) Modern PHP for real: PHP 8.5 in Docker, CI and `composer.json` (today 8.4 and `^8.3`); string literals that name a closed set become enums (`LogType` for workout, body weight, meal, general, unknown; `ChatProvider` for telegram, whatsapp, app, simulate).
 - (2026-10-04) No own knowledge base (RAG) for now. Domain knowledge lives as structured data in PHP (exercise taxonomy, progression rules) plus a short coach handbook in the prompt. Revisit when `ai_usage` shows a gap.
 - A sitting is one focused evening. No code without Hiren's green light; branch, merge to `master` when the milestone gate passes.
 
@@ -239,7 +274,14 @@ From Hiren's two sketches (2026-10-04), settled or proposed:
 
 ## 5. The plan
 
-**Fast track (2026-10-04).** The order is now: finish M2, then **v0 deploy** (the polling bot as one worker on a Coolify VPS, a slice of M6 defined below), then M4 (simulation and the eval set from Hiren's stored messages), then M5 and M6 harden the loop (webhook, budget, the full host checklist). M3 (nutrition) waits until after v0. M7 onward unchanged.
+**Next, in order (2026-10-04, after the stepping back).**
+
+1. Foundation (1): PHP 8.5; Postgres in Docker locally (MySQL out; SQLite stays for the fast suite; CI job `pest-pgsql`); enums `LogType` and `ChatProvider`; `LogRecorded` and `LogReverted` events with the stats job as a listener (Observer).
+2. Interpreter (2): `Interpreter` port with a classify step and the parse step; named rules (`BareNumberIsNotBodyWeight`, `RepsTimesSetsHasTwoReadings`, `MessageIsNotAboutTraining`); the polite reply for not understood; `php artisan log:parse` dry run; worked examples in the prompt, one retry on invalid JSON, low temperature.
+3. Sets and conversation (2.5): per-set storage (an exercise has sets, each with its own weight and reps); the conversation window (the last one or two messages of the open session go in with the new one); max two questions per log; `/edit` and the API equivalent.
+4. Then the M2 correctness leftovers, v0 deploy, M4 with the eval cases, and the rest as below.
+
+**Fast track (2026-10-04, superseded by the list above for its first steps).** The order is now: finish M2, then **v0 deploy** (the polling bot as one worker on a Coolify VPS, a slice of M6 defined below), then M4 (simulation and the eval set from Hiren's stored messages), then M5 and M6 harden the loop (webhook, budget, the full host checklist). M3 (nutrition) waits until after v0. M7 onward unchanged.
 
 Every milestone ends in something Hiren can use and a gate of concrete checks. Every step has a test that runs with zero AI calls (the fakes in `tests/Fakes`) or an exact curl. Estimates are by step; add 30 percent before promising a date.
 
