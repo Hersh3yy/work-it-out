@@ -13,7 +13,7 @@ use Illuminate\Foundation\Queue\Queueable;
 /**
  * Recomputes and caches fitness stats on the User record after any workout write.
  *
- * Dispatched by WorkoutSessionController::store(). Runs on the Redis queue so it
+ * Dispatched by WorkoutSessionController::store() and RecordSmartLog. Runs on the Redis queue so it
  * doesn't block the HTTP response. Safe to retry on failure.
  */
 final class UpdateUserStats implements ShouldQueue
@@ -38,24 +38,26 @@ final class UpdateUserStats implements ShouldQueue
     }
 
     /**
-     * Adherence = (completed sessions this week) / (planned days per week) × 100.
-     * Capped at 100.
+     * Adherence = (distinct days with a completed session this week) / (planned days per week) × 100.
+     * Two sessions on one day are one training day. Capped at 100.
      */
     private function computeWeeklyAdherenceRate(User $user): float
     {
-        if ($user->training_days_per_week === 0) {
+        $plannedDays = (int) $user->training_days_per_week;
+
+        if ($plannedDays <= 0) {
             return 0.0;
         }
 
-        $completedThisWeek = $user->workoutSessions()
+        $trainedDays = $user->workoutSessions()
             ->thisWeek()
             ->where('completed_planned', true)
+            ->pluck('logged_at')
+            ->map(fn (Carbon $dt): string => $dt->toDateString())
+            ->unique()
             ->count();
 
-        return min(100.0, round(
-            ($completedThisWeek / $user->training_days_per_week) * 100,
-            2
-        ));
+        return min(100.0, round(($trainedDays / $plannedDays) * 100, 2));
     }
 
     /**

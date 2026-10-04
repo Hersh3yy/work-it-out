@@ -9,10 +9,12 @@ use App\Models\WorkoutSession;
 it('computes weekly adherence rate correctly', function (): void {
     $user = User::factory()->create(['training_days_per_week' => 4]);
 
-    // 2 completed sessions this week
-    WorkoutSession::factory()->for($user)->count(2)->completed()->create([
-        'logged_at' => now()->startOfWeek()->addDay(),
-    ]);
+    // Completed sessions on 2 different days this week
+    foreach ([1, 2] as $day) {
+        WorkoutSession::factory()->for($user)->completed()->create([
+            'logged_at' => now()->startOfWeek()->addDays($day),
+        ]);
+    }
 
     (new UpdateUserStats($user))->handle();
 
@@ -20,6 +22,18 @@ it('computes weekly adherence rate correctly', function (): void {
 
     // 2 / 4 = 50%
     expect((float) $user->weekly_adherence_rate)->toBe(50.0);
+});
+
+it('counts two sessions on one day as one training day', function (): void {
+    $user = User::factory()->create(['training_days_per_week' => 4]);
+
+    WorkoutSession::factory()->for($user)->count(2)->completed()->create([
+        'logged_at' => now()->startOfWeek()->addDay(),
+    ]);
+
+    (new UpdateUserStats($user))->handle();
+
+    expect((float) $user->refresh()->weekly_adherence_rate)->toBe(25.0);
 });
 
 it('computes current streak correctly', function (): void {

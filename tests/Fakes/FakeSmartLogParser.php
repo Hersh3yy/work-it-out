@@ -9,7 +9,7 @@ use App\Models\User;
 use RuntimeException;
 
 /**
- * In-memory SmartLogParser for tests. Returns a canned structured payload;
+ * In-memory SmartLogParser for tests. Returns a canned facts-only payload;
  * use the named constructors for common log types.
  */
 final class FakeSmartLogParser implements SmartLogParser
@@ -30,28 +30,44 @@ final class FakeSmartLogParser implements SmartLogParser
     {
         return new self([
             'log_type' => 'workout',
-            'summary' => '3×5 Bench Press at 100kg',
+            'summary' => 'Bench Press 3x5 @ 100 kg',
+            'logged_on' => null,
             'duration_minutes' => 45,
             'perceived_exertion' => 8,
             'energy_level' => 4,
+            'workout_notes' => null,
             'exercises' => [
                 [
                     'exercise_name' => 'Bench Press',
                     'sets' => 3,
                     'reps' => 5,
                     'weight_kg' => 100.0,
+                    'duration_seconds' => null,
+                    'distance_meters' => null,
+                    'notes' => null,
                 ],
             ],
-            'lt_surge_feedback' => 'Solid pressing, Soldier.',
-            'shen_feedback' => 'Strong session — great load management.',
-            'latika_feedback' => 'Wonderful effort. Remember to stretch.',
-            'diary_text' => 'Benched 100kg for 3 sets of 5.',
-            'rpg_strength_delta' => 2,
-            'rpg_stamina_delta' => 0,
-            'rpg_vitality_delta' => 0,
-            'rpg_stat_name' => 'Bench Press Peak',
-            'rpg_stat_category' => 'strength',
-            'rpg_stat_reason' => 'New heavy triple.',
+            'meal_type' => null,
+            'food_name' => null,
+            'weight_kg_stat' => null,
+            'questions' => [],
+        ]);
+    }
+
+    /**
+     * An incline press with no weight given: stored without one, one question asked.
+     */
+    public static function missingWeight(): self
+    {
+        return new self([
+            'log_type' => 'workout',
+            'summary' => 'Incline DB Press 3x10',
+            'exercises' => [
+                ['exercise_name' => 'Incline DB Press', 'sets' => 3, 'reps' => 10, 'weight_kg' => null],
+            ],
+            'questions' => [
+                ['field' => 'exercises.0.weight_kg', 'question' => 'What weight for the incline press?'],
+            ],
         ]);
     }
 
@@ -70,6 +86,6 @@ final class FakeSmartLogParser implements SmartLogParser
             throw new RuntimeException('Fake AI outage');
         }
 
-        return $this->payload + ['log_type' => 'general', 'summary' => $message];
+        return $this->payload + ['log_type' => 'general', 'summary' => $message, 'exercises' => [], 'questions' => []];
     }
 }

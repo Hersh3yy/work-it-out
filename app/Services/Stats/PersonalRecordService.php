@@ -8,6 +8,7 @@ use App\Contracts\Stats\PersonalRecords;
 use App\Models\ExerciseEntry;
 use App\Models\User;
 use App\Models\WorkoutSession;
+use App\Services\Exercises\ExerciseAliases;
 use Illuminate\Support\Collection;
 
 /**
@@ -56,7 +57,7 @@ final class PersonalRecordService implements PersonalRecords
     {
         return $entries
             ->filter(fn (array $row): bool => (float) ($row['entry']->weight_kg ?? 0) > 0)
-            ->groupBy(fn (array $row): string => mb_strtolower(trim($row['entry']->exercise_name)))
+            ->groupBy(fn (array $row): string => ExerciseAliases::key($row['entry']->exercise_name))
             ->map(function (Collection $group): array {
                 /** @var array{entry: ExerciseEntry, session: WorkoutSession} $best */
                 $best = $group->sortByDesc(fn (array $row): float => (float) $row['entry']->weight_kg)->first();
@@ -123,7 +124,7 @@ final class PersonalRecordService implements PersonalRecords
     {
         return $entries
             ->filter(fn (array $row): bool => $this->nameMatches($row['entry']->exercise_name, self::SPORT_KEYWORDS))
-            ->groupBy(fn (array $row): string => mb_strtolower(trim($row['entry']->exercise_name)))
+            ->groupBy(fn (array $row): string => ExerciseAliases::key($row['entry']->exercise_name))
             ->map(function (Collection $group): array {
                 $durations = $group
                     ->map(fn (array $row): int => $this->durationMinutes($row))

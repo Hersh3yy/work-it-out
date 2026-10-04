@@ -25,13 +25,12 @@ it('smart log persists through the real SdkSmartLogParser', function (): void {
     Queue::fake();
     Ai::fakeAgent(SmartLogAgent::class, [smartLogPayload()]);
 
-    $user = User::factory()->create(['rpg_strength' => 10, 'rpg_stamina' => 10, 'rpg_vitality' => 10]);
+    $user = User::factory()->create();
 
     $this->actingAs($user, 'sanctum')
         ->postJson('/api/log', ['message' => 'Benched 100kg 3x5'])
         ->assertCreated()
-        ->assertJsonPath('log_type', 'workout')
-        ->assertJsonPath('rpg.strength', 12);
+        ->assertJsonPath('log_type', 'workout');
 
     $this->assertDatabaseHas('exercise_entries', ['exercise_name' => 'Bench Press']);
 });
@@ -58,19 +57,33 @@ it('junk payload is a 503 before any write', function (): void {
         ->postJson('/api/log', ['message' => 'Benched 100kg 3x5'])
         ->assertStatus(503);
 
-    $this->assertDatabaseCount('activity_feedbacks', 0);
+    $this->assertDatabaseCount('activity_logs', 0);
     $this->assertDatabaseCount('workout_sessions', 0);
 });
 
-it('long stat name is truncated to 60 characters', function (): void {
+it('drops anything beyond facts and coerces types', function (): void {
     Queue::fake();
-    Ai::fakeAgent(SmartLogAgent::class, [smartLogPayload(['rpg_stat_name' => str_repeat('x', 300)])]);
+    Ai::fakeAgent(SmartLogAgent::class, [smartLogPayload([
+        'lt_surge_feedback' => 'Solid pressing, Soldier.',
+        'rpg_strength_delta' => 5,
+        'rpg_stat_name' => 'Bench Press Peak',
+        'exercises' => [['exercise_name' => str_repeat('x', 300), 'sets' => '3', 'reps' => 5.0, 'weight_kg' => '80']],
+        'questions' => [
+            ['field' => 'exercises.0.reps', 'question' => 'How many reps?'],
+            ['field' => 'exercises.0.sets', 'question' => 'How many sets?'],
+        ],
+    ])]);
 
-    $user = User::factory()->create(['rpg_strength' => 10, 'rpg_stamina' => 10, 'rpg_vitality' => 10]);
+    $user = User::factory()->create(['rpg_strength' => 10]);
 
     $this->actingAs($user, 'sanctum')
-        ->postJson('/api/log', ['message' => 'Benched 100kg 3x5'])
-        ->assertCreated();
+        ->postJson('/api/log', ['message' => 'Benched 80kg 3x5'])
+        ->assertCreated()
+        ->assertJsonPath('entries.0.sets', 3)
+        ->assertJsonPath('entries.0.weight_kg', 80)
+        ->assertJsonPath('rpg.strength', 10)
+        ->assertJsonCount(1, 'questions');
 
-    expect(strlen((string) $user->customRpgStats()->first()->name))->toBe(60);
+    $this->assertDatabaseCount('custom_rpg_stats', 0);
+    expect(mb_strlen((string) $user->workoutSessions()->first()->exerciseEntries()->first()->exercise_name))->toBe(100);
 });
