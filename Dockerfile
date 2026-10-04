@@ -17,7 +17,7 @@ RUN composer install \
 # ============================================================================
 # Stage 2: Final production image
 # ============================================================================
-FROM php:8.4-fpm-alpine AS production
+FROM php:8.5-fpm-alpine AS production
 
 # ─── php-extension-installer (handles PECL + Alpine edge cases cleanly) ──────
 ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
@@ -33,7 +33,7 @@ RUN apk add --no-cache \
         intl \
         mbstring \
         opcache \
-        pdo_mysql \
+        pdo_pgsql \
         redis \
         sockets \
         xml \

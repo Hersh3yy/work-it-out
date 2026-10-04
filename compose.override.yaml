@@ -15,10 +15,13 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  mysql:
+  # Reachable from this laptop only (127.0.0.1), never from the network.
+  postgres:
+    ports:
+      - "127.0.0.1:${FORWARD_DB_PORT:-5433}:5432"
     volumes:
-      - mysql-data:/var/lib/mysql
-      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
   mailpit:
     image: axllent/mailpit:latest

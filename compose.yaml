@@ -10,10 +10,10 @@ services:
     environment:
       # Override DB / Redis hosts to match Docker service names.
       # These override any values in .env for the containerised stack.
-      DB_HOST: mysql
+      DB_HOST: postgres
       REDIS_HOST: redis
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -21,19 +21,16 @@ services:
       - feetness
     restart: unless-stopped
 
-  mysql:
-    image: mysql:8.4
+  postgres:
+    image: postgres:17-alpine
     environment:
-      MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: work_it_out
-      MYSQL_USER: sail
-      MYSQL_PASSWORD: password
-    ports:
-      - "${FORWARD_DB_PORT:-3308}:3306"
+      POSTGRES_DB: work_it_out
+      POSTGRES_USER: sail
+      POSTGRES_PASSWORD: password
     volumes:
-      - mysql-data:/var/lib/mysql
+      - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-proot_password"]
+      test: ["CMD-SHELL", "pg_isready -U sail -d work_it_out"]
       interval: 5s
       timeout: 5s
       retries: 12
@@ -57,7 +54,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  mysql-data:
+  postgres-data:
     driver: local
   redis-data:
     driver: local

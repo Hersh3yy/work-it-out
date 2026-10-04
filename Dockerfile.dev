@@ -1,5 +1,5 @@
 # Local development image — dev deps, live code via volume mount.
-FROM php:8.4-fpm-alpine
+FROM php:8.5-fpm-alpine
 
 ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 
@@ -15,7 +15,7 @@ RUN apk add --no-cache \
         intl \
         mbstring \
         opcache \
-        pdo_mysql \
+        pdo_pgsql \
         redis \
         sockets \
         xml \

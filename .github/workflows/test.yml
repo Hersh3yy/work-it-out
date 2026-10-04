@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.5'
           extensions: mbstring, intl, bcmath, pdo_sqlite, redis
           coverage: none
       - name: Install
@@ -26,36 +26,37 @@ jobs:
       - name: Pest
         run: php artisan test --compact
 
-  # Production runs MySQL; SQLite hides type mismatches (an integer morph id
-  # against ULID keys passed on SQLite and was a 500 on MySQL).
-  pest-mysql:
+  # Production runs Postgres; SQLite hides type mismatches (an integer morph id
+  # against ULID keys passed on SQLite and failed on a real engine).
+  pest-pgsql:
     runs-on: ubuntu-latest
     services:
-      mysql:
-        image: mysql:8.4
+      postgres:
+        image: postgres:17-alpine
         env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: testing
+          POSTGRES_USER: sail
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: testing
         ports:
-          - 3306:3306
+          - 5432:5432
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-cmd="pg_isready -U sail -d testing"
           --health-interval=5s --health-timeout=5s --health-retries=20
     env:
       DB_HOST: 127.0.0.1
-      DB_PORT: 3306
-      DB_USERNAME: root
-      DB_PASSWORD: root
+      DB_PORT: 5432
+      DB_USERNAME: sail
+      DB_PASSWORD: password
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
-          extensions: mbstring, intl, bcmath, pdo_mysql, redis
+          php-version: '8.5'
+          extensions: mbstring, intl, bcmath, pdo_pgsql, redis
           coverage: none
       - name: Install
         run: composer install --no-interaction --prefer-dist --no-progress
       - name: Prepare env
         run: cp .env.example .env && php artisan key:generate
-      - name: Pest on MySQL
-        run: vendor/bin/pest --compact --configuration=phpunit.mysql.xml
+      - name: Pest on Postgres
+        run: vendor/bin/pest --compact --configuration=phpunit.pgsql.xml

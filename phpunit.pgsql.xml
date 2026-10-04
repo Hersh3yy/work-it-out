@@ -17,15 +17,15 @@
             <directory>app</directory>
         </include>
     </source>
-    <!-- The same suite against MySQL, the production engine. Uses the `testing` database
-         (docker/mysql/init.sql), never the dev one. DB_HOST, user and password come from env. -->
+    <!-- The same suite against Postgres, the production engine. Uses the `testing` database
+         (docker/postgres/init.sql), never the dev one. DB_HOST, user and password come from env. -->
     <php>
         <env name="APP_ENV" value="testing" force="true"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file" force="true"/>
         <env name="BCRYPT_ROUNDS" value="4" force="true"/>
         <env name="BROADCAST_CONNECTION" value="null" force="true"/>
         <env name="CACHE_STORE" value="array" force="true"/>
-        <env name="DB_CONNECTION" value="mysql" force="true"/>
+        <env name="DB_CONNECTION" value="pgsql" force="true"/>
         <env name="DB_DATABASE" value="testing" force="true"/>
         <env name="DB_URL" value="" force="true"/>
         <env name="MAIL_MAILER" value="array" force="true"/>
@@ -39,7 +39,7 @@
         <server name="BCRYPT_ROUNDS" value="4" force="true"/>
         <server name="BROADCAST_CONNECTION" value="null" force="true"/>
         <server name="CACHE_STORE" value="array" force="true"/>
-        <server name="DB_CONNECTION" value="mysql" force="true"/>
+        <server name="DB_CONNECTION" value="pgsql" force="true"/>
         <server name="DB_DATABASE" value="testing" force="true"/>
         <server name="DB_URL" value="" force="true"/>
         <server name="MAIL_MAILER" value="array" force="true"/>

@@ -1,4 +1,4 @@
-.PHONY: up down build restart logs shell test test-mysql migrate fresh seed pint
+.PHONY: up down build restart logs shell test test-pg migrate fresh seed pint
 
 up:
 	docker compose up -d
@@ -21,8 +21,8 @@ shell:
 test:
 	docker compose exec app php artisan test
 
-test-mysql:
-	docker compose exec app vendor/bin/pest --configuration=phpunit.mysql.xml
+test-pg:
+	docker compose exec app vendor/bin/pest --configuration=phpunit.pgsql.xml
 
 migrate:
 	docker compose exec app php artisan migrate

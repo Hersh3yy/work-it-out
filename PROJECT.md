@@ -9,7 +9,7 @@
 
 **What it is** · The real backend for Hiren's AI fitness app: log workouts/meals in plain language, three AI coaches parse it and react in character, and an RPG stat sheet grows from your logged data. API-only (no UI) — a Nuxt or Flutter frontend comes later. Goal behind it: help Hiren cut fat / build muscle at 105kg, and maybe become a product.
 **This is the backend of record.** The `koala/ai-fitness-coaches-&-tracker` React+Express repo was a throwaway Google AI Studio visualization of the idea, not the plan. Build here.
-**Stack** · Laravel 13 · PHP 8.3 · `laravel/ai` SDK (provider-agnostic) · Sanctum bearer auth · MySQL 8 · Redis (queue/cache) · Pest 4 tests · Docker (Sail-style compose) · Pint
+**Stack** · Laravel 13 · PHP 8.5 · `laravel/ai` SDK (provider-agnostic) · Sanctum bearer auth · PostgreSQL 17 (SQLite for the fast suite) · Redis (queue/cache) · Pest 4 tests · Docker (Sail-style compose) · Pint
 **Goal right now** · Hiren wants to use it from the weekend of 2026-10-03 to gamify two weeks of fat loss and muscle gain. Realistic: the Telegram log loop running from the laptop (poll mode, no deploy) after M0, M1, M2.1 and a minimal M5+M6; that is 4 to 5 focused sittings, not one day.
 **Status** · 🟡 M0 and M1 done: runs locally, the two SDK adapter fatals fixed, payload validated at the boundary, every AI call goes through `AiCall`, suite green (46 tests, 153 assertions), CI green, audit clean. Live call against a local model still unverified (Msty was not running). M2 next — well-architected (ports/adapters, enums, FormRequests, Resources, contract tests) with the full plan in `PLAN.md`. Not yet bulletproof: two probable fatals in the SDK adapters (unverified until `vendor/` is installed), the adherence bug on the AI-log path, the smart-log write isn't transactional, the app runs in UTC for a user in Amsterdam, several endpoints are untested, and the seeder can't exercise every endpoint. Not run locally in this checkout yet.
 **Repo** · git@github.com:Hersh3yy/work-it-out.git · working on `master` (branch for changes; merge to `master` only when sure)
@@ -22,7 +22,7 @@
 ## Start here (next session, any machine)
 
 1. `git pull` on branch `m2-write-path`. Read this file, then `PLAN.md` (section 4 holds every decision from 2026-10-04, section 5 "Next, in order" holds the build order). The diary below says what happened last.
-2. `make up`, then `make test` (SQLite) and the engine suite (MySQL today, Postgres after the Foundation step). Both must be green before touching anything.
+2. `make up`, then `make test` (SQLite) and `make test-pg` (Postgres). Both must be green before touching anything. A laptop whose Postgres volume predates `docker/postgres/init.sql` needs `docker compose exec -T postgres psql -U sail -d work_it_out -c 'CREATE DATABASE testing OWNER sail'` once.
 3. Real parsing needs `GEMINI_API_KEY` and `AI_LOG_PROVIDER=gemini`, `AI_LOG_MODEL=gemini-3.5-flash-lite` in `.env` (gemini-2.5 is retired for new keys), then `docker compose up -d --force-recreate app`. Try it: `docker compose exec app php artisan log:simulate --user=<id> "bench 3x8 80"`.
 4. Next work item: "Next, in order" step 1 (Foundation) in PLAN.md section 5.
 5. Work to the gate, `pint`, both suites, push the branch, CI green, diary entry here.
@@ -32,7 +32,7 @@
 ```bash
 cd work-it-out   # ~/Code/feetness/work-it-out on the work laptop
 cp .env.example .env
-make up                 # docker compose: app + mysql + redis + mailpit
+make up                 # docker compose: app + postgres + redis + mailpit
 docker compose exec app composer install
 docker compose exec app php artisan key:generate
 make fresh              # migrate:fresh --seed  (one demo user + ~2 weeks of data)
@@ -153,6 +153,11 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-04 (late, 8) — Foundation part 1: PHP 8.5 and Postgres
+- Docker (dev and production images) on `php:8.5-fpm-alpine` with `pdo_pgsql` instead of `pdo_mysql`; `composer.json` `^8.5` (lock refreshed). Compose runs `postgres:17-alpine` (port bound to 127.0.0.1:5433 in the override), `docker/postgres/init.sql` creates `testing`. `.env` and `.env.example` on `pgsql`. `phpunit.pgsql.xml` and `make test-pg` replace the MySQL pair; CI job `pest-pgsql` on PHP 8.5. The old MySQL container was removed with `--remove-orphans`; its `mysql-data` volume is kept (delete by hand when sure).
+- 102 passed on SQLite and on Postgres, PHP 8.5.11 in the container. Dev database is fresh: re-create Hiren's user with `channel:link`.
+- Left in Foundation: `LogType` and `ChatProvider` enums, `LogRecorded` and `LogReverted` events.
 
 ### 2026-10-04 (late, 7) — classifier, Jev, modern PHP; plan consolidated
 - Hiren asked about classifiers and Jev, and whether the code is modern PHP 8.5 and Laravel 13. Jev checked on typesafe.ai: real, typed answers with calibrated confidence, cheap and fast, but early access behind a waitlist with no public API; planned as a future adapter behind the classify port. Runtime is PHP 8.4 in Docker and CI (`composer.json` `^8.3`), so 8.5 features are not usable yet; log type and provider are string literals in several places.
