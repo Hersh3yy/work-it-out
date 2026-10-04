@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Contracts\Stats\PersonalRecords;
+use App\Contracts\Stats\StatSheet;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BodyWeightLogResource;
-use App\Http\Resources\CustomRpgStatResource;
 use App\Http\Resources\WorkoutSessionResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +16,7 @@ final class DashboardController extends Controller
 {
     public function __construct(
         private readonly PersonalRecords $records,
+        private readonly StatSheet $stats,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -47,12 +48,7 @@ final class DashboardController extends Controller
             'today_macros' => $todayMacros,
             'current_weight' => $currentWeight ? new BodyWeightLogResource($currentWeight) : null,
             'personal_records' => $this->records->for($user),
-            'rpg' => [
-                'strength' => (int) $user->rpg_strength,
-                'stamina' => (int) $user->rpg_stamina,
-                'vitality' => (int) $user->rpg_vitality,
-            ],
-            'custom_stats' => CustomRpgStatResource::collection($user->customRpgStats),
+            ...$this->stats->for($user),
         ]);
     }
 }

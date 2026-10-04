@@ -7,15 +7,20 @@ namespace App\Providers;
 use App\Ai\SdkPlanGenerator;
 use App\Ai\SdkSmartLogParser;
 use App\Ai\SdkTrainerChat;
+use App\Channels\Telegram\TelegramChannel;
+use App\Channels\Telegram\TelegramClient;
 use App\Contracts\Ai\NutritionParser;
 use App\Contracts\Ai\PlanGenerator;
 use App\Contracts\Ai\SmartLogParser;
 use App\Contracts\Ai\TrainerChat;
+use App\Contracts\Channels\ChatChannel;
 use App\Contracts\Profile\ProfileIntake;
 use App\Contracts\Stats\PersonalRecords;
+use App\Contracts\Stats\StatSheet;
 use App\Services\NutritionParserService;
 use App\Services\Profile\ProfileIntakeService;
 use App\Services\Stats\PersonalRecordService;
+use App\Services\Stats\RpgStatSheet;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -33,6 +38,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(NutritionParser::class, NutritionParserService::class);
         $this->app->bind(PersonalRecords::class, PersonalRecordService::class);
         $this->app->bind(ProfileIntake::class, ProfileIntakeService::class);
+        $this->app->bind(StatSheet::class, RpgStatSheet::class);
+
+        $this->app->bind(TelegramClient::class, fn (): TelegramClient => new TelegramClient((string) config('services.telegram.bot_token')));
+        $this->app->bind(ChatChannel::class, TelegramChannel::class);
     }
 
     public function boot(): void

@@ -7,21 +7,6 @@ use App\Contracts\Stats\PersonalRecords;
 use App\Models\DiaryEntry;
 use App\Models\User;
 
-function workoutFacts(array $exercises, array $overrides = []): array
-{
-    return array_merge([
-        'log_type' => 'workout',
-        'summary' => 'Workout',
-        'exercises' => $exercises,
-        'questions' => [],
-    ], $overrides);
-}
-
-function lift(string $name, ?float $kg = 80.0, int $sets = 3, int $reps = 8): array
-{
-    return ['exercise_name' => $name, 'sets' => $sets, 'reps' => $reps, 'weight_kg' => $kg];
-}
-
 it('counts one log as one training day for adherence', function (): void {
     $user = User::factory()->create(['training_days_per_week' => 4]);
 

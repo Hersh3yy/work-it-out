@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Actions\SmartLog\RecordSmartLog;
+use App\Actions\SmartLog\RevertSmartLog;
 use App\Ai\Agents\SmartLogAgent;
 use App\Contracts\Ai\SmartLogParser;
 use App\Exceptions\AiUnavailable;
@@ -28,6 +29,7 @@ final class SmartLogController extends Controller
         private readonly SmartLogParser $parser,
         private readonly AiCall $ai,
         private readonly RecordSmartLog $record,
+        private readonly RevertSmartLog $revert,
     ) {}
 
     public function store(Request $request): JsonResponse
@@ -51,6 +53,16 @@ final class SmartLogController extends Controller
 
         $result = $this->record->handle($user, $message, $parsed);
 
-        return response()->json($result->toArray($user->refresh()), Response::HTTP_CREATED);
+        return response()->json($result->toArray(), Response::HTTP_CREATED);
+    }
+
+    public function destroy(Request $request, string $log): Response
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        $this->revert->handle($user->activityLogs()->findOrFail($log));
+
+        return response()->noContent();
     }
 }

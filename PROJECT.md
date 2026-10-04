@@ -151,6 +151,11 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-10-04 (later) — gym loop v0 (branch m2-write-path)
+- Hiren: RPG and profile build must be isolated (uncertain); real per-area stats are a later idea; nutrition not in this phase; goal is texting from the gym within two prompts, then a v0 deploy on Coolify.
+- Built: `RecordSmartLog` (M2.2, earlier commit), `RevertSmartLog` + `DELETE /api/log/{log}`, `AnswerOpenQuestion` (a bare "30", "5k", "28 min" fills the asked field without AI, "skip" clears it, latest log only, 6 hours), `StatSheet` port with `RpgStatSheet` (dashboard, stats, UserResource read only through it; the log receipt has no stats), the chat core `App\Channels\HandleInboundMessage` (unlinked ignored, /start, /help, /undo, answers, free-text log), `ReplyComposer`, `ChatChannel` port with `TelegramChannel` and `TelegramClient` (errors carry status and description, never the token URL), `channel_identities` as the allowlist, `php artisan channel:link {email} {telegram_id}` (creates the user if new), `php artisan channel:telegram:poll` (long polling, offset in cache, prints the link command for an unknown sender).
+- 90 passed on SQLite and on MySQL. Not verified: a live parse against a real model (no key or Msty here yet).
+
 ### 2026-10-04 — plan revised, M2 started (branch m2-write-path, work in progress, suite red)
 - Decisions from Hiren, written into PLAN.md section 4 and the milestones: a log gets a receipt plus at most one question for a missing value, no coach feedback per log; the AI never writes assumptions (stated facts stored, every number computed in PHP); the qualitative profile build runs only on explicit request and may use the laptop's local model (M9); log parsing on a cheap hosted model, no model chosen yet; no own knowledge base for now; a prompting and live-eval step in M4. M2 5.5, M4 3.5, M9 2 sittings; backend about 33.
 - Roadmap deck for a non-technical reader: https://claude.ai/artifact/96DpjoAmbXRoTALR3SYZDm, source in `docs/roadmap-deck/` (pre-revision, see its README).

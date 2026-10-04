@@ -8,7 +8,6 @@ use App\Models\ActivityLog;
 use App\Models\BodyWeightLog;
 use App\Models\DiaryEntry;
 use App\Models\ExerciseEntry;
-use App\Models\User;
 use App\Models\WorkoutSession;
 
 /**
@@ -31,7 +30,7 @@ final readonly class SmartLogResult
     /**
      * @return array<string, mixed>
      */
-    public function toArray(User $user): array
+    public function toArray(): array
     {
         return [
             'log_id' => $this->log->id,
@@ -54,11 +53,6 @@ final readonly class SmartLogResult
             'diary' => [
                 'id' => $this->diary->id,
                 'content' => $this->diary->content,
-            ],
-            'rpg' => [
-                'strength' => (int) $user->rpg_strength,
-                'stamina' => (int) $user->rpg_stamina,
-                'vitality' => (int) $user->rpg_vitality,
             ],
         ];
     }

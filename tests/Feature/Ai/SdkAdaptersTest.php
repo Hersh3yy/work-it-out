@@ -81,7 +81,6 @@ it('drops anything beyond facts and coerces types', function (): void {
         ->assertCreated()
         ->assertJsonPath('entries.0.sets', 3)
         ->assertJsonPath('entries.0.weight_kg', 80)
-        ->assertJsonPath('rpg.strength', 10)
         ->assertJsonCount(1, 'questions');
 
     $this->assertDatabaseCount('custom_rpg_stats', 0);

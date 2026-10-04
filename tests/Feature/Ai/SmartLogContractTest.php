@@ -25,7 +25,6 @@ it('persists a parsed workout end-to-end and returns a receipt', function (): vo
         ->assertJsonPath('entries.0.weight_kg', 100)
         ->assertJsonPath('questions', [])
         ->assertJsonPath('diary.content', 'Bench Press 3x5 @ 100 kg')
-        ->assertJsonPath('rpg.strength', 10)
         ->assertJsonMissingPath('feedback');
 
     $this->assertDatabaseHas('workout_sessions', ['user_id' => $user->id, 'duration_minutes' => 45, 'completed_planned' => true]);
