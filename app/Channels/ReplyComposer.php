@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Channels;
 
 use App\Actions\SmartLog\SmartLogResult;
+use App\Enums\LogType;
 use App\Models\ExerciseEntry;
 
 /**
@@ -17,9 +18,9 @@ final class ReplyComposer
         $log = $result->log;
 
         $lines = [match ($log->log_type) {
-            'workout' => ($result->addedToExisting ? "Added to today's session: " : 'Logged: ')
+            LogType::Workout => ($result->addedToExisting ? "Added to today's session: " : 'Logged: ')
                 .($result->entries === [] ? $log->summary : implode(', ', array_map($this->entry(...), $result->entries))),
-            'biometrics' => $result->weight !== null
+            LogType::Biometrics => $result->weight !== null
                 ? 'Logged weight: '.self::number($result->weight->weight_kg).' kg'
                 : 'Noted: '.$log->summary,
             default => 'Noted: '.$log->summary,

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\SmartLog;
 
-use App\Jobs\UpdateUserStats;
+use App\Events\LogReverted;
 use App\Models\ActivityLog;
 use App\Models\BodyWeightLog;
 use App\Models\NutritionLog;
@@ -21,6 +21,7 @@ final readonly class RevertSmartLog
     public function handle(ActivityLog $log): void
     {
         $user = $log->user;
+        $type = $log->log_type;
         $loggable = $log->loggable;
 
         DB::transaction(function () use ($log, $loggable, $user): void {
@@ -46,8 +47,6 @@ final readonly class RevertSmartLog
             $log->delete();
         });
 
-        if ($loggable instanceof WorkoutSession) {
-            UpdateUserStats::dispatch($user);
-        }
+        LogReverted::dispatch($user, $type);
     }
 }

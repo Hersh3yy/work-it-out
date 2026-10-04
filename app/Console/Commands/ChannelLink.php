@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Enums\ChatProvider;
 use App\Models\ChannelIdentity;
 use App\Models\User;
 use Illuminate\Console\Command;
@@ -25,6 +26,14 @@ final class ChannelLink extends Command
 
     public function handle(): int
     {
+        $provider = ChatProvider::tryFrom((string) $this->option('provider'));
+
+        if ($provider === null) {
+            $this->error('Unknown provider. Use one of: '.implode(', ', array_column(ChatProvider::cases(), 'value')).'.');
+
+            return self::FAILURE;
+        }
+
         $email = mb_strtolower(trim((string) $this->argument('email')));
         $user = User::query()->where('email', $email)->first();
 
@@ -38,11 +47,11 @@ final class ChannelLink extends Command
         }
 
         ChannelIdentity::query()->updateOrCreate(
-            ['provider' => (string) $this->option('provider'), 'external_id' => (string) $this->argument('external_id')],
+            ['provider' => $provider, 'external_id' => (string) $this->argument('external_id')],
             ['user_id' => $user->id],
         );
 
-        $this->info(sprintf('Linked %s user %s to %s.', $this->option('provider'), $this->argument('external_id'), $email));
+        $this->info(sprintf('Linked %s user %s to %s.', $provider->value, $this->argument('external_id'), $email));
 
         return self::SUCCESS;
     }

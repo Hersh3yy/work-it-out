@@ -34,7 +34,7 @@ final readonly class SmartLogResult
     {
         return [
             'log_id' => $this->log->id,
-            'log_type' => $this->log->log_type,
+            'log_type' => $this->log->log_type->value,
             'summary' => $this->log->summary,
             'logged_on' => $this->log->logged_on->toDateString(),
             'session_id' => $this->session?->id,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\LogSource;
+use App\Enums\LogType;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
@@ -24,7 +25,7 @@ use Illuminate\Support\Carbon;
  * @property string $id
  * @property int $user_id
  * @property LogSource $source
- * @property string $log_type
+ * @property LogType $log_type
  * @property string $raw_message
  * @property string $summary
  * @property string|null $loggable_type
@@ -51,6 +52,7 @@ final class ActivityLog extends Model
     {
         return [
             'source' => LogSource::class,
+            'log_type' => LogType::class,
             'questions' => 'array',
             'logged_on' => 'date',
         ];

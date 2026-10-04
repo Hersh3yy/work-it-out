@@ -6,6 +6,7 @@ namespace App\Ai;
 
 use App\Ai\Agents\SmartLogAgent;
 use App\Contracts\Ai\SmartLogParser;
+use App\Enums\LogType;
 use App\Exceptions\AiUnavailable;
 use App\Models\User;
 
@@ -20,8 +21,6 @@ use App\Models\User;
  */
 final readonly class SdkSmartLogParser implements SmartLogParser
 {
-    private const array LOG_TYPES = ['workout', 'meal', 'biometrics', 'general'];
-
     private const array MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack', 'supplement'];
 
     public function parse(User $user, string $message): array
@@ -48,7 +47,7 @@ final readonly class SdkSmartLogParser implements SmartLogParser
         $logType = $raw['log_type'] ?? null;
         $summary = $raw['summary'] ?? null;
 
-        if (! is_string($logType) || ! in_array($logType, self::LOG_TYPES, true)) {
+        if (! is_string($logType) || LogType::tryFrom($logType) === null) {
             throw AiUnavailable::because(SmartLogAgent::class, 'payload missing a valid log_type');
         }
         if (! is_string($summary) || trim($summary) === '') {

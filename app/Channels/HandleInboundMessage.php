@@ -46,14 +46,14 @@ final readonly class HandleInboundMessage
     public function handle(InboundMessage $message): ?string
     {
         $user = ChannelIdentity::query()
-            ->where('provider', $message->provider)
+            ->where('provider', $message->provider->value)
             ->where('external_id', $message->senderId)
             ->first()
             ?->user;
 
         if ($user === null) {
             logger()->info('Chat message from unlinked sender', [
-                'provider' => $message->provider,
+                'provider' => $message->provider->value,
                 'sender_id' => $message->senderId,
             ]);
 
@@ -66,7 +66,7 @@ final readonly class HandleInboundMessage
         return match ($command) {
             '/start', '/help' => self::HELP,
             '/undo' => $this->undo($user),
-            default => $this->freeText($user, $text, LogSource::fromProvider($message->provider)),
+            default => $this->freeText($user, $text, $message->provider->logSource()),
         };
     }
 
@@ -103,9 +103,13 @@ final readonly class HandleInboundMessage
             return 'Nothing to undo from the last 24 hours.';
         }
 
-        $summary = $log->summary;
+        $entries = $log->exerciseEntries()->orderBy('sort_order')->get();
+        $removed = $entries->isEmpty()
+            ? $log->summary
+            : $entries->map($this->replies->entry(...))->implode(', ');
+
         $this->revert->handle($log);
 
-        return "Removed: {$summary}";
+        return "Removed: {$removed}";
     }
 }

@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 use App\Channels\HandleInboundMessage;
 use App\Channels\InboundMessage;
+use App\Enums\ChatProvider;
 use App\Models\ChannelIdentity;
 use App\Models\User;
 use Tests\Fakes\FakeSmartLogParser;
 
 function telegramText(string $text, string $sender = '4242'): InboundMessage
 {
-    return new InboundMessage('telegram', $sender, $sender, $text, 'Hiren');
+    return new InboundMessage(ChatProvider::Telegram, $sender, $sender, $text, 'Hiren');
 }
 
 function linkedUser(): User
@@ -90,3 +91,17 @@ it('answers /start and /help', function (string $command): void {
 
     expect(app(HandleInboundMessage::class)->handle(telegramText($command)))->toBe(HandleInboundMessage::HELP);
 })->with(['/start', '/help', '/help@FeetnessBot']);
+
+it('describes an undone workout with the saved names, not the AI summary', function (): void {
+    linkedUser();
+    fakeSmartLogParser(new FakeSmartLogParser([
+        'log_type' => 'workout',
+        'summary' => 'bench press 3x8',
+        'exercises' => [['exercise_name' => 'bench', 'sets' => 3, 'reps' => 8, 'weight_kg' => 80]],
+    ]));
+    $chat = app(HandleInboundMessage::class);
+
+    $chat->handle(telegramText('bench 3x8 80'));
+
+    expect($chat->handle(telegramText('/undo')))->toBe('Removed: Bench Press 3x8 @ 80 kg');
+});

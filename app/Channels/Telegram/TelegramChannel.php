@@ -6,14 +6,13 @@ namespace App\Channels\Telegram;
 
 use App\Channels\InboundMessage;
 use App\Contracts\Channels\ChatChannel;
+use App\Enums\ChatProvider;
 
 /**
  * Telegram adapter: sends replies and turns raw updates into InboundMessages.
  */
 final readonly class TelegramChannel implements ChatChannel
 {
-    public const string PROVIDER = 'telegram';
-
     public function __construct(
         private TelegramClient $client,
     ) {}
@@ -40,7 +39,7 @@ final readonly class TelegramChannel implements ChatChannel
         }
 
         return new InboundMessage(
-            provider: self::PROVIDER,
+            provider: ChatProvider::Telegram,
             senderId: (string) $message['from']['id'],
             chatId: (string) $message['chat']['id'],
             text: $message['text'],

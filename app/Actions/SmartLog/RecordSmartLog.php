@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace App\Actions\SmartLog;
 
 use App\Enums\LogSource;
-use App\Jobs\UpdateUserStats;
+use App\Enums\LogType;
+use App\Events\LogRecorded;
 use App\Models\ActivityLog;
 use App\Models\BodyWeightLog;
 use App\Models\ExerciseEntry;
@@ -22,8 +23,8 @@ use Illuminate\Support\Facades\DB;
  * The one write path both doors use (HTTP now, Telegram in M5). Domain rules
  * live here: a message within three hours of today's session joins it,
  * exercise names are made canonical, a stated day may be up to a week back,
- * values outside sane ranges are clamped or dropped. Stats are recomputed by
- * the queued job only after the transaction commits.
+ * values outside sane ranges are clamped or dropped. LogRecorded fires only
+ * after the transaction commits; stats and later the profile listen to it.
  */
 final readonly class RecordSmartLog
 {
@@ -43,7 +44,7 @@ final readonly class RecordSmartLog
 
             $log = $user->activityLogs()->create([
                 'source' => $source,
-                'log_type' => $parsed['log_type'] ?? 'general',
+                'log_type' => LogType::tryFrom((string) ($parsed['log_type'] ?? '')) ?? LogType::General,
                 'raw_message' => $message,
                 'summary' => $summary,
                 'questions' => ($parsed['questions'] ?? []) ?: null,
@@ -56,19 +57,21 @@ final readonly class RecordSmartLog
             $weight = null;
 
             switch ($log->log_type) {
-                case 'workout':
+                case LogType::Workout:
                     [$session, $merged, $entries] = $this->recordWorkout($user, $log, $parsed, $loggedOn);
                     $log->loggable()->associate($session);
                     break;
 
-                case 'biometrics':
+                case LogType::Biometrics:
                     $weight = $this->recordWeight($user, $parsed, $loggedOn);
                     $log->loggable()->associate($weight);
                     break;
 
-                case 'meal':
-                    $meal = $this->recordMeal($user, $parsed, $loggedOn);
-                    $log->loggable()->associate($meal);
+                case LogType::Meal:
+                    $log->loggable()->associate($this->recordMeal($user, $parsed, $loggedOn));
+                    break;
+
+                case LogType::General:
                     break;
             }
 
@@ -82,9 +85,7 @@ final readonly class RecordSmartLog
             return new SmartLogResult($log, $diary, $session, $merged, $entries, $weight);
         });
 
-        if ($result->session !== null) {
-            UpdateUserStats::dispatch($user);
-        }
+        LogRecorded::dispatch($result->log);
 
         return $result;
     }

@@ -276,7 +276,7 @@ From Hiren's two sketches (2026-10-04), settled or proposed:
 
 **Next, in order (2026-10-04, after the stepping back).**
 
-1. Foundation (1): PHP 8.5; Postgres in Docker locally (MySQL out; SQLite stays for the fast suite; CI job `pest-pgsql`); enums `LogType` and `ChatProvider`; `LogRecorded` and `LogReverted` events with the stats job as a listener (Observer).
+1. Foundation (1, done 2026-10-04): PHP 8.5; Postgres in Docker locally (MySQL out; SQLite stays for the fast suite; CI job `pest-pgsql`); enums `LogType` and `ChatProvider`; `LogRecorded` and `LogReverted` events with the stats job as a listener (Observer).
 2. Interpreter (2): `Interpreter` port with a classify step and the parse step; named rules (`BareNumberIsNotBodyWeight`, `RepsTimesSetsHasTwoReadings`, `MessageIsNotAboutTraining`); the polite reply for not understood; `php artisan log:parse` dry run; worked examples in the prompt, one retry on invalid JSON, low temperature.
 3. Sets and conversation (2.5): per-set storage (an exercise has sets, each with its own weight and reps); the conversation window (the last one or two messages of the open session go in with the new one); max two questions per log; `/edit` and the API equivalent.
 4. Then the M2 correctness leftovers, v0 deploy, M4 with the eval cases, and the rest as below.

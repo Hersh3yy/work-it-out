@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 
 use App\Channels\HandleInboundMessage;
 use App\Channels\InboundMessage;
+use App\Enums\ChatProvider;
 use App\Models\ChannelIdentity;
 use App\Models\User;
 use Illuminate\Console\Command;
@@ -19,8 +20,6 @@ use Illuminate\Support\Str;
  */
 final class LogSimulate extends Command
 {
-    public const string PROVIDER = 'simulate';
-
     protected $signature = 'log:simulate
         {text? : One message, as you would text it}
         {--user=1 : The user id to log as}
@@ -47,14 +46,14 @@ final class LogSimulate extends Command
         }
 
         ChannelIdentity::query()->firstOrCreate(
-            ['provider' => self::PROVIDER, 'external_id' => (string) $user->id],
+            ['provider' => ChatProvider::Simulate, 'external_id' => (string) $user->id],
             ['user_id' => $user->id],
         );
 
         foreach ($messages as $text) {
             $this->line("<comment>You:</comment> {$text}");
 
-            $reply = $handler->handle(new InboundMessage(self::PROVIDER, (string) $user->id, (string) $user->id, $text, $user->name));
+            $reply = $handler->handle(new InboundMessage(ChatProvider::Simulate, (string) $user->id, (string) $user->id, $text, $user->name));
 
             $this->line('<info>Bot:</info> '.Str::replace("\n", "\n     ", (string) $reply));
             $this->newLine();

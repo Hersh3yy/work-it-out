@@ -11,13 +11,6 @@ enum LogSource: string
 {
     case Http = 'http';
     case Telegram = 'telegram';
+    case WhatsApp = 'whatsapp';
     case Simulate = 'simulate';
-
-    /**
-     * The source for a chat provider name; unknown providers count as HTTP.
-     */
-    public static function fromProvider(string $provider): self
-    {
-        return self::tryFrom($provider) ?? self::Http;
-    }
 }

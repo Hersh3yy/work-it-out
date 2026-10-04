@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
+use App\Enums\LogType;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasStructuredOutput;
@@ -65,7 +66,7 @@ INSTRUCTIONS;
 
         return [
             'log_type' => $schema->string()
-                ->enum(['workout', 'meal', 'biometrics', 'general'])
+                ->enum(LogType::values())
                 ->required(),
             'summary' => $schema->string()->required(),
             'logged_on' => $schema->string()
