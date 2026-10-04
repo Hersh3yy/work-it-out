@@ -189,6 +189,26 @@ flowchart LR
 | Observer | Not yet; `UpdateUserStats` is dispatched directly | `LogRecorded` event; stats, profile notes and the check-in planner listen. Hiren: yes (2026-10-04) |
 | Named rules (refactoring.guru: Specification) | `RecordSmartLog` clamps and date rules; the parser normalizer | Each check becomes one small class with a name and a yes/no answer, for example `BareNumberIsNotBodyWeight`, `RepsTimesSetsHasTwoReadings`, `MessageIsNotAboutTraining`. Each has its own test. The conversation asks every rule in turn; a rule that says yes produces its question or its reply |
 
+### Derived metrics catalogue (2026-10-05)
+
+Every number the profile shows is computed in PHP from the log, one `Metric` strategy class each under `StatSheet`, each with a unit test against a published worked example. Labelled "estimate" in the UI where the method is an estimate. Formulas below are the starting point; the research spike before M4 verifies each one against its primary source and writes `docs/metrics.md`.
+
+| Metric | Method (to verify) | Needs from the log | Needs from the profile | Status |
+|---|---|---|---|---|
+| Estimated 1RM per exercise | Brzycki for 2 to 6 reps, Epley above, nothing above 12 reps | weighted sets | none | ready once sets exist |
+| Strength per muscle group or movement family (chest, legs, hips, back, shoulders) | best e1RM in the family divided by body weight, placed on strength standards (beginner to advanced) | weighted sets, exercise taxonomy | body weight, sex | needs taxonomy (M5) |
+| Weekly volume per muscle group | hard sets and tonnage per group per ISO week | sets, taxonomy | none | needs taxonomy |
+| Progression per lift | e1RM trend over 4 to 8 weeks | weighted sets over time | none | ready once sets exist |
+| Run distance and pace | weekly distance, longest run, best pace per distance band | cardio entries with distance and time | none | ready |
+| VO2max estimate | Cooper 12-minute test (`(meters − 504.9) / 44.73`) or race-time tables (Daniels VDOT) from a hard recent run | a hard run with distance and time | none | needs a "this was a hard effort" flag |
+| Cardio health | weekly moderate and vigorous minutes against the WHO adult guideline (150 to 300 moderate or 75 to 150 vigorous, plus strength on 2 or more days) | cardio and sport durations, effort level | none | needs an effort level per session |
+| Fitness age ("physical age") | estimated VO2max compared with age and sex norms (the HUNT fitness calculator approach, NTNU) | VO2max estimate | date of birth, sex, resting heart rate, waist | needs profile inputs, asked by the check-in |
+| Relative strength score | DOTS (or Wilks) on the squat, bench, deadlift total | the three lifts | body weight, sex | ready once sets exist |
+| Body weight trend | 7-day moving average and weekly change | body weight logs | none | ready |
+| Consistency | training days per week against the plan, streak in weeks | sessions | training days per week | partly built (adherence) |
+
+The profile inputs these need (date of birth, sex, height, resting heart rate, waist) are optional, asked one at a time by the daily check-in, and stored as user-entered facts, never inferred.
+
 ### Input the app does not understand
 
 Today (2026-10-04) "rainbow butterfly" is saved as a general log with a diary line "Noted: rainbow butterfly". Decided: the parser gets a fifth type, `unknown`, for text that is not about training, body weight, a goal or a question for a coach. Nothing is saved. The reply is respectful and shows what works: "I didn't catch a workout or a weight in that. You can text me things like: bench 3x8 80 · ran 5k in 28 min · 104.5kg · what next? Or /help." Test: `UnknownInputTest` (no rows, the reply names three example inputs, a Dutch nonsense line gets the same).
@@ -422,6 +442,7 @@ Manual simulation: `php artisan channel:simulate --user=1 "benched 100 3x5"` (M5
 ## 8. Open questions for Hiren
 
 - RPG rules: the first formula is a proposal in one class (M2). Adjust it once you have seen a week of real numbers?
+- Abandoned drafts (cancelled or expired): delete them with their raw text (recommended, the history holds only complete logs) or keep the raw text so a message can be recovered?
 - Which cheap hosted model parses logs from the gym, and which local model builds the profile? Decide with the eval set (M4). Candidates (checked 2026-10-04): Gemini 2.5 Flash on the free tier (prompts may be used to improve Google's products; a third-party listing from June 2026 shows 10 requests per minute and 500 per day, the live numbers are in AI Studio under rate limits) or paid; DeepSeek `deepseek-flash` via the SDK's native `deepseek` provider (about $0.15 to $0.30 per million input tokens, half off-peak, no free tier). A log is a few hundred tokens, so either costs cents per month; the choice is data terms and reliability, not price.
 - Streak: consecutive calendar days (current code; reads 0 most days for a 4-day trainer) or consecutive weeks meeting `training_days_per_week`? The plan recommends weeks.
 - Shen's buckets: legs split into squat and hinge, cardio and mobility merged as conditioning, anything trained today or yesterday skipped. Matches how you train?

@@ -21,11 +21,16 @@
 
 ## Start here (next session, any machine)
 
-1. `git pull` on branch `m2-write-path`. Read this file, then `PLAN.md` (section 4 holds every decision from 2026-10-04, section 5 "Next, in order" holds the build order). The diary below says what happened last.
-2. `make up`, then `make test` (SQLite) and `make test-pg` (Postgres). Both must be green before touching anything. A laptop whose Postgres volume predates `docker/postgres/init.sql` needs `docker compose exec -T postgres psql -U sail -d work_it_out -c 'CREATE DATABASE testing OWNER sail'` once.
-3. Real parsing needs `GEMINI_API_KEY` and `AI_LOG_PROVIDER=gemini`, `AI_LOG_MODEL=gemini-3.5-flash-lite` in `.env` (gemini-2.5 is retired for new keys), then `docker compose up -d --force-recreate app`. Try it: `docker compose exec app php artisan log:simulate --user=<id> "bench 3x8 80"`.
-4. Next work item: "Next, in order" step 3 (Sets and drafts) in PLAN.md section 5. Try the interpreter alone: `docker compose exec app php artisan log:parse "I did deadlift: 90 x3 x 5"`.
-5. Work to the gate, `pint`, both suites, push the branch, CI green, diary entry here.
+1. `git pull` on branch `m2-write-path` (not merged to `master` yet). Read this file, then `PLAN.md`: section 4 holds every decision, section 5 "Next, in order" the build order. The diary below says what happened last.
+2. Since 2026-10-04 the stack is PHP 8.5 and Postgres 17, not MySQL. On a laptop that last ran the MySQL stack:
+   - `.env` is not in git. Set `DB_CONNECTION=pgsql`, `DB_HOST=postgres`, `DB_PORT=5432`, `DB_DATABASE=work_it_out`, `DB_USERNAME=sail`, `DB_PASSWORD=password` (compare with `.env.example`).
+   - `docker compose build app`, then `docker compose up -d --remove-orphans` (removes the old MySQL container, keeps its volume).
+   - `docker compose exec app composer install` (the lock changed for PHP 8.5). If it is killed with exit 137, install on the host and `docker cp vendor/. work-it-out-app-1:/var/www/html/vendor/`.
+   - The `testing` database is created on a fresh Postgres volume by `docker/postgres/init.sql`.
+3. `make test` (SQLite) and `make test-pg` (Postgres) must both be green before touching anything (122 tests on 2026-10-05).
+4. Real parsing needs in `.env`: `GEMINI_API_KEY`, `AI_LOG_PROVIDER=gemini`, `AI_LOG_MODEL=gemini-3.5-flash-lite` (gemini-2.5 is retired for new keys), then `docker compose up -d --force-recreate app`. Create a user and try it: `docker compose exec app php artisan channel:link you@example.com 1 --provider=simulate`, then `php artisan log:parse "I did deadlift: 90 x3 x 5"` (saves nothing) or `php artisan log:simulate --user=<id> "bench 3x8 80"` (full path).
+5. Next work item: "Next, in order" step 3 (Sets and drafts) in PLAN.md section 5. One open question for Hiren first: delete abandoned drafts with their raw text (recommended) or keep the raw text.
+6. Work to the gate, `pint`, both suites, push the branch, CI green, diary entry here.
 
 ## Run it
 
@@ -153,6 +158,11 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-05 (night) — metrics catalogue; handoff
+- Hiren wants derived calculations kept for cardio health, strength per muscle group, run distance, VO2max, physical age and more. PLAN.md section 4 "Derived metrics catalogue": eleven metrics with method, inputs from the log and from the profile, and status; each becomes a `Metric` class under `StatSheet` with a unit test; the profile inputs they need (date of birth, sex, height, resting heart rate, waist) are optional and asked by the check-in. Formulas are a starting point, verified in the research spike before M4.
+- Open question added: delete abandoned drafts with their raw text (recommended) or keep it.
+- Handoff: everything committed and pushed on `m2-write-path`; CI green on the last code commit. Start here rewritten for a laptop still on the MySQL stack. CLAUDE.md points at the interpreter, `log:parse`, `log:simulate` and the current build order. The roadmap deck in `docs/roadmap-deck` is still the 2026-10-03 version; update it in one pass after step 3.
 
 ### 2026-10-05 — minimum required info replaces the two-question limit
 - Hiren: without a weight we should not log; ask until we have it. Agreed with a safeguard: the incomplete message is a draft (not log, not profile, no stats) until the minimum per exercise kind is present; `cancel` discards; drafts expire after 6 hours with a notice. PLAN.md section 4, the interpreter diagram and step 3 (now "Sets and drafts", 3 sittings) updated.
