@@ -152,6 +152,9 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-10-04 (late, 5) — pattern map re-checked; interpreter test tool planned
+- Hiren wants to tweak and test the interpreter alone. PLAN.md: `log:parse` dry-run command and the eval cases file (M4). Pattern table in PLAN.md section 3 rewritten against the real code (ports and adapters, strategy, actions as commands, facade, chain, memento, null object, template method; observer, builder and specification as next).
+
 ### 2026-10-04 (late, 4) — formulas are the product; scheduled check-in
 - Hiren: formulas like Brzycki make the app stand out more than the AI; wants a scheduled outgoing message that enriches the profile; volunteered info must be interpreted too; asked for a flowier diagram style (drawn, ellipses and curves). All three recorded in PLAN.md section 4. Strength research notes with sources are in the chat log of this session only; the research spike before M4 writes them into `docs/`.
 

@@ -142,16 +142,28 @@ flowchart LR
   R --> CM[dispatch command] --> RP[ChatChannel port<br/>sendMessage] --> PH[phone]
 ```
 
-### Patterns used (refactoring.guru names)
+### Patterns used (refactoring.guru names), re-checked 2026-10-04
 
-| Pattern | Where |
-|---|---|
-| Adapter | `Sdk*` classes wrap the AI SDK behind `app/Contracts/Ai/*` (in code). `TelegramChannel` behind a `ChatChannel` port with a `FakeChatChannel` in tests (to add) |
-| Strategy | `TrainerPersona` enum owns each coach's prompt (in code) |
-| Command | One class per user intent: `LogActivity`, `LogBodyWeight`, `AskCoach`, `NextMove`, `RevertLog` (to add) |
-| Chain of Responsibility | Chat intent resolvers in a fixed order; Laravel middleware on the webhook (to add) |
-| Observer | `ActivityLogged` event; stats, diary and reply are queued listeners (to add) |
-| Null Object | `LogChannel` so `php artisan channel:simulate` runs the whole path with no Telegram (to add) |
+| Pattern | In the code today | Next |
+|---|---|---|
+| Ports and Adapters (Adapter) | `Contracts/Ai/*` with `Sdk*` adapters and `tests/Fakes/*`; `Contracts/Channels/ChatChannel` with `TelegramChannel`; `Contracts/Stats/StatSheet` with `RpgStatSheet` | `Interpreter` port (text to facts) so the conversation part can be swapped and tested alone; `WhatsAppChannel` as one more adapter |
+| Strategy | `TrainerPersona` enum owns each coach's prompt; `LogSource` | One `Metric` strategy per formula (`EstimatedOneRepMax`, `StrengthRatio`, `WeeklyVolume`, `PaceScore`) behind `StatSheet` |
+| Command (as Actions) | `RecordSmartLog`, `RevertSmartLog`, `AnswerOpenQuestion`: one class per intent, both doors call them | `EditLog`, `ConfirmGoal`, `AddProfileNote` |
+| Facade | `HandleInboundMessage`: one entry point over parse, record, answer, undo | Keep it thin; it only routes |
+| Chain of Responsibility | The `match` in `HandleInboundMessage` (unlinked, /start, /undo, answer, free text) in a fixed order | Make it a chain of small resolvers so a new command is one class, not a bigger match |
+| Memento | `activity_logs` keeps the raw message and what it produced; `RevertSmartLog` restores by removing exactly that piece | Edit history: the clay-blob provenance is the memento per message |
+| Null Object | `LogSource::Simulate` plus `log:simulate` run the whole path with no Telegram | A `NullChatChannel` for tests and simulation instead of a fake provider row |
+| Template Method | `AiCall::run()` wraps every AI call the same way (report, log, rethrow) | Same wrapper for the interpretation job |
+| Observer | Not yet; `UpdateUserStats` is dispatched directly | `LogRecorded` event; stats, profile notes and the check-in planner listen |
+| Builder | `ReplyComposer` assembles the receipt line by line | Grows into receipt, question, coach line, with one chunker |
+| Specification (guards) | `RecordSmartLog` clamps and date rules; the parser normalizer | `AmbiguityRules` as named, unit-tested checks (bare number is never a weight; "90 x3 x5" has two readings) |
+
+### Testing the interpreter alone
+
+Hiren wants to feed texts to the conversation part and see what comes out, without saving anything, so the prompt and the rules can be tweaked in isolation.
+
+- `php artisan log:parse "text" [--context="previous message"]` prints the facts, the questions and the ambiguity flags as JSON and writes nothing. Runs the real `Interpreter` port (so the configured model) or `--rules-only`.
+- `tests/Evals/messages.txt` grows into `tests/Evals/cases.yaml`: each real message with the expected facts and expected questions. `php artisan log:eval` scores the current prompt against them (live, `AI_LIVE_EVAL=1`); the default suite replays the expected facts through `RecordSmartLog` with zero AI. Lands in M4.
 
 ### Shen's next move: PHP decides, the model talks
 
