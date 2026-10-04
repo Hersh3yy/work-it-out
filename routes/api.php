@@ -62,6 +62,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
     // Smart natural-language log — AI parses, persists, and reacts in one call
     Route::post('/log', [SmartLogController::class, 'store'])
         ->middleware('throttle:trainer-chat');
+    Route::post('/log/{log}/answer', [SmartLogController::class, 'answer']);
+    Route::post('/log/{log}/skip', [SmartLogController::class, 'skip']);
     Route::delete('/log/{log}', [SmartLogController::class, 'destroy']);
 
     // Coaches' diary

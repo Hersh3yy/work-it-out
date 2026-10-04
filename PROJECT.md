@@ -125,8 +125,9 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 - [x] M0 Sync, green baseline, CI: suite green, SDK claims verified (fatals confirmed), GitHub Actions, deploy branch. Done 2026-10-03 <!-- id:n1 -->
 - [x] M1 Day-one blockers: adapters fixed, payload validated and capped, model name per provider in `config/ai.php`, `AiCall` reports every failure. Done 2026-10-03 <!-- id:n2 -->
-- [ ] M2 Facts-only write path: test safety (SQLite forced, MySQL job), facts-only parse with questions, `activity_logs`, `RecordSmartLog` + `RevertSmartLog` in transactions, RPG from rules, adherence fix, same-day merge, exercise aliases, timezone Europe/Amsterdam, numbers as numbers, DiaryResource, login/register limiters <!-- id:n3 -->
-- [ ] M3 Remove nutrition entirely (decided 2026-09-27), Latika rewritten to recovery/mobility/longevity <!-- id:n4 -->
+- [ ] M2 Facts-only write path. Done: test safety, facts-only parse with questions, `activity_logs`, `RecordSmartLog`, `RevertSmartLog`, answers on both doors, `StatSheet` port, chat core + Telegram polling, `log:simulate`, one model per job. Left: timezone Europe/Amsterdam, numbers as numbers everywhere, DiaryResource, login/register limiters, conversation ownership. RPG from rules parked <!-- id:n3 -->
+- [ ] v0 deploy: the polling bot as one supervisord worker on a Coolify VPS, registration closed in production, host checklist, smoke from the phone (PLAN.md "v0 deploy") <!-- id:n13 -->
+- [ ] M3 Remove nutrition entirely (decided 2026-09-27; waits until after v0), Latika rewritten to recovery/mobility/longevity <!-- id:n4 -->
 - [ ] M4 Simulate: factories + deterministic two-user seeder, streak on read, HTTP scenario suite (PLAN.md section 6), prompting practices and a live eval set of real messages <!-- id:n5 -->
 - [ ] M5 Channel port + the Telegram command set (log, weight, /next, /undo, /coach) + rules-only `/next` + one AI budget shared by HTTP and chat, driven by `channel:simulate`. Profile and stats stay in the app <!-- id:n6 -->
 - [ ] M6 Telegram adapter, hardened ingest, host and Coolify checklist, backups, first deploy, first message from the phone. RELEASE 1 <!-- id:n7 -->
@@ -150,6 +151,13 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-04 (evening) — regroup: three doors, simulate first, v0 next
+- Hiren: Telegram, WhatsApp and soon app-only users must all log the same way; he will store real messages and simulate gym time rather than test live now; gh is authenticated; asked about Gemini free limits and DeepSeek.
+- CI was red on `pest-mysql` with all tests passing: `php artisan test` already adds `--configuration=phpunit.xml`, the second flag made Pest warn and exit 1. Makefile and CI now call `vendor/bin/pest --configuration=phpunit.mysql.xml`.
+- Built: `POST /api/log/{log}/answer` and `/skip` (HTTP parity with chat; `ExerciseEntryResource` now returns `weight_kg` as a float), `LogSource::fromProvider`, `php artisan log:simulate {text|--file}` (exact chat path, provider `simulate`), `tests/Evals/messages.txt` + README as the safe place for real messages, `config/ai.php` `jobs` (log, plan, chat each with provider and model, `AI_*_PROVIDER`/`AI_*_MODEL`, DeepSeek via the SDK's native provider).
+- PLAN.md: fast track order (finish M2, v0 deploy, M4, M5/M6, M3 after v0), the v0 deploy milestone defined, three-doors decision, model candidates with numbers. 102 passed on SQLite and MySQL.
+- Next: the M2 correctness sitting (timezone, numbers, DiaryResource, limiters), then v0 deploy.
 
 ### 2026-10-04 (later) — gym loop v0 (branch m2-write-path)
 - Hiren: RPG and profile build must be isolated (uncertain); real per-area stats are a later idea; nutrition not in this phase; goal is texting from the gym within two prompts, then a v0 deploy on Coolify.

@@ -33,7 +33,11 @@ final readonly class SdkPlanGenerator implements PlanGenerator
             intake: $this->intake->report($user),
         );
 
-        $response = $agent->prompt("Generate my {$type->value} plan for this week.");
+        $response = $agent->prompt(
+            "Generate my {$type->value} plan for this week.",
+            provider: config('ai.jobs.plan.provider'),
+            model: config('ai.jobs.plan.model'),
+        );
 
         return (string) $response;
     }

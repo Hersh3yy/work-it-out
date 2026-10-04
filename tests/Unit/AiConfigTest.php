@@ -8,3 +8,9 @@ test('the configured text model reaches every provider we use', function (): voi
         ->and(config('ai.providers.gemini.models.text.default'))->toBe(env('AI_TEXT_MODEL', 'gemini-2.5-flash'))
         ->and(config('ai.conversations.generate_title'))->toBeFalse();
 });
+
+it('has one provider and model slot per AI job, empty by default', function (): void {
+    foreach (['log', 'plan', 'chat'] as $job) {
+        expect(config("ai.jobs.{$job}"))->toHaveKeys(['provider', 'model']);
+    }
+});

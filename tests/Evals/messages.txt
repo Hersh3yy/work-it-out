@@ -1,0 +1,6 @@
+# One message per line, as you would text it from the gym. Replace these with your own.
+bench 3x8 80, then incline db 3x10
+30
+ran 5k in 28 min
+104.5kg
+/undo

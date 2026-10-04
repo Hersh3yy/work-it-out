@@ -28,7 +28,13 @@ final readonly class SdkSmartLogParser implements SmartLogParser
     {
         $agent = new SmartLogAgent(now()->toDateString());
 
-        return $this->normalize($agent->prompt($message)->toArray());
+        $response = $agent->prompt(
+            $message,
+            provider: config('ai.jobs.log.provider'),
+            model: config('ai.jobs.log.model'),
+        );
+
+        return $this->normalize($response->toArray());
     }
 
     /**

@@ -66,11 +66,11 @@ final readonly class HandleInboundMessage
         return match ($command) {
             '/start', '/help' => self::HELP,
             '/undo' => $this->undo($user),
-            default => $this->freeText($user, $text),
+            default => $this->freeText($user, $text, LogSource::fromProvider($message->provider)),
         };
     }
 
-    private function freeText(User $user, string $text): string
+    private function freeText(User $user, string $text, LogSource $source): string
     {
         $open = $this->answers->openFor($user);
 
@@ -92,7 +92,7 @@ final readonly class HandleInboundMessage
             return "Couldn't reach the AI just now, so nothing was saved. Try again in a minute.";
         }
 
-        return $this->replies->receipt($this->record->handle($user, $text, $parsed, LogSource::Telegram));
+        return $this->replies->receipt($this->record->handle($user, $text, $parsed, $source));
     }
 
     private function undo(User $user): string

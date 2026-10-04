@@ -22,7 +22,7 @@ test:
 	docker compose exec app php artisan test
 
 test-mysql:
-	docker compose exec app php artisan test --configuration=phpunit.mysql.xml
+	docker compose exec app vendor/bin/pest --configuration=phpunit.mysql.xml
 
 migrate:
 	docker compose exec app php artisan migrate

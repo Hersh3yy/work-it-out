@@ -58,4 +58,4 @@ jobs:
       - name: Prepare env
         run: cp .env.example .env && php artisan key:generate
       - name: Pest on MySQL
-        run: php artisan test --compact --configuration=phpunit.mysql.xml
+        run: vendor/bin/pest --compact --configuration=phpunit.mysql.xml

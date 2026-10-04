@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\SmartLog\AnswerOpenQuestion;
 use App\Actions\SmartLog\RecordSmartLog;
 use App\Actions\SmartLog\RevertSmartLog;
 use App\Ai\Agents\SmartLogAgent;
 use App\Contracts\Ai\SmartLogParser;
 use App\Exceptions\AiUnavailable;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ExerciseEntryResource;
 use App\Models\User;
 use App\Services\Ai\AiCall;
 use Illuminate\Http\JsonResponse;
@@ -30,6 +32,7 @@ final class SmartLogController extends Controller
         private readonly AiCall $ai,
         private readonly RecordSmartLog $record,
         private readonly RevertSmartLog $revert,
+        private readonly AnswerOpenQuestion $answers,
     ) {}
 
     public function store(Request $request): JsonResponse
@@ -54,6 +57,40 @@ final class SmartLogController extends Controller
         $result = $this->record->handle($user, $message, $parsed);
 
         return response()->json($result->toArray(), Response::HTTP_CREATED);
+    }
+
+    /**
+     * Fill in the value a log's open question asked for. No AI involved.
+     */
+    public function answer(Request $request, string $log): JsonResponse
+    {
+        $request->validate(['value' => ['required', 'string', 'max:40']]);
+
+        /** @var User $user */
+        $user = $request->user();
+        $activityLog = $user->activityLogs()->findOrFail($log);
+
+        if (empty($activityLog->questions)) {
+            return response()->json(['message' => 'This log has no open question.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $entry = $this->answers->answer($activityLog, $request->string('value')->value());
+
+        if ($entry === null) {
+            return response()->json(['message' => 'That is not a value for the open question. Send a number, or skip it.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        return response()->json(['entry' => new ExerciseEntryResource($entry), 'questions' => []]);
+    }
+
+    public function skip(Request $request, string $log): Response
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        $this->answers->skip($user->activityLogs()->findOrFail($log));
+
+        return response()->noContent();
     }
 
     public function destroy(Request $request, string $log): Response

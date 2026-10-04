@@ -18,7 +18,7 @@ final class ExerciseEntryResource extends JsonResource
             'exercise_name' => $this->exercise_name,
             'sets' => $this->sets,
             'reps' => $this->reps,
-            'weight_kg' => $this->weight_kg,
+            'weight_kg' => $this->weight_kg === null ? null : (float) $this->weight_kg,
             'duration_seconds' => $this->duration_seconds,
             'distance_meters' => $this->distance_meters,
             'notes' => $this->notes,

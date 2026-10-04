@@ -40,8 +40,8 @@ final readonly class SdkTrainerChat implements TrainerChat
         );
 
         $response = $conversationId !== null && $conversationId !== ''
-            ? $agent->continue($conversationId, as: $user)->prompt($message)
-            : $agent->forUser($user)->prompt($message);
+            ? $agent->continue($conversationId, as: $user)->prompt($message, provider: config('ai.jobs.chat.provider'), model: config('ai.jobs.chat.model'))
+            : $agent->forUser($user)->prompt($message, provider: config('ai.jobs.chat.provider'), model: config('ai.jobs.chat.model'));
 
         return new TrainerReply(
             reply: (string) $response,

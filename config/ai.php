@@ -17,6 +17,33 @@ return [
 
     'default' => env('AI_DEFAULT_PROVIDER', 'openai'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | One model per job
+    |--------------------------------------------------------------------------
+    |
+    | Each AI job may run on its own provider and model (PLAN.md section 4,
+    | 2026-10-04): log parsing must be cheap and reachable from the gym, the
+    | profile build may run on the laptop's local model, coach chat is open.
+    | Null falls back to the default provider and its default text model.
+    |
+    */
+
+    'jobs' => [
+        'log' => [
+            'provider' => env('AI_LOG_PROVIDER'),
+            'model' => env('AI_LOG_MODEL'),
+        ],
+        'plan' => [
+            'provider' => env('AI_PLAN_PROVIDER'),
+            'model' => env('AI_PLAN_MODEL'),
+        ],
+        'chat' => [
+            'provider' => env('AI_CHAT_PROVIDER'),
+            'model' => env('AI_CHAT_MODEL'),
+        ],
+    ],
+
     'conversations' => [
         // One call per new thread: do not spend a second call naming it.
         'generate_title' => false,
