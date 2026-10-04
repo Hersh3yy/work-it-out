@@ -154,9 +154,17 @@ flowchart LR
 | Memento | `activity_logs` keeps the raw message and what it produced; `RevertSmartLog` restores by removing exactly that piece | Edit history: the clay-blob provenance is the memento per message |
 | Null Object | `LogSource::Simulate` plus `log:simulate` run the whole path with no Telegram | A `NullChatChannel` for tests and simulation instead of a fake provider row |
 | Template Method | `AiCall::run()` wraps every AI call the same way (report, log, rethrow) | Same wrapper for the interpretation job |
-| Observer | Not yet; `UpdateUserStats` is dispatched directly | `LogRecorded` event; stats, profile notes and the check-in planner listen |
-| Builder | `ReplyComposer` assembles the receipt line by line | Grows into receipt, question, coach line, with one chunker |
-| Specification (guards) | `RecordSmartLog` clamps and date rules; the parser normalizer | `AmbiguityRules` as named, unit-tested checks (bare number is never a weight; "90 x3 x5" has two readings) |
+| Observer | Not yet; `UpdateUserStats` is dispatched directly | `LogRecorded` event; stats, profile notes and the check-in planner listen. Hiren: yes (2026-10-04) |
+| Named rules (refactoring.guru: Specification) | `RecordSmartLog` clamps and date rules; the parser normalizer | Each check becomes one small class with a name and a yes/no answer, for example `BareNumberIsNotBodyWeight`, `RepsTimesSetsHasTwoReadings`, `MessageIsNotAboutTraining`. Each has its own test. The conversation asks every rule in turn; a rule that says yes produces its question or its reply |
+
+### Input the app does not understand
+
+Today (2026-10-04) "rainbow butterfly" is saved as a general log with a diary line "Noted: rainbow butterfly". Decided: the parser gets a fifth type, `unknown`, for text that is not about training, body weight, a goal or a question for a coach. Nothing is saved. The reply is respectful and shows what works: "I didn't catch a workout or a weight in that. You can text me things like: bench 3x8 80 · ran 5k in 28 min · 104.5kg · what next? Or /help." Test: `UnknownInputTest` (no rows, the reply names three example inputs, a Dutch nonsense line gets the same).
+
+### Prompt practices (plain words, for `docs/prompting.md` in M4)
+
+What is in place: structured output (the model must answer in a fixed JSON shape, the Laravel equivalent of Pydantic; `SmartLogAgent::schema()`); server-side validation that rebuilds the payload from known keys only (`SdkSmartLogParser::normalize`); the user's text is data, never instructions; a missing value is `null`, never a guess; lengths capped; at most one question per call; one wrapper logs every failure without the prompt text (`AiCall`).
+What is missing: worked examples in the prompt (two or three real messages with their correct JSON, including a `90 x3 x5` that asks and a nonsense line that is `unknown`); a conversation window (the previous one or two messages of the open session); a `confidence` field per fact so a low-confidence set becomes a question; one retry when the JSON does not validate, then the 503 path; low temperature for parsing; the prompt versioned in code with the eval cases run on every change.
 
 ### Testing the interpreter alone
 

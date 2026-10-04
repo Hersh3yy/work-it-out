@@ -152,6 +152,9 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-10-04 (late, 6) — observer yes, builder no, named rules, unknown input
+- Hiren: Observer yes, Builder no, Specification renamed to named rules with a plain explanation; nonsense input must get a respectful reply listing what works. Verified today "rainbow butterfly" is stored as a general log ("Noted: rainbow butterfly"), undone. PLAN.md: `unknown` log type and reply, prompt practices in plain words (in place vs missing).
+
 ### 2026-10-04 (late, 5) — pattern map re-checked; interpreter test tool planned
 - Hiren wants to tweak and test the interpreter alone. PLAN.md: `log:parse` dry-run command and the eval cases file (M4). Pattern table in PLAN.md section 3 rewritten against the real code (ports and adapters, strategy, actions as commands, facade, chain, memento, null object, template method; observer, builder and specification as next).
 
