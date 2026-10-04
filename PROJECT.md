@@ -152,6 +152,9 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-10-04 (late, 4) — formulas are the product; scheduled check-in
+- Hiren: formulas like Brzycki make the app stand out more than the AI; wants a scheduled outgoing message that enriches the profile; volunteered info must be interpreted too; asked for a flowier diagram style (drawn, ellipses and curves). All three recorded in PLAN.md section 4. Strength research notes with sources are in the chat log of this session only; the research spike before M4 writes them into `docs/`.
+
 ### 2026-10-04 (late, 3) — two sketches read, architecture drawn
 - Both photos of Hiren's paper sketches were readable (rotated, no problem). Sketch 1: doors to one parser to "log to profile". Sketch 2: parsed message to history and, via interpretation, to the profile; goals on the profile; profile feeds coaches; reply out. Redrawn and corrected in chat; my high-level architecture drawn (doors, conversation, AI parser, plain-code checks, log, profile, coaches, reply).
 - Clarified: "message" is an app widget door; "log to profile" means log plus interpretation; "90 x3 x5" was 3 reps 5 sets and must be asked; max two questions then editable history; profile as a clay blob with provenance per message. Written into PLAN.md section 4.
