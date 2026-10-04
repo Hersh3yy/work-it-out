@@ -152,6 +152,10 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-10-04 (late, 3) — two sketches read, architecture drawn
+- Both photos of Hiren's paper sketches were readable (rotated, no problem). Sketch 1: doors to one parser to "log to profile". Sketch 2: parsed message to history and, via interpretation, to the profile; goals on the profile; profile feeds coaches; reply out. Redrawn and corrected in chat; my high-level architecture drawn (doors, conversation, AI parser, plain-code checks, log, profile, coaches, reply).
+- Clarified: "message" is an app widget door; "log to profile" means log plus interpretation; "90 x3 x5" was 3 reps 5 sets and must be asked; max two questions then editable history; profile as a clay blob with provenance per message. Written into PLAN.md section 4.
+
 ### 2026-10-04 (late, 2) — VAMS idea dropped; real messages; architecture first
 - Hiren: work-it-out is its own backend, so no VAMS database; local Postgres in Docker for now; he wants to settle high-level architecture before more building. PLAN.md section 4 updated, v0 deploy waits on it.
 - Ran three of his real gym messages through the parser (gemini-3.5-flash-lite). Findings recorded in PLAN.md "Architecture decisions still open": no per-set data model (a 90/90/95/85/85 squat became five entries), multi-message logs not connected (bare numbers became a 90 kg body weight), comments and plans dropped, "90 x3 x5" not questioned. All test rows undone.

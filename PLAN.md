@@ -205,6 +205,16 @@ Decisions, each with a current lean:
 8. Accounts across doors: one user, several linked chat identities, app login by email. Lean: yes, already the shape.
 9. Stats: RPG, real metrics, or both, behind `StatSheet`. Lean: decide after usage.
 
+From Hiren's two sketches (2026-10-04), settled or proposed:
+
+- Three doors (Telegram, WhatsApp, an app message widget) into one conversation layer. Settled.
+- A parsed message goes two places: the log (facts: sessions, sets, the user's own words as notes) and the profile (the interpretation). Settled, with one rule: the interpretation layer never overwrites what the user said; every piece carries the message id it came from, so the profile is a clay blob where each piece can be found and removed.
+- Ambiguity means a question: "90 x3 x5" (Hiren meant 3 reps, 5 sets) is asked, never guessed; a bare number is never a body weight. Settled.
+- At most two questions back per log. After that the log is stored with gaps and the user edits the history (`/edit`, and the same over the API). Proposed.
+- Profile layers, proposed: (1) identity and settings the user entered; (2) goals the user confirmed; (3) the log; (4) computed stats, per exercise (best set, estimated 1RM, weekly volume) and per body area or movement pattern (push, pull, squat, hinge, core, conditioning), with a research step before the per-area formulas are fixed; (5) interpretations and notes written by the AI, each citing its messages. The RPG sheet, if kept, is a view on (4).
+- Coaches read the log and the profile and speak on request. Settled.
+- Open: the roadmap deck (`docs/roadmap-deck`) is out of date on all of this and gets one update pass once this round is settled.
+
 ## 5. The plan
 
 **Fast track (2026-10-04).** The order is now: finish M2, then **v0 deploy** (the polling bot as one worker on a Coolify VPS, a slice of M6 defined below), then M4 (simulation and the eval set from Hiren's stored messages), then M5 and M6 harden the loop (webhook, budget, the full host checklist). M3 (nutrition) waits until after v0. M7 onward unchanged.
