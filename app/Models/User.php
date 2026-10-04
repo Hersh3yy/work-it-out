@@ -83,10 +83,10 @@ class User extends Authenticatable
         return $this->hasMany(CustomRpgStat::class)->orderByDesc('last_updated_at');
     }
 
-    /** @return HasMany<ActivityFeedback, $this> */
-    public function activityFeedbacks(): HasMany
+    /** @return HasMany<ActivityLog, $this> */
+    public function activityLogs(): HasMany
     {
-        return $this->hasMany(ActivityFeedback::class)->latest();
+        return $this->hasMany(ActivityLog::class)->latest();
     }
 
     /** @return HasMany<DiaryEntry, $this> */

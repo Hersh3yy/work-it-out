@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * AI-synthesised diary entry — one per smart-log event.
+ * Diary line for one smart-log event: the log's factual summary.
  *
  * @property int $id
  * @property int $user_id
- * @property int|null $activity_feedback_id
+ * @property string|null $activity_log_id
  * @property string $content
  */
 final class DiaryEntry extends Model
@@ -20,7 +20,7 @@ final class DiaryEntry extends Model
     /** @var list<string> */
     protected $fillable = [
         'user_id',
-        'activity_feedback_id',
+        'activity_log_id',
         'content',
     ];
 
@@ -30,9 +30,9 @@ final class DiaryEntry extends Model
         return $this->belongsTo(User::class);
     }
 
-    /** @return BelongsTo<ActivityFeedback, $this> */
-    public function activityFeedback(): BelongsTo
+    /** @return BelongsTo<ActivityLog, $this> */
+    public function activityLog(): BelongsTo
     {
-        return $this->belongsTo(ActivityFeedback::class);
+        return $this->belongsTo(ActivityLog::class);
     }
 }

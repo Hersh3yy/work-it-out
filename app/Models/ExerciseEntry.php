@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'workout_session_id',
+    'activity_log_id',
     'exercise_name',
     'sets',
     'reps',

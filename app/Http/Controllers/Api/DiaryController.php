@@ -13,16 +13,13 @@ final class DiaryController extends Controller
 {
     /**
      * List diary entries (paginated, newest first).
-     * Includes the associated three-coach feedback.
      */
     public function index(Request $request): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
 
-        $entries = $user->diaryEntries()
-            ->with('activityFeedback')
-            ->paginate(20);
+        $entries = $user->diaryEntries()->paginate(20);
 
         return response()->json($entries);
     }

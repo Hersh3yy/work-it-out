@@ -15,7 +15,7 @@
 **Repo** · git@github.com:Hersh3yy/work-it-out.git · working on `master` (branch for changes; merge to `master` only when sure)
 **Hosting** · designed for Coolify/VPS (see `.env.example` production block); nothing deployed yet. Heed the VAMS VPS lessons: never expose service ports, rotate keys.
 **ClickUp** · not linked yet. Needs `CLICKUP_API_KEY` in the shell and a list id here as `<!-- clickup_list:ID -->`; then `node ~/.claude/skills/project-map/scripts/clickup-sync.mjs PROJECT.md`
-**Last assessed** · 2026-10-03
+**Last assessed** · 2026-10-04
 
 ---
 
@@ -117,7 +117,7 @@ Data model (all user-scoped, ULIDs on the log tables): `users` (profile + goals 
 What the backend must do, in Hiren's words (2026-10-02), and where each lives:
 - take logs and activities and turn them into an overall profile: exists (`POST /api/log`, RPG, PRs, dashboard); hardened in M2
 - suggestions from history: Shen `/next` (rules in M5, model in M8)
-- feedback: exists (three coach reactions per log); over Telegram from M6
+- feedback: changed 2026-10-04. A log gets a receipt plus one question when a value is missing, no coach reactions (M2, M5). Coaches answer on request (M7). The AI never writes assumptions; the qualitative profile build runs only on request (M9)
 - understand the user's high-level plan and ask questions when info is missing, capped per day: intake exists (one question per coach reply, `TrainerAgent::intakeRules`); the daily cap and short/long-term goals are new, item n12
 - accept Telegram and support a frontend: M5/M6 and M10/M12
 
@@ -125,14 +125,14 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 - [x] M0 Sync, green baseline, CI: suite green, SDK claims verified (fatals confirmed), GitHub Actions, deploy branch. Done 2026-10-03 <!-- id:n1 -->
 - [x] M1 Day-one blockers: adapters fixed, payload validated and capped, model name per provider in `config/ai.php`, `AiCall` reports every failure. Done 2026-10-03 <!-- id:n2 -->
-- [ ] M2 Bulletproof the write path: `RecordSmartLog` + `RevertSmartLog` in transactions, adherence fix, null diary, same-day merge, exercise aliases, timezone Europe/Amsterdam, numbers as numbers, DiaryResource, login/register limiters <!-- id:n3 -->
+- [ ] M2 Facts-only write path: test safety (SQLite forced, MySQL job), facts-only parse with questions, `activity_logs`, `RecordSmartLog` + `RevertSmartLog` in transactions, RPG from rules, adherence fix, same-day merge, exercise aliases, timezone Europe/Amsterdam, numbers as numbers, DiaryResource, login/register limiters <!-- id:n3 -->
 - [ ] M3 Remove nutrition entirely (decided 2026-09-27), Latika rewritten to recovery/mobility/longevity <!-- id:n4 -->
-- [ ] M4 Simulate: factories + deterministic two-user seeder, streak on read, HTTP scenario suite (PLAN.md section 6) <!-- id:n5 -->
+- [ ] M4 Simulate: factories + deterministic two-user seeder, streak on read, HTTP scenario suite (PLAN.md section 6), prompting practices and a live eval set of real messages <!-- id:n5 -->
 - [ ] M5 Channel port + the Telegram command set (log, weight, /next, /undo, /coach) + rules-only `/next` + one AI budget shared by HTTP and chat, driven by `channel:simulate`. Profile and stats stay in the app <!-- id:n6 -->
 - [ ] M6 Telegram adapter, hardened ingest, host and Coolify checklist, backups, first deploy, first message from the phone. RELEASE 1 <!-- id:n7 -->
 - [ ] M7 AI commands over chat: coach threads with memory, `/plan` <!-- id:n8 -->
 - [ ] M8 Shen next-move with the model on top of the rules path; compact coach context <!-- id:n9 -->
-- [ ] M9 Intake gaps for the contract: `asked_field`, skip state, `GET /api/coaches` <!-- id:n10 -->
+- [ ] M9 Profile: intake gaps (`asked_field`, skip state, `GET /api/coaches`) and the profile build on explicit request (coach notes citing logs, local model allowed, never overwrites user fields) <!-- id:n10 -->
 - [ ] M10 API contract: Resources everywhere, one envelope, idempotency keys, OpenAPI with drift test, exported fixtures. RELEASE 3 <!-- id:n11 -->
 - [ ] Coach questions with a daily cap: the coach may ask at most N intake or goal questions per day (config), tracks what was asked, and captures short-term and long-term goals (new fields) so answers over chat persist. Lands with M7 or M9 <!-- id:n12 -->
 
@@ -150,6 +150,15 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-04 — plan revised, M2 started (branch m2-write-path, work in progress, suite red)
+- Decisions from Hiren, written into PLAN.md section 4 and the milestones: a log gets a receipt plus at most one question for a missing value, no coach feedback per log; the AI never writes assumptions (stated facts stored, every number computed in PHP); the qualitative profile build runs only on explicit request and may use the laptop's local model (M9); log parsing on a cheap hosted model, no model chosen yet; no own knowledge base for now; a prompting and live-eval step in M4. M2 5.5, M4 3.5, M9 2 sittings; backend about 33.
+- Roadmap deck for a non-technical reader: https://claude.ai/artifact/96DpjoAmbXRoTALR3SYZDm, source in `docs/roadmap-deck/` (pre-revision, see its README).
+- Found: in Docker the container's env vars beat `phpunit.xml`, so `make test` ran against the dev MySQL `work_it_out` and wiped it. Laravel reads `$_SERVER` first, so `phpunit.xml` now sets every value as `<env force>` and `<server force>`. `make test` is SQLite in memory again (46 passed in the container before the M2 code changes).
+- Found: `activity_feedbacks.loggable_id` was an integer morph while workouts have ULIDs; on MySQL every AI-logged workout was a 500 (SQLite hid it). Added `phpunit.mysql.xml` (the `testing` database), `make test-mysql`, and a `pest-mysql` CI job.
+- M2 done so far: migration `2026_10_04_000001` replaces `activity_feedbacks` with `activity_logs` (ULID, ULID morph, questions json, logged_on, source) and adds `activity_log_id` to `diary_entries` and `exercise_entries`; `ActivityLog` model, `LogSource` enum; `ActivityFeedback` deleted; `SmartLogAgent` facts-only (no user data sent, `logged_on`, `questions`); `SdkSmartLogParser` rebuilds the payload from known keys only; `ExerciseAliases` (key + alias map + the user's own earlier spelling).
+- Not done, next in this order: `app/Actions/SmartLog/RecordSmartLog` + `SmartLogResult` (transaction, completed_planned true, same-day merge within 3 hours, aliases, logged_on within 7 days, clamps, stats job after commit) and rewrite `SmartLogController` to use it; adherence counts distinct days in `UpdateUserStats` (update its 50% test to two days); `PersonalRecordService` groups by `ExerciseAliases::key`; `FakeSmartLogParser` facts-only; rewrite `SmartLogContractTest` and `SdkAdaptersTest`, add `RecordSmartLogTest` and an `ExerciseAliasesTest`; then RpgSheet, RevertSmartLog, the correctness sitting. 4 tests red until RecordSmartLog lands; CI on this branch is expected to fail.
+- Laptop setup notes: this laptop had a stale `vendor/` and no composer (installed with Homebrew); local `.env` APP_NAME set to Feetness. If `make test-mysql` says access denied on `testing`, the MySQL volume predates `docker/mysql/init.sql`: run `docker compose exec -T mysql mysql -uroot -proot_password < docker/mysql/init.sql` once.
 
 ### 2026-10-03 — M1 done (branch m1-adapters)
 - `SdkSmartLogParser`: `->prompt($message)->toArray()`, then validation at the boundary: `log_type` in the enum and a non-empty `summary` or `AiUnavailable`; summary 255, coach lines 600, diary 1000, stat name 60, reason 255, stat category whitelisted. `SdkPlanGenerator`: `->prompt()` without `forUser()`. `SmartLogAgent` no longer sends the user's name.
