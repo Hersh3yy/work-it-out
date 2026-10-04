@@ -3,24 +3,7 @@
 declare(strict_types=1);
 
 use App\Channels\HandleInboundMessage;
-use App\Channels\InboundMessage;
-use App\Enums\ChatProvider;
-use App\Models\ChannelIdentity;
-use App\Models\User;
 use Tests\Fakes\FakeSmartLogParser;
-
-function telegramText(string $text, string $sender = '4242'): InboundMessage
-{
-    return new InboundMessage(ChatProvider::Telegram, $sender, $sender, $text, 'Hiren');
-}
-
-function linkedUser(): User
-{
-    $user = User::factory()->create(['training_days_per_week' => 4]);
-    ChannelIdentity::create(['user_id' => $user->id, 'provider' => 'telegram', 'external_id' => '4242']);
-
-    return $user;
-}
 
 it('ignores a sender that is not linked and never calls the parser', function (): void {
     $parser = fakeSmartLogParser();

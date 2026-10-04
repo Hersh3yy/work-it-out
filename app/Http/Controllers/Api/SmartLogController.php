@@ -7,13 +7,11 @@ namespace App\Http\Controllers\Api;
 use App\Actions\SmartLog\AnswerOpenQuestion;
 use App\Actions\SmartLog\RecordSmartLog;
 use App\Actions\SmartLog\RevertSmartLog;
-use App\Ai\Agents\SmartLogAgent;
-use App\Contracts\Ai\SmartLogParser;
 use App\Exceptions\AiUnavailable;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ExerciseEntryResource;
+use App\Interpretation\Interpreter;
 use App\Models\User;
-use App\Services\Ai\AiCall;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,8 +26,7 @@ use Symfony\Component\HttpFoundation\Response;
 final class SmartLogController extends Controller
 {
     public function __construct(
-        private readonly SmartLogParser $parser,
-        private readonly AiCall $ai,
+        private readonly Interpreter $interpreter,
         private readonly RecordSmartLog $record,
         private readonly RevertSmartLog $revert,
         private readonly AnswerOpenQuestion $answers,
@@ -46,7 +43,7 @@ final class SmartLogController extends Controller
         $message = $request->string('message')->value();
 
         try {
-            $parsed = $this->ai->run($user, SmartLogAgent::class, fn (): array => $this->parser->parse($user, $message));
+            $interpretation = $this->interpreter->interpret($user, $message);
         } catch (AiUnavailable) {
             return response()->json(
                 ['message' => 'The AI log processor is temporarily unavailable. Please try again.'],
@@ -54,7 +51,14 @@ final class SmartLogController extends Controller
             );
         }
 
-        $result = $this->record->handle($user, $message, $parsed);
+        if (! $interpretation->shouldRecord()) {
+            return response()->json([
+                'message' => $interpretation->reply,
+                'kind' => $interpretation->classification->kind->value,
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $result = $this->record->handle($user, $message, $interpretation->parsed);
 
         return response()->json($result->toArray(), Response::HTTP_CREATED);
     }

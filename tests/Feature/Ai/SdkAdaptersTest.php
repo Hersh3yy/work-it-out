@@ -49,7 +49,7 @@ it('workout plan generates through the real SdkPlanGenerator', function (): void
 });
 
 it('junk payload is a 503 before any write', function (): void {
-    Ai::fakeAgent(SmartLogAgent::class, [['nonsense' => true]]);
+    Ai::fakeAgent(SmartLogAgent::class, [['nonsense' => true], ['nonsense' => true]]);
 
     $user = User::factory()->create();
 
@@ -59,6 +59,15 @@ it('junk payload is a 503 before any write', function (): void {
 
     $this->assertDatabaseCount('activity_logs', 0);
     $this->assertDatabaseCount('workout_sessions', 0);
+});
+
+it('retries once when the answer does not fit the form', function (): void {
+    Queue::fake();
+    Ai::fakeAgent(SmartLogAgent::class, [['nonsense' => true], smartLogPayload()]);
+
+    $this->actingAs(User::factory()->create(), 'sanctum')
+        ->postJson('/api/log', ['message' => 'Benched 100kg 3x5'])
+        ->assertCreated();
 });
 
 it('drops anything beyond facts and coerces types', function (): void {

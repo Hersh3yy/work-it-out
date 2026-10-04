@@ -26,14 +26,18 @@ final readonly class SdkSmartLogParser implements SmartLogParser
     public function parse(User $user, string $message): array
     {
         $agent = new SmartLogAgent(now()->toDateString());
-
-        $response = $agent->prompt(
+        $ask = fn (): array => $agent->prompt(
             $message,
             provider: config('ai.jobs.log.provider'),
             model: config('ai.jobs.log.model'),
-        );
+        )->toArray();
 
-        return $this->normalize($response->toArray());
+        try {
+            return $this->normalize($ask());
+        } catch (AiUnavailable) {
+            // One retry when the answer did not fit the form; a second miss is an outage.
+            return $this->normalize($ask());
+        }
     }
 
     /**

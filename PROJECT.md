@@ -24,7 +24,7 @@
 1. `git pull` on branch `m2-write-path`. Read this file, then `PLAN.md` (section 4 holds every decision from 2026-10-04, section 5 "Next, in order" holds the build order). The diary below says what happened last.
 2. `make up`, then `make test` (SQLite) and `make test-pg` (Postgres). Both must be green before touching anything. A laptop whose Postgres volume predates `docker/postgres/init.sql` needs `docker compose exec -T postgres psql -U sail -d work_it_out -c 'CREATE DATABASE testing OWNER sail'` once.
 3. Real parsing needs `GEMINI_API_KEY` and `AI_LOG_PROVIDER=gemini`, `AI_LOG_MODEL=gemini-3.5-flash-lite` in `.env` (gemini-2.5 is retired for new keys), then `docker compose up -d --force-recreate app`. Try it: `docker compose exec app php artisan log:simulate --user=<id> "bench 3x8 80"`.
-4. Next work item: "Next, in order" step 2 (Interpreter) in PLAN.md section 5.
+4. Next work item: "Next, in order" step 3 (Sets and conversation) in PLAN.md section 5. Try the interpreter alone: `docker compose exec app php artisan log:parse "I did deadlift: 90 x3 x 5"`.
 5. Work to the gate, `pint`, both suites, push the branch, CI green, diary entry here.
 
 ## Run it
@@ -126,7 +126,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [x] M1 Day-one blockers: adapters fixed, payload validated and capped, model name per provider in `config/ai.php`, `AiCall` reports every failure. Done 2026-10-03 <!-- id:n2 -->
 - [ ] M2 Facts-only write path. Done: test safety, facts-only parse with questions, `activity_logs`, `RecordSmartLog`, `RevertSmartLog`, answers on both doors, `StatSheet` port, chat core + Telegram polling, `log:simulate`, one model per job. Left: timezone Europe/Amsterdam, numbers as numbers everywhere, DiaryResource, login/register limiters, conversation ownership. RPG from rules parked <!-- id:n3 -->
 - [x] Foundation: PHP 8.5, Postgres locally, `LogType` and `ChatProvider` enums, `LogRecorded` observer. Done 2026-10-04 <!-- id:n14 -->
-- [ ] Interpreter: classify, parse, named rules, polite help for not understood, `log:parse` dry run, prompt examples and retry <!-- id:n15 -->
+- [x] Interpreter: classify, parse, named rules, polite help for not understood, `log:parse` dry run, prompt examples and retry. Done 2026-10-05 <!-- id:n15 -->
 - [ ] Sets and conversation: per-set storage, conversation window, max two questions, `/edit` <!-- id:n16 -->
 - [ ] v0 deploy: the polling bot as one supervisord worker on a Coolify VPS, registration closed in production, host checklist, smoke from the phone (PLAN.md "v0 deploy") <!-- id:n13 -->
 - [ ] M3 Remove nutrition entirely (decided 2026-09-27; waits until after v0), Latika rewritten to recovery/mobility/longevity <!-- id:n4 -->
@@ -153,6 +153,11 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-05 — Interpreter done: classify, parse, named rules
+- `MessageKind` (workout, body_weight, goal_or_info, coach_question, command, unknown); `MessageClassifier` port with `SdkMessageClassifier` (plain `RuleClassifier` first, then `ClassifierAgent` on the log job's model at temperature 0); `Interpreter` (classify, parse, named rules; saves nothing) used by the chat core and the app door (non-loggable kinds are a 422 with the reply). Named rules: `BareNumberIsNotBodyWeight` (stops, asks), `RepsTimesSetsHasTwoReadings` (empties sets and reps, asks for the number of sets; `AnswerOpenQuestion` fills reps from the pair). A weight with a unit is logged with no AI call. Parser prompt: worked examples, temperature 0.1, one retry when the JSON does not fit. `php artisan log:parse "text" [--rules-only]` prints the interpretation as JSON and writes nothing. Tests bind `FakeMessageClassifier` by default (`tests/TestCase.php`).
+- Live on gemini-3.5-flash-lite with Hiren's real messages: rainbow butterfly polite help; "90 x3 x5" asks; bare numbers never a weight; coach question honest "coming soon"; "104.5kg" no AI. Known gaps for step 3: squat 90/90/95/85/85 loses per-set weights; "5x5 today" asks the exercise but the answer is not tied to it. 122 passed on SQLite and Postgres.
+- Hiren is in with Gemini as the classifier for now; the VPS has no GPU, so no local model there.
 
 ### 2026-10-04 (late, 9) — Foundation done: enums and Observer
 - `LogType` (workout, biometrics, meal, general; `values()`, `touchesTraining()`) replaces the string literals in the agent schema, normalizer, recorder, receipt and `ActivityLog` cast. `ChatProvider` (telegram, whatsapp, app, simulate; `logSource()`) types `InboundMessage`, casts `ChannelIdentity`, validates `channel:link --provider`; `LogSource` gains `whatsapp`, `fromProvider` removed.

@@ -7,20 +7,19 @@ namespace App\Channels;
 use App\Actions\SmartLog\AnswerOpenQuestion;
 use App\Actions\SmartLog\RecordSmartLog;
 use App\Actions\SmartLog\RevertSmartLog;
-use App\Ai\Agents\SmartLogAgent;
-use App\Contracts\Ai\SmartLogParser;
 use App\Enums\LogSource;
 use App\Exceptions\AiUnavailable;
+use App\Interpretation\Interpreter;
 use App\Models\ChannelIdentity;
 use App\Models\User;
-use App\Services\Ai\AiCall;
 
 /**
  * The conversation core every chat provider shares: message in, reply text out.
  *
  * Checked in this order: unlinked sender (ignored), /start and /help, /undo,
- * an answer to the open question (no AI), then a free-text log. It knows
- * nothing about Telegram; a WhatsApp adapter would call the same method.
+ * an answer to the open question (no AI), then the interpreter (classify,
+ * parse, named rules) and the recorder. It knows nothing about Telegram; a
+ * WhatsApp adapter would call the same method.
  */
 final readonly class HandleInboundMessage
 {
@@ -32,8 +31,7 @@ final readonly class HandleInboundMessage
         .'/undo removes your last log.';
 
     public function __construct(
-        private SmartLogParser $parser,
-        private AiCall $ai,
+        private Interpreter $interpreter,
         private RecordSmartLog $record,
         private RevertSmartLog $revert,
         private AnswerOpenQuestion $answers,
@@ -87,12 +85,16 @@ final readonly class HandleInboundMessage
         }
 
         try {
-            $parsed = $this->ai->run($user, SmartLogAgent::class, fn (): array => $this->parser->parse($user, $text));
+            $interpretation = $this->interpreter->interpret($user, $text);
         } catch (AiUnavailable) {
             return "Couldn't reach the AI just now, so nothing was saved. Try again in a minute.";
         }
 
-        return $this->replies->receipt($this->record->handle($user, $text, $parsed, $source));
+        if (! $interpretation->shouldRecord()) {
+            return (string) $interpretation->reply;
+        }
+
+        return $this->replies->receipt($this->record->handle($user, $text, $interpretation->parsed, $source));
     }
 
     private function undo(User $user): string

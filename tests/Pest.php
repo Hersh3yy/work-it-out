@@ -2,10 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Channels\InboundMessage;
 use App\Contracts\Ai\NutritionParser;
 use App\Contracts\Ai\PlanGenerator;
 use App\Contracts\Ai\SmartLogParser;
 use App\Contracts\Ai\TrainerChat;
+use App\Enums\ChatProvider;
+use App\Models\ChannelIdentity;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Fakes\FakeNutritionParser;
 use Tests\Fakes\FakePlanGenerator;
@@ -111,4 +115,21 @@ function workoutFacts(array $exercises, array $overrides = []): array
 function lift(string $name, ?float $kg = 80.0, int $sets = 3, int $reps = 8): array
 {
     return ['exercise_name' => $name, 'sets' => $sets, 'reps' => $reps, 'weight_kg' => $kg];
+}
+
+/*
+| A chat message from the linked test sender, and that sender's user.
+*/
+
+function telegramText(string $text, string $sender = '4242'): InboundMessage
+{
+    return new InboundMessage(ChatProvider::Telegram, $sender, $sender, $text, 'Hiren');
+}
+
+function linkedUser(): User
+{
+    $user = User::factory()->create(['training_days_per_week' => 4]);
+    ChannelIdentity::create(['user_id' => $user->id, 'provider' => 'telegram', 'external_id' => '4242']);
+
+    return $user;
 }

@@ -13,6 +13,7 @@ use App\Models\User;
  *
  * The question names its field ("exercises.1.weight_kg"), so a reply like
  * "30", "32.5 kg", "5k" or "28 min" can be written straight into that entry.
+ * A sets-or-reps question carries the two counts, so the answer fills both.
  * Only the user's latest log, and only for six hours.
  */
 final readonly class AnswerOpenQuestion
@@ -60,7 +61,19 @@ final readonly class AnswerOpenQuestion
         }
 
         $value = min($value, $max);
-        $entry->update([$column => $column === 'weight_kg' ? $value : (int) round($value)]);
+        $changes = [$column => $column === 'weight_kg' ? $value : (int) round($value)];
+
+        $pair = $log->questions[0]['pair'] ?? null;
+
+        if ($column === 'sets' && is_array($pair)) {
+            if (! in_array((int) round($value), $pair, true)) {
+                return null;
+            }
+
+            $changes['reps'] = (int) round($value) === $pair[0] ? $pair[1] : $pair[0];
+        }
+
+        $entry->update($changes);
         $log->update(['questions' => null]);
 
         return $entry;
