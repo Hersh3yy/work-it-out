@@ -159,6 +159,9 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-10-05 (night, 2) — facts, not judgments
+- Hiren: the metrics were examples of the real goal (awareness and guidance); never ask "was that high effort?" (everyone says yes); smartwatches one day. PLAN.md catalogue reframed: effort and intensity are derived from the data (own usual pace, activity type and pace, later heart rate), the effort-flag dependencies removed, profile questions limited to facts the user knows.
+
 ### 2026-10-05 (night) — metrics catalogue; handoff
 - Hiren wants derived calculations kept for cardio health, strength per muscle group, run distance, VO2max, physical age and more. PLAN.md section 4 "Derived metrics catalogue": eleven metrics with method, inputs from the log and from the profile, and status; each becomes a `Metric` class under `StatSheet` with a unit test; the profile inputs they need (date of birth, sex, height, resting heart rate, waist) are optional and asked by the check-in. Formulas are a starting point, verified in the research spike before M4.
 - Open question added: delete abandoned drafts with their raw text (recommended) or keep it.

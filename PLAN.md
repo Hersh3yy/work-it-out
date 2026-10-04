@@ -191,6 +191,10 @@ flowchart LR
 
 ### Derived metrics catalogue (2026-10-05)
 
+The goal is awareness and guidance for the user; the metrics below are examples of that, not a list to build. A metric earns its place when it tells the user something they can act on.
+
+Ask for facts, never for judgments (Hiren, 2026-10-05). "Was that a hard effort?" gets a yes every time, so it is never asked. Effort and intensity come from the data: a run faster than the user's own usual pace for that distance, activity type and pace against standard intensity tables, later heart rate from a smartwatch. Facts the user knows (date of birth, height) may be asked; opinions about their own effort may not.
+
 Every number the profile shows is computed in PHP from the log, one `Metric` strategy class each under `StatSheet`, each with a unit test against a published worked example. Labelled "estimate" in the UI where the method is an estimate. Formulas below are the starting point; the research spike before M4 verifies each one against its primary source and writes `docs/metrics.md`.
 
 | Metric | Method (to verify) | Needs from the log | Needs from the profile | Status |
@@ -200,14 +204,14 @@ Every number the profile shows is computed in PHP from the log, one `Metric` str
 | Weekly volume per muscle group | hard sets and tonnage per group per ISO week | sets, taxonomy | none | needs taxonomy |
 | Progression per lift | e1RM trend over 4 to 8 weeks | weighted sets over time | none | ready once sets exist |
 | Run distance and pace | weekly distance, longest run, best pace per distance band | cardio entries with distance and time | none | ready |
-| VO2max estimate | Cooper 12-minute test (`(meters − 504.9) / 44.73`) or race-time tables (Daniels VDOT) from a hard recent run | a hard run with distance and time | none | needs a "this was a hard effort" flag |
-| Cardio health | weekly moderate and vigorous minutes against the WHO adult guideline (150 to 300 moderate or 75 to 150 vigorous, plus strength on 2 or more days) | cardio and sport durations, effort level | none | needs an effort level per session |
-| Fitness age ("physical age") | estimated VO2max compared with age and sex norms (the HUNT fitness calculator approach, NTNU) | VO2max estimate | date of birth, sex, resting heart rate, waist | needs profile inputs, asked by the check-in |
+| VO2max estimate | Cooper 12-minute test (`(meters − 504.9) / 44.73`) or race-time tables (Daniels VDOT) from a hard recent run | the fastest recent runs, picked from the log | none | ready once runs have distance and time |
+| Cardio health | weekly moderate and vigorous minutes against the WHO adult guideline (150 to 300 moderate or 75 to 150 vigorous, plus strength on 2 or more days) | cardio and sport durations, pace | none | intensity from activity type and pace, later heart rate |
+| Fitness age ("physical age") | estimated VO2max compared with age and sex norms (the HUNT fitness calculator approach, NTNU) | VO2max estimate | date of birth, sex, waist; resting heart rate from a smartwatch later | needs profile facts, asked by the check-in |
 | Relative strength score | DOTS (or Wilks) on the squat, bench, deadlift total | the three lifts | body weight, sex | ready once sets exist |
 | Body weight trend | 7-day moving average and weekly change | body weight logs | none | ready |
 | Consistency | training days per week against the plan, streak in weeks | sessions | training days per week | partly built (adherence) |
 
-The profile inputs these need (date of birth, sex, height, resting heart rate, waist) are optional, asked one at a time by the daily check-in, and stored as user-entered facts, never inferred.
+The profile facts these need (date of birth, sex, height, waist) are optional, asked one at a time by the daily check-in, and stored as user-entered facts, never inferred. Heart rate (resting and per session) waits for a smartwatch integration, which stays in "Later, on purpose".
 
 ### Input the app does not understand
 
