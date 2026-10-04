@@ -92,7 +92,7 @@ flowchart TB
     APP([App message widget])
   end
   CI([Daily check-in, one question])
-  CONV([Conversation: session memory, max 2 questions, then /edit])
+  CONV([Conversation: the open draft, asks until complete])
   INT([Interpreter: classify, parse, named rules])
   LOG[(Log: sessions, sets, notes; one piece per message)]
   PROF[(Profile: goals you confirmed, computed stats, notes citing messages)]
@@ -123,7 +123,7 @@ flowchart LR
   C -->|question for a coach| Q([Coach])
   C -->|not understood| H([Polite help reply, nothing saved])
   P --> N{Named rules}
-  N -->|two readings or a gap| A([Ask, max 2 per log])
+  N -->|two readings or missing info| A([Ask, keep the draft])
   N -->|clear| S([Record facts])
 ```
 
@@ -265,7 +265,7 @@ From Hiren's two sketches (2026-10-04), settled or proposed:
 - Three doors (Telegram, WhatsApp, an app message widget) into one conversation layer. Settled.
 - A parsed message goes two places: the log (facts: sessions, sets, the user's own words as notes) and the profile (the interpretation). Settled, with one rule: the interpretation layer never overwrites what the user said; every piece carries the message id it came from, so the profile is a clay blob where each piece can be found and removed.
 - Ambiguity means a question: "90 x3 x5" (Hiren meant 3 reps, 5 sets) is asked, never guessed; a bare number is never a body weight. Settled.
-- At most two questions back per log. After that the log is stored with gaps and the user edits the history (`/edit`, and the same over the API). Proposed.
+- (2026-10-05, replaces the two-question limit) Minimum required info, then log. An incomplete message becomes a draft: not in the log, not in the profile, no stats, no `LogRecorded`. The conversation asks one question at a time until the minimum is present, then the draft becomes a log. Minimum per exercise kind: weighted lift needs exercise, sets, reps and weight (each set may differ); bodyweight needs exercise, sets, reps; timed hold needs exercise and duration; cardio needs exercise and distance or time; sport needs exercise and duration; a body weight needs a number with a unit. The parser labels each exercise's kind, the named rule `MinimumInfoIsPresent` (plain code) decides what is missing. `cancel` discards the draft. Two answers in a row that do not fit offer `cancel`. A new workout message while a draft is open asks "finish the squat first, or cancel it?". A draft expires after 6 hours and the next reply says it was not saved. `/edit` stays for complete logs only.
 - Profile layers, proposed: (1) identity and settings the user entered; (2) goals the user confirmed; (3) the log; (4) computed stats, per exercise (best set, estimated 1RM, weekly volume) and per body area or movement pattern (push, pull, squat, hinge, core, conditioning), with a research step before the per-area formulas are fixed; (5) interpretations and notes written by the AI, each citing its messages. The RPG sheet, if kept, is a view on (4).
 - Coaches read the log and the profile and speak on request. Settled.
 - Formulas are the product (Hiren, 2026-10-04). The AI is the typist that turns text into rows; what makes Feetness worth using is the maths over those rows: estimated 1RM (Brzycki for 2 to 6 reps, Epley above), strength ratios to body weight per movement family, volume per muscle group, pace scoring. Testable, free, never hallucinated. Every new metric lands in one class under `StatSheet` with a unit test against known numbers. Settled.
@@ -278,7 +278,7 @@ From Hiren's two sketches (2026-10-04), settled or proposed:
 
 1. Foundation (1, done 2026-10-04): PHP 8.5; Postgres in Docker locally (MySQL out; SQLite stays for the fast suite; CI job `pest-pgsql`); enums `LogType` and `ChatProvider`; `LogRecorded` and `LogReverted` events with the stats job as a listener (Observer).
 2. Interpreter (2, done 2026-10-05): `Interpreter` port with a classify step and the parse step; named rules (`BareNumberIsNotBodyWeight`, `RepsTimesSetsHasTwoReadings`, `MessageIsNotAboutTraining`); the polite reply for not understood; `php artisan log:parse` dry run; worked examples in the prompt, one retry on invalid JSON, low temperature.
-3. Sets and conversation (2.5): per-set storage (an exercise has sets, each with its own weight and reps); the conversation window (the last one or two messages of the open session go in with the new one); max two questions per log; `/edit` and the API equivalent.
+3. Sets and drafts (3): per-set storage (an exercise has sets, each with its own weight and reps); the parser labels each exercise's kind; drafts (`pending_logs`: the messages so far, the facts so far, what is missing, expiry) as the conversation memory; `MinimumInfoIsPresent`; answers and follow-up messages fill the draft; `cancel`; a complete draft goes through `RecordSmartLog`; the app door gets the same (`POST /api/log` returns the draft and its question, `POST /api/drafts/{id}/answer`); `/edit` for complete logs.
 4. Then the M2 correctness leftovers, v0 deploy, M4 with the eval cases, and the rest as below.
 
 **Fast track (2026-10-04, superseded by the list above for its first steps).** The order is now: finish M2, then **v0 deploy** (the polling bot as one worker on a Coolify VPS, a slice of M6 defined below), then M4 (simulation and the eval set from Hiren's stored messages), then M5 and M6 harden the loop (webhook, budget, the full host checklist). M3 (nutrition) waits until after v0. M7 onward unchanged.
