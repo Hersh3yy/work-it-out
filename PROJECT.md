@@ -7,21 +7,21 @@
 
 # Feetness (work-it-out) — cockpit
 
-**What it is** · The real backend for Hiren's AI fitness app: log workouts/meals in plain language, three AI coaches parse it and react in character, and an RPG stat sheet grows from your logged data. API-only (no UI) — a Nuxt or Flutter frontend comes later. Goal behind it: help Hiren cut fat / build muscle at 105kg, and maybe become a product.
+**What it is** · The real backend for Hiren's fitness app: text a workout or your weight in plain language (Telegram now, an app later), an AI turns it into facts, PHP computes every number from those facts, and you get a receipt. Coaches speak only when asked. API-only; a Nuxt or Flutter frontend comes later. Goal behind it: help Hiren cut fat / build muscle at 105kg, and maybe become a product.
 **This is the backend of record.** The `koala/ai-fitness-coaches-&-tracker` React+Express repo was a throwaway Google AI Studio visualization of the idea, not the plan. Build here.
 **Stack** · Laravel 13 · PHP 8.5 · `laravel/ai` SDK (provider-agnostic) · Sanctum bearer auth · PostgreSQL 17 (SQLite for the fast suite) · Redis (queue/cache) · Pest 4 tests · Docker (Sail-style compose) · Pint
-**Goal right now** · Hiren wants to use it from the weekend of 2026-10-03 to gamify two weeks of fat loss and muscle gain. Realistic: the Telegram log loop running from the laptop (poll mode, no deploy) after M0, M1, M2.1 and a minimal M5+M6; that is 4 to 5 focused sittings, not one day.
-**Status** · 🟡 M0 and M1 done: runs locally, the two SDK adapter fatals fixed, payload validated at the boundary, every AI call goes through `AiCall`, suite green (46 tests, 153 assertions), CI green, audit clean. Live call against a local model still unverified (Msty was not running). M2 next — well-architected (ports/adapters, enums, FormRequests, Resources, contract tests) with the full plan in `PLAN.md`. Not yet bulletproof: two probable fatals in the SDK adapters (unverified until `vendor/` is installed), the adherence bug on the AI-log path, the smart-log write isn't transactional, the app runs in UTC for a user in Amsterdam, several endpoints are untested, and the seeder can't exercise every endpoint. Not run locally in this checkout yet.
-**Repo** · git@github.com:Hersh3yy/work-it-out.git · working on `master` (branch for changes; merge to `master` only when sure)
+**Goal right now** · Text the bot from the gym and trust what it stores. The Telegram loop already runs from the laptop by long polling. Next: per-set storage and drafts (n16), then the M2 correctness leftovers, then v0 deploy so the laptop can sleep.
+**Status** · 🟡 Foundation and Interpreter done, M2 mostly done, all on `master`. 122 tests, 339 assertions, green on SQLite and Postgres; CI green; audit clean. Telegram loop works from the laptop (polling). Live parse verified on gemini-3.5-flash-lite. Not yet trustworthy for real sessions: one weight per exercise (real sets differ), no drafts, UTC timezone.
+**Repo** · git@github.com:Hersh3yy/work-it-out.git · one branch only: `master`. Short-lived feature branches are fine, merged and deleted the same session. No `deploy` branch: Coolify deploys `master` manually, auto-deploy off
 **Hosting** · designed for Coolify/VPS (see `.env.example` production block); nothing deployed yet. Heed the VAMS VPS lessons: never expose service ports, rotate keys.
 **ClickUp** · not linked yet. Needs `CLICKUP_API_KEY` in the shell and a list id here as `<!-- clickup_list:ID -->`; then `node ~/.claude/skills/project-map/scripts/clickup-sync.mjs PROJECT.md`
-**Last assessed** · 2026-10-04
+**Last assessed** · 2026-10-05
 
 ---
 
 ## Start here (next session, any machine)
 
-1. `git pull` on branch `m2-write-path` (not merged to `master` yet). Read this file, then `PLAN.md`: section 4 holds every decision, section 5 "Next, in order" the build order. The diary below says what happened last.
+1. `git pull` on `master` (the only branch). Read this file, then `PLAN.md`: section 4 holds every decision, section 5 "Next, in order" the build order. The diary below says what happened last.
 2. Since 2026-10-04 the stack is PHP 8.5 and Postgres 17, not MySQL. On a laptop that last ran the MySQL stack:
    - `.env` is not in git. Set `DB_CONNECTION=pgsql`, `DB_HOST=postgres`, `DB_PORT=5432`, `DB_DATABASE=work_it_out`, `DB_USERNAME=sail`, `DB_PASSWORD=password` (compare with `.env.example`).
    - `docker compose build app`, then `docker compose up -d --remove-orphans` (removes the old MySQL container, keeps its volume).
@@ -43,76 +43,117 @@ docker compose exec app php artisan key:generate
 make fresh              # migrate:fresh --seed  (one demo user + ~2 weeks of data)
 make test               # Pest, runs inside the container
 ```
-API on http://localhost:8088, Mailpit on http://localhost:8025. Register a test user with `make register-test`. Local AI runs against a **free local model** (Msty MLX / Granite) via an OpenAI-compatible endpoint — you develop without spending a cent on tokens. Production swaps to `gemini-2.5-flash` with one env change (`AI_DEFAULT_PROVIDER=gemini`).
+API on http://localhost:8088, Mailpit on http://localhost:8025. Register a test user with `make register-test`. Local AI runs against a **free local model** (Msty MLX / Granite) via an OpenAI-compatible endpoint — you develop without spending a cent on tokens. Hosted parsing: set `AI_LOG_PROVIDER=gemini` and `AI_LOG_MODEL=gemini-3.5-flash-lite` (gemini-2.5 is retired for new keys). Each job (log, plan, chat) has its own provider and model in `config/ai.php` `jobs`. Dry run a message with `php artisan log:parse "bench 3x8 80"`; full chat path with `php artisan log:simulate --user=1 "..."`; the bot with `php artisan channel:telegram:poll`.
 
 ## Status
 
-The core loop is built and mostly correct: register (Sanctum), fill a profile, log workouts/meals/body-weight either structured or as free text, get one AI call that parses the log plus writes three coach reactions, a diary line, and RPG deltas, then read it all back via dashboard/stats/diary endpoints. Auth and per-user data scoping are solid (no cross-user leakage found). The AI layer is cleanly abstracted behind ports with test fakes, so the whole app is testable and providers are swappable. What keeps it at yellow: the AI-log path marks every workout `completed_planned = false` so adherence always reads 0%; the smart-log write isn't wrapped in a transaction and can orphan rows on failure; Dashboard/Nutrition/BodyWeight/Diary/Profile-update have no tests; and the seeder leaves RPG/feedback/diary tables empty, so "simulate the whole backend from seed data" isn't yet possible. None of these are architecture problems — they're the finishing work to make it bulletproof.
+A free-text message goes through one path on every door: classify (plain rules first, then a model at temperature 0), parse into facts only (the model never invents a number or a judgment), named rules that catch known traps (a bare number is never a body weight; "90 x3 x5" is asked, not guessed), then `RecordSmartLog` writes it in one transaction and answers with a receipt and at most one question. A reply like "30" or "skip" fills or clears that question without AI. `/undo` reverts one log exactly. Stats are recomputed by a listener after commit. Telegram works by long polling from the laptop for linked users only.
+
+What keeps it yellow: the data model stores one weight per exercise while real sets differ (the squat message "90 90 95 85 85" breaks it), so per-set storage and drafts (n16) come before real use; timezone is still UTC; dashboard, body weight and profile endpoints are thinly tested; nothing is deployed, so the bot only answers while the laptop runs the poller.
 
 ## Issues
 
 | Sev | Issue | Where |
 |---|---|---|
-| fixed in M1 (2026-10-03) | `SdkSmartLogParser` and `SdkPlanGenerator` called `->forUser()` and `->structured()` which do not exist on one-shot agents; now `->prompt()->toArray()` and `->prompt()`, covered by `SdkAdaptersTest` through the SDK's own agent fake | `app/Ai/SdkSmartLogParser.php:26`, `app/Ai/SdkPlanGenerator.php:33` |
-| serious | App timezone is UTC while Hiren logs from Amsterdam: a 00:30 local log lands on yesterday, a Monday 00:30 log in last week, streak and adherence day boundaries shift | `config/app.php:68`, `Jobs/UpdateUserStats.php:82` |
-| serious | Free-text logs fragment: two messages from one gym visit make two sessions, and "bench", "Bench Press", "benchpress" become three PRs | `SmartLogController.php:134-146`, `Services/Stats/PersonalRecordService.php:59` |
-| serious | AI-logged workouts hardcode `completed_planned=false`; adherence only counts `true`, so logging via AI always shows 0% adherence | `SmartLogController.php:140`, `Jobs/UpdateUserStats.php` |
-| serious | Smart-log write is not transactional; a mid-way failure leaves orphaned session/feedback rows | `SmartLogController.php:62-110` |
-| serious | `DiaryEntry.content` can be null (`diary_text ?? summary`, both may be absent) → insert throws on a non-nullable column, uncaught and outside any transaction | `SmartLogController.php:105` |
-| serious | No tests for Dashboard, Nutrition, BodyWeight, Diary, Profile update, or the smart-log meal/biometrics branches | `tests/Feature/*` |
-| serious | Seeder can't exercise every endpoint: no custom_rpg_stats / activity_feedbacks / diary_entries seeded, no factories for them, only one user | `database/seeders/DatabaseSeeder.php` |
-| warning | Dashboard fires 3 overlapping full-history session queries; PersonalRecords scans the user's entire workout history uncached on every call — slow for active users | `DashboardController.php:21-56`, `Services/Stats/PersonalRecordService.php` |
-| warning | Missing composite `(user_id, logged_at)` indexes on the hot log tables | `workout_sessions`, `nutrition_logs`, `body_weight_logs` |
-| warning | `training_days_per_week` not cast to int but compared with `=== 0`; inconsistent with ProfileIntakeService's `(int)` guard | `Jobs/UpdateUserStats.php:46` |
-| warning | `/diary` returns a raw paginator and leaks stored `raw_message` to the client (no DiaryResource) | `DiaryController.php` |
-| minor | No destroy route for body-weight logs | `routes/api.php` |
-| minor | Dead scaffolding + no-op: `tests/**/ExampleTest.php`, `ProfileController::update` self-assign of password | `ProfileController.php:42` |
-| minor | README is stock Laravel; no CLAUDE.md/AGENTS.md; `ruby-app-scaffold-prompt.md` is a stale spec (Inertia/Vue/2 coaches) the build has outgrown | repo root |
+| serious | One weight per exercise entry; real sessions have a weight per set. "squat 90 90 95 85 85" becomes five entries with no reps. Fix is n16 (per-set storage + drafts) | `exercise_entries`, `RecordSmartLog::recordWorkout` |
+| serious | App timezone is UTC while Hiren logs from Amsterdam: a 00:30 local log lands on yesterday, a Monday 00:30 log in last week | `config/app.php:70` |
+| serious | No drafts: an incomplete message is saved as a log with a question; a log spanning several messages is not understood. n16 | `app/Channels/HandleInboundMessage.php` |
+| warning | The poller advances and stores the Telegram offset before handling the message, so a crash mid-handle loses that one message (at-most-once). Fine for v0; the webhook in M6 stores first | `app/Console/Commands/TelegramPoll.php:63-66` |
+| warning | Dashboard, body weight, profile update and diary endpoints have few or no tests | `tests/Feature/*` |
+| warning | Seeder has one user and leaves activity logs and diary empty; no factories for `ActivityLog`, `DiaryEntry`, `CustomRpgStat` | `database/seeders/DatabaseSeeder.php` |
+| warning | Dashboard runs overlapping full-history queries; `PersonalRecordService` scans all history uncached; no `(user_id, logged_at)` indexes | `DashboardController.php`, `PersonalRecordService.php` |
+| warning | `/diary` returns a raw paginator, not a Resource; decimals still serialize as strings in some Resources | `DiaryController.php:22`, `UserResource.php` |
+| warning | Nutrition is still in the code (routes, controller, parser, meal branch in `RecordSmartLog`). Decided: delete in M3, after v0 | `routes/api.php`, `RecordSmartLog::recordMeal` |
+| minor | No login or register rate limiter beyond the global 60/min; no conversation ownership check in chat | `AppServiceProvider.php`, `AiTrainerController.php` |
+| minor | README is stock Laravel; `ruby-app-scaffold-prompt.md` is a stale spec | repo root |
+| fixed 2026-10-04 | `activity_feedbacks.loggable_id` was an integer while workouts use ULIDs: every AI-logged workout was a 500 on MySQL, invisible on SQLite. Replaced by `activity_logs` with a ULID morph | `2026_10_04_000001_replace_activity_feedbacks_with_activity_logs.php` |
+| fixed 2026-10-04 | The test suite inside the container read the container's env and wiped the dev database. `phpunit.xml` now forces the test env as env and server vars | `phpunit.xml` |
+| fixed 2026-10-04 | Adherence 0% for AI logs, non-transactional write, null diary, fragmented sessions and exercise names | `RecordSmartLog`, `ExerciseAliases`, `UpdateUserStats` |
+| fixed 2026-10-03 | SDK adapter fatals (`forUser()`, `structured()`) | `app/Ai/Sdk*` |
 
 ## Guide
 
-API-only Laravel. Every route lives in `routes/api.php`, all authenticated ones behind `auth:sanctum`; the AI routes (`/log`, `/trainer/chat`, `/plans/*`) sit behind `throttle:trainer-chat` (20 req/user/hour, defined in `AppServiceProvider`). Requests are validated by FormRequests, responses shaped by API Resources (mostly).
+API-only Laravel 13 on PHP 8.5. Routes in `routes/api.php` behind `auth:sanctum`. Three doors (Telegram now, WhatsApp later, the app) share one log path; a feature on one door and not the others is a bug. Full decisions and build order: `PLAN.md` sections 4 and 5.
 
-The AI layer is the heart and is deliberately hexagonal:
-- **Ports** (`app/Contracts/Ai/*`): `TrainerChat`, `SmartLogParser`, `PlanGenerator`, `NutritionParser`. Controllers depend only on these.
-- **Adapters** (`app/Ai/Sdk*`): wrap the `laravel/ai` SDK. Bound to ports in `AppServiceProvider::register`.
-- **Agents** (`app/Ai/Agents/*`): pure prompt-builders. `SmartLogAgent` is the big one — one structured call returns parse + three coach reactions + diary + RPG deltas.
-- **Fakes** (`tests/Fakes/*`): swapped in for the ports so the whole flow is testable with zero AI calls.
+```mermaid
+flowchart LR
+  TG["Telegram poller"] --> HIM["HandleInboundMessage"]
+  SIM["log:simulate"] --> HIM
+  HTTP["POST /api/log"] --> INT
+  HIM -->|"answer or skip"| AOQ["AnswerOpenQuestion"]
+  HIM -->|"/undo"| REV["RevertSmartLog"]
+  HIM --> INT["Interpreter"]
+  INT --> CLS["Classify: rules then model"]
+  INT --> PAR["Parse: facts and questions"]
+  INT --> RUL["Named rules"]
+  INT -->|"loggable"| REC["RecordSmartLog"]
+  REC -->|"one transaction"| DB[("Postgres")]
+  REC -->|"after commit"| EVT["LogRecorded"]
+  EVT --> STATS["RefreshTrainingStats"]
+  REC --> RCPT["Receipt and one question"]
+```
 
-The three coaches live in `app/Enums/TrainerPersona.php` (Strategy pattern — each case owns its full system prompt), and each has a defined job:
-- **Lt. Surge** — drill-sergeant. Pushes you harder, holds you to goals. RPG: strength.
-- **Shen** — friendly fit-bro raver. The "what to do next" coach: he reads your recent split and suggests the next session, giving 3-4 concrete options (e.g. after bench today + back/biceps yesterday: squats, deadlifts, abs, or cardio/mobility). RPG: stamina.
-- **Latika** — yogi/nutritionist. Food, stretching, recovery, longevity. RPG: vitality.
+Where things live:
+- Chat core: `app/Channels/HandleInboundMessage.php` (provider-agnostic), `app/Channels/Telegram/*`, `ReplyComposer`. Linked users only: `channel_identities` (`php artisan channel:link email id --provider=telegram|simulate`).
+- Interpreter: `app/Interpretation/` (`Interpreter`, `RuleClassifier`, `Rules/*`). Saves nothing; every door decides what to do with the result.
+- AI ports and adapters: `app/Contracts/Ai/*` (`MessageClassifier`, `SmartLogParser`, `TrainerChat`, `PlanGenerator`), `app/Ai/Sdk*`, agents in `app/Ai/Agents/*`, all calls wrapped by `App\Services\Ai\AiCall`. Model per job in `config/ai.php` `jobs`.
+- Write path: `app/Actions/SmartLog/` (`RecordSmartLog`, `AnswerOpenQuestion`, `RevertSmartLog`, `SmartLogResult`).
+- Events: `LogRecorded` and `LogReverted`, listener `RefreshTrainingStats` dispatches `UpdateUserStats` for training logs only.
+- Stats behind the `StatSheet` port (`RpgStatSheet` today); personal records in `PersonalRecordService`, grouped by `ExerciseAliases::key`.
+- Enums for closed sets: `LogType`, `MessageKind`, `ChatProvider`, `LogSource`, `TrainerPersona` (the coaches, Strategy).
+- Tests: fakes in `tests/Fakes` bound by default in `tests/Pest.php` (including `FakeMessageClassifier`), so no test reaches a model. `tests/Evals/messages.txt` holds real messages for `log:simulate --file`.
 
-Persona maps to one RPG core stat each. Real numbers come from `PersonalRecordService` (computes PRs from logged data, no LLM) and are injected into every prompt so coaches quote true figures, never invented ones. Note: Shen's next-move role needs his prompt in `TrainerPersona.php` and his log/chat context to actually include the last several days of training split by muscle group — today's context (`TrainerAgent::buildContext`, last 7 days of sessions + exercises) has the raw data but doesn't group it into "what you trained recently," so the suggestion logic is a build task, not just a prompt tweak.
-
-Data model (all user-scoped, ULIDs on the log tables): `users` (profile + goals + adherence/streak + rpg_strength/stamina/vitality), `workout_sessions` → `exercise_entries`, `nutrition_logs`, `body_weight_logs`, `custom_rpg_stats`, `activity_feedbacks` (the three coach reactions per log, polymorphic to the logged thing), `diary_entries`, and the SDK's `agent_conversations` for chat memory. `UpdateUserStats` (queued job) recomputes adherence + streak after each workout.
+Data: `users`, `workout_sessions` (ULID) to `exercise_entries` (each remembers the `activity_log_id` that added it), `body_weight_logs`, `activity_logs` (one row per message: raw text, summary, ULID morph to what it logged, open questions, source, `logged_on`), `diary_entries`, `channel_identities`, the SDK's `agent_conversations`.
 
 ## Hard parts
 
 ### The whole AI layer is swappable and free to test
 
-🔭 **What it does** — Controllers never touch the AI SDK. They depend on four port interfaces; real adapters wrap `laravel/ai` in production, and in tests the container binds Fakes instead, so the full log-to-DB flow runs deterministically with zero tokens. Provider is one env var (`AI_DEFAULT_PROVIDER`) across 15 back-ends.
+🔭 **What it does** — Nothing outside `app/Ai` touches the SDK. Callers depend on ports (`MessageClassifier`, `SmartLogParser`, `TrainerChat`, `PlanGenerator`); real adapters wrap `laravel/ai`, and `tests/Pest.php` binds fakes by default, so the whole chat-to-database path runs with zero tokens. Provider and model are chosen per job in `config/ai.php`.
 
-⚖️ **Why this way** — It solves the "AI is slow, costs money, and is non-deterministic" testing problem at the architecture level, and it means the choice of model/provider is a config change, not a code change.
+⚖️ **Why this way** — AI is slow, costs money and is non-deterministic; putting it behind a port makes all three a configuration concern instead of a testing problem.
 
-🗣️ **Say it to a senior** — "The AI is behind ports with adapter + fake implementations, so the trainer, log parser, and plan generator are all unit-testable without a live model, and swapping Gemini for a local model is a one-line env change."
+🗣️ **Say it to a senior** — "Every model call sits behind a port with an SDK adapter and a fake, so the suite never hits a model and switching provider per job is config."
 
-### One structured call does five jobs, and RPG uses deltas not snapshots
+### The model types, PHP decides
 
-🔭 **What it does** — `SmartLogAgent` sends a single prompt with a JSON schema that returns the parsed activity, one reaction per coach, a diary sentence, and small integer RPG deltas (0–5). The server clamps and applies the deltas; it never asks the model to re-emit the whole stat sheet.
+🔭 **What it does** — The parser returns facts and, for a value the user did not give, one question; it never guesses and never judges. Then named rules in plain PHP override the model where the reading is ambiguous: `BareNumberIsNotBodyWeight` stops "90 90 95" from becoming a body weight, `RepsTimesSetsHasTwoReadings` turns "90 x3 x5" into a question that carries both counts, so the answer "5" fills sets and reps without another call.
 
-⚖️ **Why this way** — One call is far cheaper than four and gives every coach the same context to reference the actual log. Returning deltas instead of the full custom-stats array keeps output tokens flat as history grows (the mistake the React prototype made).
+⚖️ **Why this way** — Asking the model to be careful is a hope; a rule with a unit test is a guarantee. Every number downstream (records, adherence, RPG) is computed in PHP from the stored facts, so the model can only ever be wrong about typing, not about maths.
 
-🗣️ **Say it to a senior** — "Logging is a single schema-constrained call returning parse + coach reactions + bounded RPG deltas, so cost is constant per log regardless of how much history the user has."
+🗣️ **Say it to a senior** — "The LLM is the typist: it extracts facts, and deterministic named rules plus PHP formulas own every ambiguity and every number."
 
-### Free local model in dev, cheap flash in prod
+### Transaction first, event after commit
 
-🔭 **What it does** — Local `.env` points the OpenAI driver at a Msty MLX endpoint running Granite locally, so every dev AI call is free and offline. Production flips to `gemini-2.5-flash`.
+🔭 **What it does** — `RecordSmartLog` writes the log, session, entries, weight and diary inside one `DB::transaction`, and only after the closure returns does it dispatch `LogRecorded`. The stats job is a listener on that event, so the action knows nothing about stats.
 
-⚖️ **Why this way** — This is the real answer to "don't lose a billion dollars in AI costs": you never burn API budget while building, and production runs on a cheap flash tier behind a 20/hour rate limit.
+⚖️ **Why this way** — Dispatching a queued job inside the transaction lets the worker run before the commit and read rows that do not exist yet (Laravel's redis queue has `after_commit` false by default); firing after the closure means listeners only ever see committed data.
 
-🗣️ **Say it to a senior** — "Dev runs against a local Granite model via the OpenAI-compatible driver, so iteration costs nothing; prod is gemini-2.5-flash, rate-limited per user."
+🗣️ **Say it to a senior** — "The write is one unit of work, and side effects hang off an event fired after commit, so a stats job can never race the rows it reads."
+
+### The ULID morph bug SQLite could not see
+
+🔭 **What it does** — `activity_feedbacks.loggable_id` was an integer column, but `workout_sessions` use ULID keys (26 characters). SQLite stores anything in any column and the suite passed; MySQL rejected the value, so every AI-logged workout was a 500 in the real stack. `activity_logs` uses `nullableUlidMorphs`.
+
+⚖️ **Why this way** — The lesson is the Postgres suite in CI (`make test-pg`, job `pest-pgsql`): a type bug that only a strict database catches needs a strict database in the loop.
+
+🗣️ **Say it to a senior** — "SQLite's type affinity hid an integer morph column receiving ULIDs; we caught it by running the suite on the production engine too."
+
+### Why the test env is forced twice
+
+🔭 **What it does** — `phpunit.xml` sets every test variable as both `<env force="true">` and `<server force="true">`. The Docker container exports `.env` as real environment variables, which normally win over PHPUnit's, so the suite in the container pointed at the dev database and `RefreshDatabase` wiped it. Laravel reads `$_SERVER` before `$_ENV`, hence both.
+
+⚖️ **Why this way** — Without `force`, PHPUnit only fills variables that are unset; in a container they are always set.
+
+🗣️ **Say it to a senior** — "PHPUnit env values are defaults unless forced, and Laravel reads `$_SERVER` first, so we force both to keep tests off the dev database."
+
+### Long polling is at-most-once
+
+🔭 **What it does** — `channel:telegram:poll` calls `getUpdates` with an offset; Telegram forgets every update below it. The poller stores `update_id + 1` before handling each message, so a crash mid-handle drops that one message rather than replaying it.
+
+⚖️ **Why this way** — Replaying after a crash could log the same set twice, which is worse for a training log than losing one message the user sees go unanswered. The M6 webhook stores the update first and dedupes on `update_id` for exactly-once.
+
+🗣️ **Say it to a senior** — "The poller acknowledges before processing, so delivery is at-most-once by choice; the webhook path will store first and dedupe on update_id."
 
 ## Roadmap — near future
 
@@ -155,134 +196,16 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 ---
 
+
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
-### 2026-10-05 (night, 2) — facts, not judgments
-- Hiren: the metrics were examples of the real goal (awareness and guidance); never ask "was that high effort?" (everyone says yes); smartwatches one day. PLAN.md catalogue reframed: effort and intensity are derived from the data (own usual pace, activity type and pace, later heart rate), the effort-flag dependencies removed, profile questions limited to facts the user knows.
+### 2026-10-05 — merged to one branch, map refreshed
+- Pulled the other laptop's work: 18 commits on `m2-write-path` (Foundation: PHP 8.5, Postgres 17, enums, `LogRecorded` observer; Interpreter: classify, parse, named rules, `log:parse`; M2 write path: `RecordSmartLog`, `AnswerOpenQuestion`, `RevertSmartLog`, `activity_logs`; Telegram polling loop; model per job; gemini-3.5-flash-lite; plan decisions in PLAN.md section 4).
+- Verified before merging: fast-forward from `master`, `composer install` on host PHP 8.5, 122 passed (339 assertions) on SQLite, `pint` clean, `composer audit` clean, CI green on the last three commits. Read the core code (recorder, interpreter, rules, chat core, answers, poller, migration, phpunit.xml).
+- Merged `m2-write-path` into `master` (fast-forward, 2546392) and deleted `m0-baseline`, `m1-adapters`, `m2-write-path` and `deploy` locally and on GitHub. One branch now. Coolify will deploy `master` manually; PLAN.md updated to match.
+- PROJECT.md: What it is, Goal, Status, Issues, Guide (Mermaid of the log path), Hard parts (six blocks: ports, the model types PHP decides, transaction then event, the ULID morph bug, forced test env, at-most-once polling) rewritten for the current code.
+- This laptop's local `.env` and containers are still on MySQL and PHP 8.4; follow Start here step 2 before running `make test` in Docker.
+- Not done: ClickUp (no key, no list).
 
-### 2026-10-05 (night) — metrics catalogue; handoff
-- Hiren wants derived calculations kept for cardio health, strength per muscle group, run distance, VO2max, physical age and more. PLAN.md section 4 "Derived metrics catalogue": eleven metrics with method, inputs from the log and from the profile, and status; each becomes a `Metric` class under `StatSheet` with a unit test; the profile inputs they need (date of birth, sex, height, resting heart rate, waist) are optional and asked by the check-in. Formulas are a starting point, verified in the research spike before M4.
-- Open question added: delete abandoned drafts with their raw text (recommended) or keep it.
-- Handoff: everything committed and pushed on `m2-write-path`; CI green on the last code commit. Start here rewritten for a laptop still on the MySQL stack. CLAUDE.md points at the interpreter, `log:parse`, `log:simulate` and the current build order. The roadmap deck in `docs/roadmap-deck` is still the 2026-10-03 version; update it in one pass after step 3.
-
-### 2026-10-05 — minimum required info replaces the two-question limit
-- Hiren: without a weight we should not log; ask until we have it. Agreed with a safeguard: the incomplete message is a draft (not log, not profile, no stats) until the minimum per exercise kind is present; `cancel` discards; drafts expire after 6 hours with a notice. PLAN.md section 4, the interpreter diagram and step 3 (now "Sets and drafts", 3 sittings) updated.
-
-### 2026-10-05 — Interpreter done: classify, parse, named rules
-- `MessageKind` (workout, body_weight, goal_or_info, coach_question, command, unknown); `MessageClassifier` port with `SdkMessageClassifier` (plain `RuleClassifier` first, then `ClassifierAgent` on the log job's model at temperature 0); `Interpreter` (classify, parse, named rules; saves nothing) used by the chat core and the app door (non-loggable kinds are a 422 with the reply). Named rules: `BareNumberIsNotBodyWeight` (stops, asks), `RepsTimesSetsHasTwoReadings` (empties sets and reps, asks for the number of sets; `AnswerOpenQuestion` fills reps from the pair). A weight with a unit is logged with no AI call. Parser prompt: worked examples, temperature 0.1, one retry when the JSON does not fit. `php artisan log:parse "text" [--rules-only]` prints the interpretation as JSON and writes nothing. Tests bind `FakeMessageClassifier` by default (`tests/TestCase.php`).
-- Live on gemini-3.5-flash-lite with Hiren's real messages: rainbow butterfly polite help; "90 x3 x5" asks; bare numbers never a weight; coach question honest "coming soon"; "104.5kg" no AI. Known gaps for step 3: squat 90/90/95/85/85 loses per-set weights; "5x5 today" asks the exercise but the answer is not tied to it. 122 passed on SQLite and Postgres.
-- Hiren is in with Gemini as the classifier for now; the VPS has no GPU, so no local model there.
-
-### 2026-10-04 (late, 9) — Foundation done: enums and Observer
-- `LogType` (workout, biometrics, meal, general; `values()`, `touchesTraining()`) replaces the string literals in the agent schema, normalizer, recorder, receipt and `ActivityLog` cast. `ChatProvider` (telegram, whatsapp, app, simulate; `logSource()`) types `InboundMessage`, casts `ChannelIdentity`, validates `channel:link --provider`; `LogSource` gains `whatsapp`, `fromProvider` removed.
-- Observer: `LogRecorded` (after commit) and `LogReverted` events; `RefreshTrainingStats` listener (auto-discovered) dispatches `UpdateUserStats` only for workouts. `RecordSmartLog` and `RevertSmartLog` no longer know about the stats job. `LogEventsTest` proves the wiring.
-- Undo now describes the saved entries ("Bench Press 3x8 @ 80 kg") instead of the model's summary. Live check on PHP 8.5 + Postgres + Gemini: log, receipt, undo all work. Hiren's dev user is id 1 on the fresh Postgres database. 106 passed on SQLite and Postgres.
-- Next: Interpreter (PLAN.md section 5, step 2).
-
-### 2026-10-04 (late, 8) — Foundation part 1: PHP 8.5 and Postgres
-- Docker (dev and production images) on `php:8.5-fpm-alpine` with `pdo_pgsql` instead of `pdo_mysql`; `composer.json` `^8.5` (lock refreshed). Compose runs `postgres:17-alpine` (port bound to 127.0.0.1:5433 in the override), `docker/postgres/init.sql` creates `testing`. `.env` and `.env.example` on `pgsql`. `phpunit.pgsql.xml` and `make test-pg` replace the MySQL pair; CI job `pest-pgsql` on PHP 8.5. The old MySQL container was removed with `--remove-orphans`; its `mysql-data` volume is kept (delete by hand when sure).
-- 102 passed on SQLite and on Postgres, PHP 8.5.11 in the container. Dev database is fresh: re-create Hiren's user with `channel:link`.
-- Left in Foundation: `LogType` and `ChatProvider` enums, `LogRecorded` and `LogReverted` events.
-
-### 2026-10-04 (late, 7) — classifier, Jev, modern PHP; plan consolidated
-- Hiren asked about classifiers and Jev, and whether the code is modern PHP 8.5 and Laravel 13. Jev checked on typesafe.ai: real, typed answers with calibrated confidence, cheap and fast, but early access behind a waitlist with no public API; planned as a future adapter behind the classify port. Runtime is PHP 8.4 in Docker and CI (`composer.json` `^8.3`), so 8.5 features are not usable yet; log type and provider are string literals in several places.
-- PLAN.md: section 3 redrawn as mermaid (three doors and one core, the interpreter pipeline, the profile as a clay blob), decisions (classifier first, Jev candidate, PHP 8.5 and enums), "Next, in order" (Foundation, Interpreter, Sets and conversation). PROJECT.md: Start here rewritten for this laptop and the current state, roadmap items n14 to n16.
-
-### 2026-10-04 (late, 6) — observer yes, builder no, named rules, unknown input
-- Hiren: Observer yes, Builder no, Specification renamed to named rules with a plain explanation; nonsense input must get a respectful reply listing what works. Verified today "rainbow butterfly" is stored as a general log ("Noted: rainbow butterfly"), undone. PLAN.md: `unknown` log type and reply, prompt practices in plain words (in place vs missing).
-
-### 2026-10-04 (late, 5) — pattern map re-checked; interpreter test tool planned
-- Hiren wants to tweak and test the interpreter alone. PLAN.md: `log:parse` dry-run command and the eval cases file (M4). Pattern table in PLAN.md section 3 rewritten against the real code (ports and adapters, strategy, actions as commands, facade, chain, memento, null object, template method; observer, builder and specification as next).
-
-### 2026-10-04 (late, 4) — formulas are the product; scheduled check-in
-- Hiren: formulas like Brzycki make the app stand out more than the AI; wants a scheduled outgoing message that enriches the profile; volunteered info must be interpreted too; asked for a flowier diagram style (drawn, ellipses and curves). All three recorded in PLAN.md section 4. Strength research notes with sources are in the chat log of this session only; the research spike before M4 writes them into `docs/`.
-
-### 2026-10-04 (late, 3) — two sketches read, architecture drawn
-- Both photos of Hiren's paper sketches were readable (rotated, no problem). Sketch 1: doors to one parser to "log to profile". Sketch 2: parsed message to history and, via interpretation, to the profile; goals on the profile; profile feeds coaches; reply out. Redrawn and corrected in chat; my high-level architecture drawn (doors, conversation, AI parser, plain-code checks, log, profile, coaches, reply).
-- Clarified: "message" is an app widget door; "log to profile" means log plus interpretation; "90 x3 x5" was 3 reps 5 sets and must be asked; max two questions then editable history; profile as a clay blob with provenance per message. Written into PLAN.md section 4.
-
-### 2026-10-04 (late, 2) — VAMS idea dropped; real messages; architecture first
-- Hiren: work-it-out is its own backend, so no VAMS database; local Postgres in Docker for now; he wants to settle high-level architecture before more building. PLAN.md section 4 updated, v0 deploy waits on it.
-- Ran three of his real gym messages through the parser (gemini-3.5-flash-lite). Findings recorded in PLAN.md "Architecture decisions still open": no per-set data model (a 90/90/95/85/85 squat became five entries), multi-message logs not connected (bare numbers became a 90 kg body weight), comments and plans dropped, "90 x3 x5" not questioned. All test rows undone.
-- His screenshot of the message parser flow did not come through.
-
-### 2026-10-04 (late) — persistence plan: the DO Postgres cluster
-- Hiren asked to use VAMS's production database as Feetness's persistence. `VAMS/.env` holds a commented-out production block for a DigitalOcean managed Postgres (host `db-postgresql-ams3-40945-…`, port 25060, database `main`); VAMS dev runs a local Postgres and its `coolify` branch runs its own `postgres:16-alpine`, so VAMS is leaving the cluster. Verified read-only from this laptop: Postgres 17.11, `main` has 24 tables, the VAMS user cannot create databases, roles include `doadmin` (createdb) and `hiren-strapi`. Credentials were read inside the shell only and never printed.
-- Decision written into PLAN.md section 4 and the v0 deploy milestone: Feetness gets its own database and user on that cluster, dev moves to Postgres, SQLite stays for tests, CI MySQL job becomes Postgres, the VPS holds no data. Human-only steps for Hiren listed in the milestone (create db and user in the DO panel, check price, confirm whether Strapi still uses the cluster, tighten trusted sources).
-- Blocked by the permission classifier: scanning the other projects' `.env` files for the cluster host and admin credentials. Left as questions for Hiren.
-
-### 2026-10-04 (night) — first live parse
-- Hiren pasted a Gemini key. `AI_LOG_PROVIDER=gemini` in the local `.env`; dev chat and plan stay on Msty. First call failed with 404: "models/gemini-2.5-flash is no longer available to new users" (the model is still listed by the API, but new keys cannot call it). The SDK's own defaults are `gemini-3.5-flash` and `gemini-3.1-flash-lite`; the log job now runs `gemini-3.5-flash-lite`, config fallbacks and `.env.example` updated from 2.5 to 3.5.
-- `log:simulate --user=43 "bench 3x8 80, then incline db 3x10"` → "Logged: Bench Press 3x8 @ 80 kg, incline db 3x10 / What weight was used for the incline db press?"; then "30" → "Updated: incline db 3x10 @ 30 kg" with no AI call. The whole loop is verified against a real model for the first time. "incline db" kept Hiren's spelling (no alias); the next log with the same key reuses it.
-- Dev DB was empty after the earlier wipe; Hiren's user is id 43 (`channel:link` created it). MySQL auto-increment did not reset.
-
-### 2026-10-04 (evening) — regroup: three doors, simulate first, v0 next
-- Hiren: Telegram, WhatsApp and soon app-only users must all log the same way; he will store real messages and simulate gym time rather than test live now; gh is authenticated; asked about Gemini free limits and DeepSeek.
-- CI was red on `pest-mysql` with all tests passing: `php artisan test` already adds `--configuration=phpunit.xml`, the second flag made Pest warn and exit 1. Makefile and CI now call `vendor/bin/pest --configuration=phpunit.mysql.xml`.
-- Built: `POST /api/log/{log}/answer` and `/skip` (HTTP parity with chat; `ExerciseEntryResource` now returns `weight_kg` as a float), `LogSource::fromProvider`, `php artisan log:simulate {text|--file}` (exact chat path, provider `simulate`), `tests/Evals/messages.txt` + README as the safe place for real messages, `config/ai.php` `jobs` (log, plan, chat each with provider and model, `AI_*_PROVIDER`/`AI_*_MODEL`, DeepSeek via the SDK's native provider).
-- PLAN.md: fast track order (finish M2, v0 deploy, M4, M5/M6, M3 after v0), the v0 deploy milestone defined, three-doors decision, model candidates with numbers. 102 passed on SQLite and MySQL.
-- Next: the M2 correctness sitting (timezone, numbers, DiaryResource, limiters), then v0 deploy.
-
-### 2026-10-04 (later) — gym loop v0 (branch m2-write-path)
-- Hiren: RPG and profile build must be isolated (uncertain); real per-area stats are a later idea; nutrition not in this phase; goal is texting from the gym within two prompts, then a v0 deploy on Coolify.
-- Built: `RecordSmartLog` (M2.2, earlier commit), `RevertSmartLog` + `DELETE /api/log/{log}`, `AnswerOpenQuestion` (a bare "30", "5k", "28 min" fills the asked field without AI, "skip" clears it, latest log only, 6 hours), `StatSheet` port with `RpgStatSheet` (dashboard, stats, UserResource read only through it; the log receipt has no stats), the chat core `App\Channels\HandleInboundMessage` (unlinked ignored, /start, /help, /undo, answers, free-text log), `ReplyComposer`, `ChatChannel` port with `TelegramChannel` and `TelegramClient` (errors carry status and description, never the token URL), `channel_identities` as the allowlist, `php artisan channel:link {email} {telegram_id}` (creates the user if new), `php artisan channel:telegram:poll` (long polling, offset in cache, prints the link command for an unknown sender).
-- 90 passed on SQLite and on MySQL. Not verified: a live parse against a real model (no key or Msty here yet).
-
-### 2026-10-04 — plan revised, M2 started (branch m2-write-path, work in progress, suite red)
-- Decisions from Hiren, written into PLAN.md section 4 and the milestones: a log gets a receipt plus at most one question for a missing value, no coach feedback per log; the AI never writes assumptions (stated facts stored, every number computed in PHP); the qualitative profile build runs only on explicit request and may use the laptop's local model (M9); log parsing on a cheap hosted model, no model chosen yet; no own knowledge base for now; a prompting and live-eval step in M4. M2 5.5, M4 3.5, M9 2 sittings; backend about 33.
-- Roadmap deck for a non-technical reader: https://claude.ai/artifact/96DpjoAmbXRoTALR3SYZDm, source in `docs/roadmap-deck/` (pre-revision, see its README).
-- Found: in Docker the container's env vars beat `phpunit.xml`, so `make test` ran against the dev MySQL `work_it_out` and wiped it. Laravel reads `$_SERVER` first, so `phpunit.xml` now sets every value as `<env force>` and `<server force>`. `make test` is SQLite in memory again (46 passed in the container before the M2 code changes).
-- Found: `activity_feedbacks.loggable_id` was an integer morph while workouts have ULIDs; on MySQL every AI-logged workout was a 500 (SQLite hid it). Added `phpunit.mysql.xml` (the `testing` database), `make test-mysql`, and a `pest-mysql` CI job.
-- M2 done so far: migration `2026_10_04_000001` replaces `activity_feedbacks` with `activity_logs` (ULID, ULID morph, questions json, logged_on, source) and adds `activity_log_id` to `diary_entries` and `exercise_entries`; `ActivityLog` model, `LogSource` enum; `ActivityFeedback` deleted; `SmartLogAgent` facts-only (no user data sent, `logged_on`, `questions`); `SdkSmartLogParser` rebuilds the payload from known keys only; `ExerciseAliases` (key + alias map + the user's own earlier spelling).
-- Not done, next in this order: `app/Actions/SmartLog/RecordSmartLog` + `SmartLogResult` (transaction, completed_planned true, same-day merge within 3 hours, aliases, logged_on within 7 days, clamps, stats job after commit) and rewrite `SmartLogController` to use it; adherence counts distinct days in `UpdateUserStats` (update its 50% test to two days); `PersonalRecordService` groups by `ExerciseAliases::key`; `FakeSmartLogParser` facts-only; rewrite `SmartLogContractTest` and `SdkAdaptersTest`, add `RecordSmartLogTest` and an `ExerciseAliasesTest`; then RpgSheet, RevertSmartLog, the correctness sitting. 4 tests red until RecordSmartLog lands; CI on this branch is expected to fail.
-- Laptop setup notes: this laptop had a stale `vendor/` and no composer (installed with Homebrew); local `.env` APP_NAME set to Feetness. If `make test-mysql` says access denied on `testing`, the MySQL volume predates `docker/mysql/init.sql`: run `docker compose exec -T mysql mysql -uroot -proot_password < docker/mysql/init.sql` once.
-
-### 2026-10-03 — M1 done (branch m1-adapters)
-- `SdkSmartLogParser`: `->prompt($message)->toArray()`, then validation at the boundary: `log_type` in the enum and a non-empty `summary` or `AiUnavailable`; summary 255, coach lines 600, diary 1000, stat name 60, reason 255, stat category whitelisted. `SdkPlanGenerator`: `->prompt()` without `forUser()`. `SmartLogAgent` no longer sends the user's name.
-- `config/ai.php`: dead top-level `model` removed; `models.text.default` and `cheapest` on the openai and gemini providers read `AI_TEXT_MODEL` (the SDK reads `providers.*.models.text.*`, verified in `GeminiProvider.php:95` and `OpenAiProvider.php:93`); `conversations.generate_title` false so a new thread is one call. `APP_TRAINER_DEFAULT_PERSONA` removed from `.env.example` (never read).
-- `App\Services\Ai\AiCall::run(User, string $agent, Closure)`: `report()` plus one `logger()->error('AI call failed', [user_id, provider, agent, error])` line, never the prompt text; rethrows `AiUnavailable`. The three controllers use it; the chat 503 now carries `coach`.
-- Tests: `SdkAdaptersTest` (real adapters through `Ai::fakeAgent`: workout persists, plan generates with zero conversations, junk payload is a 503 with zero rows, 300-char stat name stored at 60), `AiOutageLoggingTest`, `AiConfigTest`. The two tests that hit the network (`TrainerAgentTest`, `NutritionParserServiceTest`) now use a throwing fake. 46 passed, 153 assertions.
-- Not done: a live call against Msty (not running on this machine). First thing next session, see Start here.
-
-### 2026-10-03 — M0 done (branch m0-baseline)
-- Green light from Hiren: work to a milestone, then push. 45 minutes.
-- Ran it: Docker stack up (app, mysql, redis, mailpit), `composer install` in the container was OOM-killed (exit 137), so vendor was installed on the host with Herd PHP 8.5 and copied into the container's `vendor-data` volume with `docker cp`. `migrate:fresh --seed` ok. API on :8088. Container runs PHP 8.4.26, Laravel 13.34.
-- `php artisan test` on the host (sqlite): 39 passed, 131 assertions, all green. Note: green only because every AI port is faked.
-- Vendor findings: (a) `forUser()` lives only in `Laravel\Ai\Concerns\RemembersConversations`; `SmartLogAgent` and `PlanAgent` do not use it, so `SdkSmartLogParser.php:26` and `SdkPlanGenerator.php:33` fatal. No `structured()` method anywhere; use `->prompt()->toArray()` like `NutritionParserService`. (b) `fakeAgent(string $agent, Closure|array $responses = [])` on `InteractsWithFakeAgents`, returns a `FakeTextGateway`; arrays and closures both accepted. (c) Gemini store and file gateways send the key as header `x-goog-api-key`, not in the URL; the text gateway was not read, verify in M6 before trusting the log scrubber.
-- Msty: nothing listening on localhost:11973. Hiren must open Msty Studio and load the Granite model before any live AI call in dev.
-- M0.3: `.github/workflows/test.yml` (composer install, audit, pint, pest on PHP 8.4), `tests/Unit` now bound to the Laravel TestCase, the two ExampleTests replaced by `tests/Unit/PlumbingTest.php`. Pint had 54 files out of style; formatted (whitespace and `declare(strict_types=1)` only), suite still green. `composer audit` found 25 advisories in 5 packages (guzzle, psr7, framework 13.15, commonmark, flysystem); updated them (framework 13.15 to 13.34), audit now clean, suite green.
-- Deploy branch created from master so Coolify never deploys on every push.
-- Not done: ClickUp (no key, no list). Msty live call. M1 is next.
-
-### 2026-10-03 — handoff to the other laptop
-- Everything pushed: `master` at this commit, tree clean. Pick up with `git pull`, then read `CLAUDE.md`, this file, `PLAN.md`. First work item is M0 (n1): `make up`, `composer install`, `make fresh`, `make test`, verify the three SDK claims, record the red list here.
-- Still open from Hiren: green light to start M0; `CLICKUP_API_KEY` and a ClickUp list id for the sync; answers to the open questions in `PLAN.md` section 8 (coach reply length, streak definition, Shen buckets, Gemini billing, voice before or after the app, Android or iOS).
-- No code changed.
-
-### 2026-10-02 — map update before the weekend
-- Hiren wants to use it from the weekend: gamify two weeks of fat loss and muscle gain. Restated the five backend duties and mapped each to the plan; added n12 (coach questions capped per day, short and long-term goals persisted).
-- Wrote the honest weekend cut: M0, M1, M2.1, minimal M5 and M6 in poll mode from the laptop. Four to five sittings. Not one day.
-- Repo check: `master` equals `origin/master` at 8ff7ec4 (docs commit from 2026-09-27). No code pushed from the other machine since.
-- ClickUp not synced: no `CLICKUP_API_KEY` in this shell and no list for this project yet. Script and convention documented in the ClickUp line above.
-- No code changed. Awaiting green light to start M0.
-
-### 2026-09-25 to 27 — planning sprint (no code)
-- Hiren set the rules: no coding for two days, plan and simulate; backend is the priority; the backend must be usable solely through a chat channel (Telegram is a legitimate first choice); Flutter is the optimistic client, Nuxt 4 the fallback; always design patterns, one UI library, atomic design; the React mock is Google-generated and is NOT direction (Hiren hates React); nutrition likely out of v1 (delete vs hide still his call); watch integration and RAG material are later.
-- Ran a 22-agent workflow: six journeys traced through the code, judged designs for the channel (Telegram won over Meta and Twilio), Shen (rules plus LLM won over pure LLM), the client stack (atomic-first Flutter won, with a Nuxt fallback that keeps about 60 percent of the plan), a planner, three critics, a reviser.
-- New findings from the journeys: two probable fatals in the SDK adapters (`->forUser()`/`->structured()` on non-conversational agents), UTC timezone for an Amsterdam user, session and exercise-name fragmentation on free text, the php-fpm `zz-docker.conf` glob-order trap that would re-create the VAMS exposure, `update_id` (not `message_id`) as the Telegram idempotency key, `pcntl` missing so job timeouts are silently unenforced, bot token leaking through Guzzle exception messages, no backups anywhere.
-- Wrote `PLAN.md`, one file: where we are and what we have vs plan, the end-user description, architecture with mermaid diagrams, the pattern map, M0 to M12 with a test per step, the five simulation scenarios, risks, open questions. Five separate design docs were consolidated into it at Hiren's request. Decisions applied: no nutrition (delete), Telegram only logs activities and asks coaches, profile and stats live in the app.
-- Published the architecture page (two doors, one core; SmartLogController before/after; one Telegram message's lifecycle; refactoring.guru pattern map; hard parts; five practice drills): https://claude.ai/artifact/7ZWNCtkfJeniTZsQQ94D46
-- Installed the `visual-explainer` slash command and built a local variant on `mflux` (FLUX.1-schnell, on invoke, no daemon); not yet run, first run downloads about 30 GB, awaiting Hiren's go.
-- No code changed. `vendor/` still absent; `make test` still unrun.
-
-### 2026-09-18 — first assessment (renew)
-- Established that `work-it-out` (app name **Feetness**) is the backend of record; the React+Express `ai-fitness-coaches-&-tracker` repo is a throwaway AI Studio viz. Wrote that repo's PROJECT.md too, pointing here.
-- Read the whole AI layer (enums/contracts/adapters/agents/provider) directly; ran an audit agent over data model, controllers, services, tests, seeders.
-- Found the backend is much more mature than the prototype: ports/adapters + fakes, Sanctum + solid per-user scoping, 20/hr AI throttle, single structured log call with bounded RPG deltas, free local-model dev loop, prod on gemini-2.5-flash. The user's "don't lose a billion dollars" worry is already largely designed for.
-- Coaches already refactored from the vibe-based marine/raver/yogi to Lt. Surge / Shen / Latika. Coach roles now settled by Hiren: Surge = push/accountability, Latika = food/mobility/longevity, and **Shen = the "what to do next" coach** — friendly fit-bro raver who reads your recent split and suggests the next session with 3-4 options. That's a build task (prompt + muscle-group grouping in context), captured in n6.
-- Confirmed local `work-it-out` is up to date: `master` == `origin/master` at c776905, 0 ahead/behind. Nothing to pull.
-- Top real bug: AI-logged workouts never count toward adherence (completed_planned=false). Plus smart-log isn't transactional and diary content can be null. Test + seed gaps block "simulate the whole backend."
-- No code changed (no green light). Not run locally (`vendor/` absent). `make test` result unverified.
-- Stack ordering confirmed with Hiren: fix + bulletproof + simulate backend first, then Nuxt or Flutter frontend. API-first design already supports either.
