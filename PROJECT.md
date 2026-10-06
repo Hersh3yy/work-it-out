@@ -204,6 +204,8 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ### 2026-10-06 — decision: ask while unclear; handoff
 - Hiren: the interpreter was overthinking. Rule now: while anything is unclear, ask; no cap on questions per log; save when clear; `cancel` drops it. Recorded in PLAN.md section 4 (supersedes the one-question and two-question rules), PROJECT.md wording updated. Named rules stay as detectors that turn unclear input into a question; nothing decided on the user's behalf.
 - Code still asks one question per log and saves before it is clear (`AnswerOpenQuestion` holds one open question). The change lands with n16 (drafts): a draft keeps asking until `MinimumInfoIsPresent`, only then `RecordSmartLog`.
+- Laya found (self-hosted classifier model, PHP SDK `marcreichel/laya-php`): recorded in PLAN.md section 4 as the second candidate for the classify slot next to Jev, as an adapter behind `MessageClassifier`. Not tried.
+- CLAUDE.md still named `m2-write-path` as the working branch; fixed to one branch, `master`.
 - No code changed. `master` == `origin/master`, one branch. Next on the other laptop: n16.
 
 
