@@ -48,7 +48,7 @@ No food or diet tracking. The app is called work-it-out; it tracks working out a
 
 **Two ways in, one core:**
 
-- **Telegram** (first). For the moments you are at the gym or just left it. You text what you did, you get a receipt back, or one question when a number is missing. You can ask a coach a question or ask Shen what to train next. You log your weight. That is all Telegram does.
+- **Telegram** (first). For the moments you are at the gym or just left it. You text what you did, you get a receipt back, or a question for as long as something is unclear. You can ask a coach a question or ask Shen what to train next. You log your weight. That is all Telegram does.
 - **The app** (later, Flutter or Nuxt). For everything you look at: profile and goals, history, stats, records, the RPG sheet, weight chart, weekly plan, diary. One day the chat may also handle goals ("short term: bench 100, long term: 90 kg").
 
 **A day, seen from the phone:**
@@ -248,7 +248,8 @@ Already flat by design: one structured call per log that returns facts only (no 
 - Timezone: Europe/Amsterdam app-wide.
 - Identity on Telegram is the numeric user id, allowlisted to Hiren alone at first deploy. Link codes and multi-user come when a named second person wants in.
 - Always design patterns, one UI library, atomic design.
-- (2026-10-04) A log gets a receipt, not coach feedback. The parser returns facts and, when a needed value is missing, one question. It never guesses. Coaches speak only when asked.
+- (2026-10-04) A log gets a receipt, not coach feedback. The parser returns facts and never guesses. Coaches speak only when asked.
+- (2026-10-06, replaces every "one question" and "at most one question" rule below) While anything is unclear, ask. No cap on questions per log. The conversation asks until the log is clear (one question per reply, so the chat stays readable), then saves; `cancel` drops it. "Unclear" covers a missing value, an ambiguous reading ("90 x3 x5") and a number whose meaning is unknown ("90 90 95"). The named rules stay, but only as detectors that turn something unclear into a question; they never decide on the user's behalf. Hiren's note: the interpreter was overthinking.
 - (2026-10-04) The AI never writes assumptions about the user. Stated facts are stored (a weight you typed is a fact). Every number (records, volume, adherence, streak, RPG) is computed in PHP from facts. Qualitative profile notes are built only on an explicit request, are stored apart from what the user entered, cite the logs they came from, and never overwrite user-entered fields.
 - (2026-10-04) One model per job, chosen later: log parsing on a cheap hosted model (it must work from the gym), the profile build may run on the laptop's local model, coach chat open. Nothing is locked to Gemini yet.
 - (2026-10-04) RPG and the profile build are uncertain. Each lives behind one port so it can be replaced alone: `StatSheet` (today `RpgStatSheet`, read by dashboard, stats, profile) and `ProfileBuilder` (M9). Logging never writes to either. Real per-area stats (chest strength, leg strength, run score) instead of or next to RPG are an idea for after real usage, not a milestone yet.

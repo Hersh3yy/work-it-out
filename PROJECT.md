@@ -15,7 +15,7 @@
 **Repo** · git@github.com:Hersh3yy/work-it-out.git · one branch only: `master`. Short-lived feature branches are fine, merged and deleted the same session. No `deploy` branch: Coolify deploys `master` manually, auto-deploy off
 **Hosting** · designed for Coolify/VPS (see `.env.example` production block); nothing deployed yet. Heed the VAMS VPS lessons: never expose service ports, rotate keys.
 **ClickUp** · not linked yet. Needs `CLICKUP_API_KEY` in the shell and a list id here as `<!-- clickup_list:ID -->`; then `node ~/.claude/skills/project-map/scripts/clickup-sync.mjs PROJECT.md`
-**Last assessed** · 2026-10-05
+**Last assessed** · 2026-10-06
 
 ---
 
@@ -90,7 +90,7 @@ flowchart LR
   REC -->|"one transaction"| DB[("Postgres")]
   REC -->|"after commit"| EVT["LogRecorded"]
   EVT --> STATS["RefreshTrainingStats"]
-  REC --> RCPT["Receipt and one question"]
+  REC --> RCPT["Receipt, or ask while unclear"]
 ```
 
 Where things live:
@@ -117,7 +117,7 @@ Data: `users`, `workout_sessions` (ULID) to `exercise_entries` (each remembers t
 
 ### The model types, PHP decides
 
-🔭 **What it does** — The parser returns facts and, for a value the user did not give, one question; it never guesses and never judges. Then named rules in plain PHP override the model where the reading is ambiguous: `BareNumberIsNotBodyWeight` stops "90 90 95" from becoming a body weight, `RepsTimesSetsHasTwoReadings` turns "90 x3 x5" into a question that carries both counts, so the answer "5" fills sets and reps without another call.
+🔭 **What it does** — The parser returns facts; it never guesses and never judges. Anything unclear becomes a question, and the conversation keeps asking until the log is clear (decision 2026-10-06, no cap). Then named rules in plain PHP override the model where the reading is ambiguous: `BareNumberIsNotBodyWeight` stops "90 90 95" from becoming a body weight, `RepsTimesSetsHasTwoReadings` turns "90 x3 x5" into a question that carries both counts, so the answer "5" fills sets and reps without another call.
 
 ⚖️ **Why this way** — Asking the model to be careful is a hope; a rule with a unit test is a guarantee. Every number downstream (records, adherence, RPG) is computed in PHP from the stored facts, so the model can only ever be wrong about typing, not about maths.
 
@@ -162,7 +162,7 @@ Data: `users`, `workout_sessions` (ULID) to `exercise_entries` (each remembers t
 What the backend must do, in Hiren's words (2026-10-02), and where each lives:
 - take logs and activities and turn them into an overall profile: exists (`POST /api/log`, RPG, PRs, dashboard); hardened in M2
 - suggestions from history: Shen `/next` (rules in M5, model in M8)
-- feedback: changed 2026-10-04. A log gets a receipt plus one question when a value is missing, no coach reactions (M2, M5). Coaches answer on request (M7). The AI never writes assumptions; the qualitative profile build runs only on request (M9)
+- feedback: changed 2026-10-04. A log gets a receipt; while something is unclear the bot asks (no cap, 2026-10-06), no coach reactions (M2, M5). Coaches answer on request (M7). The AI never writes assumptions; the qualitative profile build runs only on request (M9)
 - understand the user's high-level plan and ask questions when info is missing, capped per day: intake exists (one question per coach reply, `TrainerAgent::intakeRules`); the daily cap and short/long-term goals are new, item n12
 - accept Telegram and support a frontend: M5/M6 and M10/M12
 
@@ -173,7 +173,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [ ] M2 Facts-only write path. Done: test safety, facts-only parse with questions, `activity_logs`, `RecordSmartLog`, `RevertSmartLog`, answers on both doors, `StatSheet` port, chat core + Telegram polling, `log:simulate`, one model per job. Left: timezone Europe/Amsterdam, numbers as numbers everywhere, DiaryResource, login/register limiters, conversation ownership. RPG from rules parked <!-- id:n3 -->
 - [x] Foundation: PHP 8.5, Postgres locally, `LogType` and `ChatProvider` enums, `LogRecorded` observer. Done 2026-10-04 <!-- id:n14 -->
 - [x] Interpreter: classify, parse, named rules, polite help for not understood, `log:parse` dry run, prompt examples and retry. Done 2026-10-05 <!-- id:n15 -->
-- [ ] Sets and drafts: per-set storage, exercise kinds, drafts until the minimum info is present, `cancel`, `/edit` for complete logs <!-- id:n16 -->
+- [ ] Sets and drafts: per-set storage, exercise kinds, a draft keeps asking while anything is unclear (no cap) and saves only when clear, `cancel`, `/edit` for complete logs <!-- id:n16 -->
 - [ ] v0 deploy: the polling bot as one supervisord worker on a Coolify VPS, registration closed in production, host checklist, smoke from the phone (PLAN.md "v0 deploy") <!-- id:n13 -->
 - [ ] M3 Remove nutrition entirely (decided 2026-09-27; waits until after v0), Latika rewritten to recovery/mobility/longevity <!-- id:n4 -->
 - [ ] M4 Simulate: factories + deterministic two-user seeder, streak on read, HTTP scenario suite (PLAN.md section 6), prompting practices and a live eval set of real messages <!-- id:n5 -->
@@ -200,6 +200,12 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-06 — decision: ask while unclear; handoff
+- Hiren: the interpreter was overthinking. Rule now: while anything is unclear, ask; no cap on questions per log; save when clear; `cancel` drops it. Recorded in PLAN.md section 4 (supersedes the one-question and two-question rules), PROJECT.md wording updated. Named rules stay as detectors that turn unclear input into a question; nothing decided on the user's behalf.
+- Code still asks one question per log and saves before it is clear (`AnswerOpenQuestion` holds one open question). The change lands with n16 (drafts): a draft keeps asking until `MinimumInfoIsPresent`, only then `RecordSmartLog`.
+- No code changed. `master` == `origin/master`, one branch. Next on the other laptop: n16.
+
 
 ### 2026-10-05 — merged to one branch, map refreshed
 - Pulled the other laptop's work: 18 commits on `m2-write-path` (Foundation: PHP 8.5, Postgres 17, enums, `LogRecorded` observer; Interpreter: classify, parse, named rules, `log:parse`; M2 write path: `RecordSmartLog`, `AnswerOpenQuestion`, `RevertSmartLog`, `activity_logs`; Telegram polling loop; model per job; gemini-3.5-flash-lite; plan decisions in PLAN.md section 4).
