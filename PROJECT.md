@@ -53,9 +53,9 @@ Plain version: before anything else, one small AI model reads the message and pi
 make laya                                         # the model, on 127.0.0.1:8765 (first time: uv tool install "laya[serve]" --python 3.13)
 php artisan intent:try "my left knee hurts"       # one message: the pick, how sure, a bar per option
 php artisan intent:try --file=tests/Evals/intent.txt   # score all 38 English test messages
-cd classifier-lab && npm install && PUBLIC_API_URL=http://localhost:8088 npx astro dev   # the Astro page on http://127.0.0.1:4321
+cd ~/Herd/testbed && npm install && npm run dev   # visual explainer on http://localhost:4321/classifier
 ```
-The Astro page (`classifier-lab/`) only calls `POST /api/lab/intent` (and `/api/lab/intent/eval`) on the Laravel app; those routes need no login and exist only in local and testing. Options and their descriptions live in `app/Enums/Intent.php`; edit them and rescore. Not yet wired into the real chat path.
+The visual explainer lives in the separate Astro testbed `~/Herd/testbed` (page `/classifier`); it only calls `POST /api/lab/intent`, `/api/lab/intent/explain` and `/api/lab/intent/eval` on this app; those routes need no login and exist only in local and testing. Options and their descriptions live in `app/Enums/Intent.php`; edit them and rescore. Not yet wired into the real chat path.
 
 ### Classifier lab (the classify step alone, per model)
 
@@ -205,7 +205,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [x] Foundation: PHP 8.5, Postgres locally, `LogType` and `ChatProvider` enums, `LogRecorded` observer. Done 2026-10-04 <!-- id:n14 -->
 - [x] Interpreter: classify, parse, named rules, polite help for not understood, `log:parse` dry run, prompt examples and retry. Done 2026-10-05 <!-- id:n15 -->
 - [x] Classifier lab: Laya and Jev behind `MessageClassifier` (one `SystemOneClient`), `AI_CLASSIFIER` switch with LLM fallback, `classify:try`, `/lab/classify`, labelled eval set. Laya local scores 21/31 (68%) at ~80 ms. Done 2026-10-07 <!-- id:n17 -->
-- [x] Intent lab: `Intent` enum (workout_log, profile_update, feeling, question, nonsense), `IntentClassifier`, `POST /api/lab/intent`, `intent:try`, English eval set, Astro page `classifier-lab/`. Laya 32/38 (84%), ~60 ms. Done 2026-10-07 <!-- id:n18 -->
+- [x] Intent lab: `Intent` enum (workout_log, profile_update, feeling, question, nonsense), `IntentClassifier`, `POST /api/lab/intent`, `intent:try`, English eval set, Astro page (moved to `~/Herd/testbed`). Laya 32/38 (84%), ~60 ms. Done 2026-10-07 <!-- id:n18 -->
 - [ ] Wire `Intent` into the real chat path in place of `MessageKind` once the intents feel right in the lab; `profile_update` and `feeling` need somewhere to go (profile fields, notes) <!-- id:n19 -->
 - [ ] Sets and drafts: per-set storage, exercise kinds, a draft keeps asking while anything is unclear (no cap) and saves only when clear, `cancel`, `/edit` for complete logs <!-- id:n16 -->
 - [ ] v0 deploy: the polling bot as one supervisord worker on a Coolify VPS, registration closed in production, host checklist, smoke from the phone (PLAN.md "v0 deploy") <!-- id:n13 -->
@@ -234,6 +234,12 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-07 (evening) — explain endpoint, testbed in ~/Herd
+- `POST /api/lab/intent` accepts `criteria` (other option wording, 2 to 8 options); `POST /api/lab/intent/explain` leaves each word out, re-asks and reports how much the winning option's probability moves. Example: "My squat just now was 90 90 95 85 85" picks workout_log at 66%; "squat" +14 points, "now" +10, the numbers about 0. 149 tests.
+- Visual explainer moved out of this repo into a general Astro testbed, `~/Herd/testbed` (Astro 7, Tailwind 4, React, Vue, Svelte; local git, no remote yet). `classifier-lab/` deleted here.
+- This network blocks SSH on port 22; pushes go over GitHub's port 443 (`GIT_SSH_COMMAND="ssh -p 443 -o Hostname=ssh.github.com"`), host key verified against GitHub's published fingerprint.
+
 
 ### 2026-10-07 (later) — intent lab, English only, Astro page
 - Hiren: jargon unclear; classify by intent first (workout log, profile update, feeling, nonsense); classifier should not care about exercise type; English only for now; isolate the classifier with a simple Astro page.
