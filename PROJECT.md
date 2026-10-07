@@ -45,6 +45,18 @@ make test               # Pest, runs inside the container
 ```
 API on http://localhost:8088, Mailpit on http://localhost:8025. Register a test user with `make register-test`. Local AI runs against a **free local model** (Msty MLX / Granite) via an OpenAI-compatible endpoint — you develop without spending a cent on tokens. Hosted parsing: set `AI_LOG_PROVIDER=gemini` and `AI_LOG_MODEL=gemini-3.5-flash-lite` (gemini-2.5 is retired for new keys). Each job (log, plan, chat) has its own provider and model in `config/ai.php` `jobs`. Dry run a message with `php artisan log:parse "bench 3x8 80"`; full chat path with `php artisan log:simulate --user=1 "..."`; the bot with `php artisan channel:telegram:poll`.
 
+### Intent lab (start here for the classifier)
+
+Plain version: before anything else, one small AI model reads the message and picks what the user means from five options: `workout_log`, `profile_update`, `feeling`, `question`, `nonsense`. It runs on this laptop (Laya), free, about 60 ms. It does not write text; it only scores the five options. Exercise names, sets and weights are a later step (the parser), not the classifier's job.
+
+```bash
+make laya                                         # the model, on 127.0.0.1:8765 (first time: uv tool install "laya[serve]" --python 3.13)
+php artisan intent:try "my left knee hurts"       # one message: the pick, how sure, a bar per option
+php artisan intent:try --file=tests/Evals/intent.txt   # score all 38 English test messages
+cd classifier-lab && npm install && PUBLIC_API_URL=http://localhost:8088 npx astro dev   # the Astro page on http://127.0.0.1:4321
+```
+The Astro page (`classifier-lab/`) only calls `POST /api/lab/intent` (and `/api/lab/intent/eval`) on the Laravel app; those routes need no login and exist only in local and testing. Options and their descriptions live in `app/Enums/Intent.php`; edit them and rescore. Not yet wired into the real chat path.
+
 ### Classifier lab (the classify step alone, per model)
 
 ```bash
@@ -193,6 +205,8 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [x] Foundation: PHP 8.5, Postgres locally, `LogType` and `ChatProvider` enums, `LogRecorded` observer. Done 2026-10-04 <!-- id:n14 -->
 - [x] Interpreter: classify, parse, named rules, polite help for not understood, `log:parse` dry run, prompt examples and retry. Done 2026-10-05 <!-- id:n15 -->
 - [x] Classifier lab: Laya and Jev behind `MessageClassifier` (one `SystemOneClient`), `AI_CLASSIFIER` switch with LLM fallback, `classify:try`, `/lab/classify`, labelled eval set. Laya local scores 21/31 (68%) at ~80 ms. Done 2026-10-07 <!-- id:n17 -->
+- [x] Intent lab: `Intent` enum (workout_log, profile_update, feeling, question, nonsense), `IntentClassifier`, `POST /api/lab/intent`, `intent:try`, English eval set, Astro page `classifier-lab/`. Laya 32/38 (84%), ~60 ms. Done 2026-10-07 <!-- id:n18 -->
+- [ ] Wire `Intent` into the real chat path in place of `MessageKind` once the intents feel right in the lab; `profile_update` and `feeling` need somewhere to go (profile fields, notes) <!-- id:n19 -->
 - [ ] Sets and drafts: per-set storage, exercise kinds, a draft keeps asking while anything is unclear (no cap) and saves only when clear, `cancel`, `/edit` for complete logs <!-- id:n16 -->
 - [ ] v0 deploy: the polling bot as one supervisord worker on a Coolify VPS, registration closed in production, host checklist, smoke from the phone (PLAN.md "v0 deploy") <!-- id:n13 -->
 - [ ] M3 Remove nutrition entirely (decided 2026-09-27; waits until after v0), Latika rewritten to recovery/mobility/longevity <!-- id:n4 -->
@@ -220,6 +234,15 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-07 (later) — intent lab, English only, Astro page
+- Hiren: jargon unclear; classify by intent first (workout log, profile update, feeling, nonsense); classifier should not care about exercise type; English only for now; isolate the classifier with a simple Astro page.
+- New `App\Enums\Intent` (workout_log, profile_update, feeling, question, nonsense; question added because chat already lets you ask a coach). Lab only, the chat path still uses `MessageKind`.
+- `IntentClassifier` (one typed choice through `SystemOneClient`), JSON routes `GET/POST /api/lab/intent` and `POST /api/lab/intent/eval` (no login, `LocalOnly`), `php artisan intent:try`, `tests/Evals/intent.txt` (38 English messages), `classifier-lab/` (Astro 7, one page, calls only that endpoint). 7 new tests; 146 passed.
+- Live on Laya `laya-typed-decisions`: 32/38 (84%). Misses: "padel for an hour" as question, "90 / 90 / 95 / 85 / 85" as profile_update, "scale says 101.9 today" as workout_log, "I want to squat 100 by December" as question, "how did my week go?" as workout_log, "asdfgh" as workout_log. Confidence runs 0.24 to 0.76, so a 0.6 cut-off would send most messages to the fallback; the threshold needs rethinking before this goes live.
+- Speed: laya-serve keeps two models in memory; preloading three made it swap (1.8 s per call). `make laya` now loads only `laya-typed-decisions`: ~60 ms warm. Default `LAYA_MODEL` is `laya-typed-decisions`.
+- Astro gotcha: `<style>` is scoped to the template, so HTML injected by the script got no styling; `<style is:global>` fixes it. Astro 7's `astro dev` detaches (`astro dev stop` to stop).
+
 
 ### 2026-10-07 — classifier lab: Laya and Jev testable on their own
 - Green light from Hiren (Jev is gaining popularity; make the Jev/Laya part testable alone, connect a model locally, artisan or a hacky frontend).

@@ -45,7 +45,7 @@ register-test:
 # Classifier lab: run Laya locally (needs `uv tool install "laya[serve]" --python 3.13` once;
 # first start downloads ~2.3 GB of checkpoints). Loopback only; Docker reaches it via host.docker.internal.
 laya:
-	LAYA_HOST=127.0.0.1 LAYA_PORT=8765 LAYA_DEVICE=mps LAYA_PRELOAD=1 laya-serve
+	LAYA_HOST=127.0.0.1 LAYA_PORT=8765 LAYA_DEVICE=mps LAYA_PRELOAD=1 LAYA_MODELS=laya-typed-decisions laya-serve
 
 classify-eval:
 	php artisan classify:try --file=tests/Evals/classify.txt --driver=rules --driver=laya

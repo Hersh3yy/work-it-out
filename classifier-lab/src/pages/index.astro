@@ -1,0 +1,102 @@
+---
+// One page: type a message, ask the intent classifier, see what it thinks.
+// Calls the Laravel lab endpoint; nothing here knows about the model.
+const api = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:8088';
+const examples = [
+  'bench 3x8 80, then incline db 3x10',
+  'My squat just now was 90 90 95 85 85',
+  'weighed 103 this morning',
+  'I want to squat 100 by December',
+  'my left knee hurts',
+  'so tired, no energy at all',
+  'what should I train today?',
+  'how did my week go?',
+  'rainbow butterfly',
+];
+---
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Intent lab</title>
+  <style is:global>
+    :root { --bg:#f6f7f9; --card:#fff; --ink:#14181f; --muted:#5b6574; --line:#d9dee6; --accent:#2f5bd3; --bar:#dbe4fb; --bad:#b3261e; --ok:#1f7a4d; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#101318; --card:#181c23; --ink:#e7eaf0; --muted:#97a1b0; --line:#2a313c; --accent:#7f9cff; --bar:#25304d; --bad:#f08a80; --ok:#5cc58f; } }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 system-ui, sans-serif; padding:24px 16px; }
+    main { max-width:720px; margin:0 auto; display:grid; gap:16px; }
+    h1 { font-size:20px; margin:0; } p { margin:0; color:var(--muted); }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; display:grid; gap:12px; }
+    textarea { width:100%; min-height:64px; font:inherit; padding:10px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); }
+    .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    button { font:inherit; border:0; border-radius:8px; padding:8px 14px; background:var(--accent); color:#fff; cursor:pointer; }
+    button.ghost { background:transparent; color:var(--accent); border:1px solid var(--line); }
+    .chip { font-size:13px; padding:3px 10px; border-radius:999px; background:var(--bg); color:var(--ink); border:1px solid var(--line); }
+    .intent { font-size:26px; font-weight:600; }
+    .bar { display:grid; grid-template-columns:130px 1fr 48px; gap:8px; align-items:center; font-size:13px; }
+    .bar div { height:10px; background:var(--bar); border-radius:5px; overflow:hidden; } .bar span { display:block; height:100%; background:var(--accent); }
+    pre { margin:0; font-size:12px; overflow-x:auto; color:var(--muted); }
+    table { width:100%; border-collapse:collapse; font-size:13px; } td, th { text-align:left; padding:5px; border-bottom:1px solid var(--line); }
+    .ok { color:var(--ok); } .no, .err { color:var(--bad); }
+  </style>
+</head>
+<body>
+  <main data-api={api}>
+    <h1>Intent lab</h1>
+    <p>What does the user mean? One message in, the classifier's pick and how sure it is out. Nothing is saved.</p>
+
+    <section class="card">
+      <textarea id="text">My squat just now was 90 90 95 85 85</textarea>
+      <div class="row">
+        <button id="ask">Ask the classifier</button>
+        <button id="eval" class="ghost">Score all test messages</button>
+      </div>
+      <div class="row">
+        {examples.map((e) => <button class="chip" type="button" data-example={e}>{e}</button>)}
+      </div>
+    </section>
+
+    <section id="answer" class="card" hidden></section>
+    <section id="score" class="card" hidden></section>
+  </main>
+
+  <script>
+    const api = document.querySelector('main')!.dataset.api;
+    const $ = (id: string) => document.getElementById(id)!;
+    const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
+    const post = async (path: string, body: object) => {
+      const res = await fetch(api + path, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(body) });
+      return { ok: res.ok, data: await res.json() };
+    };
+
+    async function ask() {
+      const box = $('answer');
+      box.hidden = false;
+      box.innerHTML = '<p>Asking...</p>';
+      try {
+        const { ok, data } = await post('/api/lab/intent', { text: ($('text') as HTMLTextAreaElement).value });
+        if (!ok) { box.innerHTML = `<p class="err">${esc(data.message)}</p>`; return; }
+        const bars = Object.entries(data.probabilities as Record<string, number>).map(([k, p]) =>
+          `<div class="bar"><span style="background:none">${esc(k)}</span><div><span style="width:${Math.round(p * 100)}%"></span></div><span style="background:none">${p.toFixed(2)}</span></div>`).join('');
+        box.innerHTML = `<div class="intent">${esc(data.intent)}</div><p>${Math.round(data.confidence * 100)}% sure, ${data.ms} ms, model: ${esc(data.driver)}</p>${bars}<pre>${esc(JSON.stringify(data, null, 2))}</pre>`;
+      } catch {
+        box.innerHTML = `<p class="err">Cannot reach ${esc(api)}. Is the Laravel app running?</p>`;
+      }
+    }
+
+    async function score() {
+      const box = $('score');
+      box.hidden = false;
+      box.innerHTML = '<p>Scoring every test message...</p>';
+      const { data } = await post('/api/lab/intent/eval', {});
+      const rows = (data.cases ?? []).map((c: any) => `<tr><td>${esc(c.expected)}</td><td class="${c.got === c.expected ? 'ok' : 'no'}">${esc(c.got ?? 'error')}</td><td>${c.confidence ?? '-'}</td><td>${esc(c.text)}</td></tr>`).join('');
+      box.innerHTML = `<p><strong>${data.correct}/${data.total}</strong> right, ${data.avg_ms} ms per message</p><table><tr><th>should be</th><th>got</th><th>sure</th><th>message</th></tr>${rows}</table>`;
+    }
+
+    $('ask').addEventListener('click', ask);
+    $('eval').addEventListener('click', score);
+    document.querySelectorAll<HTMLButtonElement>('[data-example]').forEach((b) =>
+      b.addEventListener('click', () => { ($('text') as HTMLTextAreaElement).value = b.dataset.example!; ask(); }));
+  </script>
+</body>
+</html>

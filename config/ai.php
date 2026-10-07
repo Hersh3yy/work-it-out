@@ -59,7 +59,7 @@ return [
             'url' => env('LAYA_URL', 'http://localhost:8765'),
             'path' => env('LAYA_PATH', '/v1/systemone'),
             'key' => env('LAYA_API_KEY'),
-            'model' => env('LAYA_MODEL'), // empty: laya-serve routes by language (English or multilingual checkpoint)
+            'model' => env('LAYA_MODEL', 'laya-typed-decisions'), // English only for now; scored best in the lab
         ],
         'jev' => [
             'url' => env('TYPESAFE_BASE_URL', 'https://api.typesafe.ai'),

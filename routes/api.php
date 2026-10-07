@@ -7,12 +7,14 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BodyWeightController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DiaryController;
+use App\Http\Controllers\Api\IntentLabController;
 use App\Http\Controllers\Api\NutritionLogController;
 use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SmartLogController;
 use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\WorkoutSessionController;
+use App\Http\Middleware\LocalOnly;
 use Illuminate\Support\Facades\Route;
 
 // -------------------------------------------------------------------------
@@ -77,4 +79,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     // Dashboard summary
     Route::get('/dashboard', [DashboardController::class, 'index']);
+});
+
+// -------------------------------------------------------------------------
+// Intent lab, local only, no login: the classifier on its own for classifier-lab/
+// -------------------------------------------------------------------------
+Route::middleware(LocalOnly::class)->prefix('lab/intent')->group(function (): void {
+    Route::get('/', [IntentLabController::class, 'options']);
+    Route::post('/', [IntentLabController::class, 'classify']);
+    Route::post('/eval', [IntentLabController::class, 'evaluate']);
 });

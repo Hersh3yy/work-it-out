@@ -1,0 +1,41 @@
+# Intent eval set, English only: "intent | message", one per line.
+# Intents: workout_log, profile_update, feeling, question, nonsense.
+# Add real messages you send from the gym. Score: php artisan intent:try --file=tests/Evals/intent.txt
+workout_log | bench 3x8 80, then incline db 3x10
+workout_log | My squat just now was 90 90 95 85 85
+workout_log | I did deadlift: 90 x3 x 5
+workout_log | 5x5 today
+workout_log | padel for an hour
+workout_log | ran 5k in 28 min
+workout_log | 90 / 90 / 95 / 85 / 85
+workout_log | leg day done, squats and lunges
+workout_log | pullups 3 sets till failure
+workout_log | did 30 min on the rower
+workout_log | just finished chest and triceps
+workout_log | cycled 20 km this morning
+profile_update | 104.5kg
+profile_update | weighed 103 this morning
+profile_update | scale says 101.9 today
+profile_update | I want to squat 100 by December
+profile_update | goal: lose 10 kg before summer
+profile_update | I can train 4 days a week
+profile_update | I'm 34 years old and 1.83 m tall
+profile_update | from now on I only train mornings
+feeling | my left knee hurts
+feeling | I sleep badly lately
+feeling | feeling super strong today
+feeling | so tired, no energy at all
+feeling | my shoulders are sore from yesterday
+feeling | stressed at work, not motivated
+question | what should I train today?
+question | how did my week go?
+question | is 3x5 enough for strength?
+question | should I deload this week?
+question | can you make me a plan for next week?
+question | how do I get my bench up?
+nonsense | rainbow butterfly
+nonsense | lol
+nonsense | what's the capital of France
+nonsense | can you order me a pizza
+nonsense | asdfgh
+nonsense | who won the football last night
