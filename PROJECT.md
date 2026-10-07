@@ -49,12 +49,17 @@ API on http://localhost:8088, Mailpit on http://localhost:8025. Register a test 
 
 Plain version: before anything else, one small AI model reads the message and picks what the user means from five options: `workout_log`, `profile_update`, `feeling`, `question`, `nonsense`. It runs on this laptop (Laya), free, about 60 ms. It does not write text; it only scores the five options. Exercise names, sets and weights are a later step (the parser), not the classifier's job.
 
-```bash
-make laya                                         # the model, on 127.0.0.1:8765 (first time: uv tool install "laya[serve]" --python 3.13)
-php artisan intent:try "my left knee hurts"       # one message: the pick, how sure, a bar per option
-php artisan intent:try --file=tests/Evals/intent.txt   # score all 38 English test messages
-cd ~/Herd/testbed && npm install && npm run dev   # visual explainer on http://localhost:4321/classifier
-```
+Start it: three terminals, then one URL.
+
+| Terminal | Command | What it is | Check it at |
+|---|---|---|---|
+| 1 | `cd ~/Documents/koala/work-it-out && make laya` | the model | http://127.0.0.1:8765/health |
+| 2 | `cd ~/Documents/koala/work-it-out && make lab-api` | the Feetness lab API | http://127.0.0.1:8099/api/lab/intent |
+| 3 | `cd ~/Herd/testbed && npm run dev` | the visual page | http://127.0.0.1:4321 |
+
+Then open **http://127.0.0.1:4321/classifier**.
+
+First time only: `uv tool install "laya[serve]" --python 3.13` (the model, about 2.3 GB on first start), `composer install` in work-it-out, `npm install` and `cp .env.example .env` in the testbed. Without the browser: `php artisan intent:try "my left knee hurts"` and `php artisan intent:try --file=tests/Evals/intent.txt`.
 The visual explainer lives in the separate Astro testbed `~/Herd/testbed` (page `/classifier`); it only calls `POST /api/lab/intent`, `/api/lab/intent/explain` and `/api/lab/intent/eval` on this app; those routes need no login and exist only in local and testing. Options and their descriptions live in `app/Enums/Intent.php`; edit them and rescore. Not yet wired into the real chat path.
 
 ### Classifier lab (the classify step alone, per model)
