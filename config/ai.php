@@ -44,6 +44,31 @@ return [
         ],
     ],
 
+    /*
+    | The classify step (what kind of message is this). Plain rules always run
+    | first. "llm" asks ClassifierAgent on the log job's model; "laya" and "jev"
+    | ask a typed-decision (System One) model over HTTP: Laya self-hosted with
+    | laya-serve, Jev hosted by TypeSafe. Below min_confidence the answer falls
+    | back to the llm classifier when fallback is on.
+    */
+    'classifier' => [
+        'driver' => env('AI_CLASSIFIER', 'llm'),
+        'min_confidence' => (float) env('AI_CLASSIFIER_MIN_CONFIDENCE', 0.6),
+        'fallback' => (bool) env('AI_CLASSIFIER_FALLBACK', true),
+        'laya' => [
+            'url' => env('LAYA_URL', 'http://localhost:8765'),
+            'path' => env('LAYA_PATH', '/v1/systemone'),
+            'key' => env('LAYA_API_KEY'),
+            'model' => env('LAYA_MODEL'), // empty: laya-serve routes by language (English or multilingual checkpoint)
+        ],
+        'jev' => [
+            'url' => env('TYPESAFE_BASE_URL', 'https://api.typesafe.ai'),
+            'path' => env('TYPESAFE_PATH', '/v1/systemone'),
+            'key' => env('TYPESAFE_API_KEY'),
+            'model' => env('TYPESAFE_MODEL', 'jev'),
+        ],
+    ],
+
     'conversations' => [
         // One call per new thread: do not spend a second call naming it.
         'generate_title' => false,

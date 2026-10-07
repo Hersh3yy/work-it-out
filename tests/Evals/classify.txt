@@ -1,0 +1,34 @@
+# Labelled messages for the classify step: "kind | message", one per line.
+# Kinds: workout, body_weight, goal_or_info, coach_question, unknown.
+# Add your real messages here; run: php artisan classify:try --file=tests/Evals/classify.txt
+workout | bench 3x8 80, then incline db 3x10
+workout | My squat just now was 90 90 95 85 85
+workout | I did deadlift: 90 x3 x 5
+workout | 5x5 today
+workout | padel for an hour
+workout | ran 5k in 28 min
+workout | 90 / 90 / 95 / 85 / 85
+workout | bankdrukken 4x6 70kg
+workout | vandaag 10 km gefietst
+workout | leg day done, squats and lunges
+workout | pullups 3 sets till failure
+workout | did 30 min on the rower
+body_weight | 104.5kg
+body_weight | weighed 103 this morning
+body_weight | gewicht 102,8
+body_weight | scale says 101.9 today
+goal_or_info | I want to squat 100 by December
+goal_or_info | my left knee hurts
+goal_or_info | I sleep badly lately
+goal_or_info | this weekend I go to a friend's house to do 100
+goal_or_info | mijn rug doet pijn
+goal_or_info | goal: lose 10 kg before summer
+coach_question | what should I train today?
+coach_question | how did my week go?
+coach_question | is 3x5 enough for strength?
+coach_question | wat moet ik morgen trainen?
+coach_question | should I deload this week?
+unknown | rainbow butterfly
+unknown | lol
+unknown | what's the capital of France
+unknown | can you order me a pizza

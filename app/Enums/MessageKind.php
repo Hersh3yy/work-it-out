@@ -25,6 +25,23 @@ enum MessageKind: string
     }
 
     /**
+     * What each kind means, in the words a classifier model is given.
+     * Command is left out: commands start with "/" and are caught by plain rules.
+     *
+     * @return array<string, string> kind value => description
+     */
+    public static function criteria(): array
+    {
+        return [
+            self::Workout->value => 'training that happened or is being reported, with or without numbers: lifts, sets, reps, runs, sports',
+            self::BodyWeight->value => "the user's own body weight, a number with kg or a word like weighed",
+            self::GoalOrInfo->value => 'a goal, a plan, or something about the user that is not a logged session: pain, sleep, a target',
+            self::CoachQuestion->value => 'a question asking for training advice or feedback',
+            self::Unknown->value => 'not about training, the body, goals or advice',
+        ];
+    }
+
+    /**
      * Kinds whose facts go through the parser and into the log.
      */
     public function isLoggable(): bool

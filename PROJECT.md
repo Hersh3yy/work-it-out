@@ -15,7 +15,7 @@
 **Repo** · git@github.com:Hersh3yy/work-it-out.git · one branch only: `master`. Short-lived feature branches are fine, merged and deleted the same session. No `deploy` branch: Coolify deploys `master` manually, auto-deploy off
 **Hosting** · designed for Coolify/VPS (see `.env.example` production block); nothing deployed yet. Heed the VAMS VPS lessons: never expose service ports, rotate keys.
 **ClickUp** · not linked yet. Needs `CLICKUP_API_KEY` in the shell and a list id here as `<!-- clickup_list:ID -->`; then `node ~/.claude/skills/project-map/scripts/clickup-sync.mjs PROJECT.md`
-**Last assessed** · 2026-10-06
+**Last assessed** · 2026-10-07
 
 ---
 
@@ -44,6 +44,17 @@ make fresh              # migrate:fresh --seed  (one demo user + ~2 weeks of dat
 make test               # Pest, runs inside the container
 ```
 API on http://localhost:8088, Mailpit on http://localhost:8025. Register a test user with `make register-test`. Local AI runs against a **free local model** (Msty MLX / Granite) via an OpenAI-compatible endpoint — you develop without spending a cent on tokens. Hosted parsing: set `AI_LOG_PROVIDER=gemini` and `AI_LOG_MODEL=gemini-3.5-flash-lite` (gemini-2.5 is retired for new keys). Each job (log, plan, chat) has its own provider and model in `config/ai.php` `jobs`. Dry run a message with `php artisan log:parse "bench 3x8 80"`; full chat path with `php artisan log:simulate --user=1 "..."`; the bot with `php artisan channel:telegram:poll`.
+
+### Classifier lab (the classify step alone, per model)
+
+```bash
+uv tool install "laya[serve]" --python 3.13   # once; Python 3.10+ needed
+make laya                                      # laya-serve on 127.0.0.1:8765, Apple MPS; first start downloads ~2.3 GB
+php artisan classify:try "squat 90 90 95 85 85"                          # every driver side by side
+php artisan classify:try "..." --driver=laya --driver=rules               # pick drivers
+make classify-eval                                                         # score rules and laya on tests/Evals/classify.txt
+```
+Browser: `http://localhost:8088/lab/classify` (local and testing only, 404 elsewhere): type a message, tick drivers (rules, llm, laya, jev, pipeline), see kind, confidence and the full probability bars; "Score the eval set" grades every labelled line. From Docker set `LAYA_URL=http://host.docker.internal:8765`. Jev needs `TYPESAFE_API_KEY` (waitlist). Switch the app's real classifier with `AI_CLASSIFIER=llm|laya|jev`; below `AI_CLASSIFIER_MIN_CONFIDENCE` it falls back to the LLM.
 
 ## Status
 
@@ -155,6 +166,14 @@ Data: `users`, `workout_sessions` (ULID) to `exercise_entries` (each remembers t
 
 🗣️ **Say it to a senior** — "The poller acknowledges before processing, so delivery is at-most-once by choice; the webhook path will store first and dedupe on update_id."
 
+### Typed decisions instead of generated text
+
+🔭 **What it does** — Laya and Jev are "System One" models: they never write text. You send the message as state plus a typed question (a choice with five described options) and one forward pass of an encoder returns a probability for every option. `SystemOneClient` posts that to `/v1/systemone`; `SystemOneMessageClassifier` takes the top option when its probability clears `min_confidence`, else asks the LLM.
+
+⚖️ **Why this way** — An LLM classifier generates JSON token by token (hundreds of ms, can drift off the list, needs a schema and a retry); a typed model can only pick from the options, answers in tens of ms, and its probabilities say how unsure it is, which is exactly the signal to fall back on. Two gotchas found live: laya-serve's `confidence` is an act-or-abstain signal, not the pick's probability (`answer_confidence` is), and forcing `model: laya-multilingual` dropped accuracy from 19/31 to 14/31 because laya-serve otherwise routes English to the English checkpoint.
+
+🗣️ **Say it to a senior** — "Classification runs on a typed-decision encoder that returns a calibrated distribution over our enum in one pass; low-confidence answers fall through to the LLM, so we pay for generation only when the cheap model is unsure."
+
 ## Roadmap — near future
 
 <!-- The full plan with acceptance tests per step is PLAN.md. Tick a milestone here when its release gate passes. Green light needed before any code change. -->
@@ -173,6 +192,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [ ] M2 Facts-only write path. Done: test safety, facts-only parse with questions, `activity_logs`, `RecordSmartLog`, `RevertSmartLog`, answers on both doors, `StatSheet` port, chat core + Telegram polling, `log:simulate`, one model per job. Left: timezone Europe/Amsterdam, numbers as numbers everywhere, DiaryResource, login/register limiters, conversation ownership. RPG from rules parked <!-- id:n3 -->
 - [x] Foundation: PHP 8.5, Postgres locally, `LogType` and `ChatProvider` enums, `LogRecorded` observer. Done 2026-10-04 <!-- id:n14 -->
 - [x] Interpreter: classify, parse, named rules, polite help for not understood, `log:parse` dry run, prompt examples and retry. Done 2026-10-05 <!-- id:n15 -->
+- [x] Classifier lab: Laya and Jev behind `MessageClassifier` (one `SystemOneClient`), `AI_CLASSIFIER` switch with LLM fallback, `classify:try`, `/lab/classify`, labelled eval set. Laya local scores 21/31 (68%) at ~80 ms. Done 2026-10-07 <!-- id:n17 -->
 - [ ] Sets and drafts: per-set storage, exercise kinds, a draft keeps asking while anything is unclear (no cap) and saves only when clear, `cancel`, `/edit` for complete logs <!-- id:n16 -->
 - [ ] v0 deploy: the polling bot as one supervisord worker on a Coolify VPS, registration closed in production, host checklist, smoke from the phone (PLAN.md "v0 deploy") <!-- id:n13 -->
 - [ ] M3 Remove nutrition entirely (decided 2026-09-27; waits until after v0), Latika rewritten to recovery/mobility/longevity <!-- id:n4 -->
@@ -200,6 +220,14 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-07 — classifier lab: Laya and Jev testable on their own
+- Green light from Hiren (Jev is gaining popularity; make the Jev/Laya part testable alone, connect a model locally, artisan or a hacky frontend).
+- Laya installed with `uv tool install "laya[serve]" --python 3.13` and run as `laya-serve` on 127.0.0.1:8765 (MPS); all three checkpoints loaded. Its real API: `POST /v1/systemone` with `state` and typed `questions`, answer under `answers.kind` with `choice`, `probabilities`, `answer_confidence` (the pick) and `confidence` (an act signal, not the pick). laya-serve binds 0.0.0.0 by default; `LAYA_HOST=127.0.0.1` in `make laya`, and Docker still reaches it via host.docker.internal.
+- Built on branch `classifier-lab`: `App\Ai\SystemOne\SystemOneClient` (Laya and Jev share it; Jev at api.typesafe.ai with a bearer key, endpoint path unverified until a key exists), `SystemOneMessageClassifier` (rules first, typed choice over `MessageKind::criteria()`, LLM fallback below `min_confidence`), `config/ai.php` `classifier` block and `AI_CLASSIFIER` switch, `ClassifierLab` + `php artisan classify:try` (one message or `--file` scoring), local-only `/lab/classify` page (Blade + fetch, `LocalOnly` middleware), `tests/Evals/classify.txt` (31 labelled messages, English and Dutch), `make laya`, `make classify-eval`. 17 new tests with `Http::fake`; 139 passed, pint and audit clean.
+- Live scores on the eval set: rules 1/31; Laya auto-routed 19/31 (61%); Laya forced multilingual 14/31 (45%); Laya `laya-typed-decisions` 21/31 (68%) at ~80 ms warm. Criteria with examples scored worse (13/31) than plain descriptions. Typical misses: coach questions read as workout, pain and plans read as workout, "squat 90 90 95 85 85" read as body weight with 0.98 (dangerous: the named rule `BareNumberIsNotBodyWeight` still catches it downstream). LLM driver not scored here (no Msty or Gemini key on this laptop).
+- Default stays `AI_CLASSIFIER=llm`. Laya is not good enough to own the step yet; the lab is where wording, checkpoint and threshold get tuned. Jev untested (waitlist).
+
 
 ### 2026-10-06 — decision: ask while unclear; handoff
 - Hiren: the interpreter was overthinking. Rule now: while anything is unclear, ask; no cap on questions per log; save when clear; `cancel` drops it. Recorded in PLAN.md section 4 (supersedes the one-question and two-question rules), PROJECT.md wording updated. Named rules stay as detectors that turn unclear input into a question; nothing decided on the user's behalf.

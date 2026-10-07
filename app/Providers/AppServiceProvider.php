@@ -8,6 +8,8 @@ use App\Ai\SdkMessageClassifier;
 use App\Ai\SdkPlanGenerator;
 use App\Ai\SdkSmartLogParser;
 use App\Ai\SdkTrainerChat;
+use App\Ai\SystemOne\SystemOneClient;
+use App\Ai\SystemOneMessageClassifier;
 use App\Channels\Telegram\TelegramChannel;
 use App\Channels\Telegram\TelegramClient;
 use App\Contracts\Ai\MessageClassifier;
@@ -19,6 +21,7 @@ use App\Contracts\Channels\ChatChannel;
 use App\Contracts\Profile\ProfileIntake;
 use App\Contracts\Stats\PersonalRecords;
 use App\Contracts\Stats\StatSheet;
+use App\Interpretation\RuleClassifier;
 use App\Services\NutritionParserService;
 use App\Services\Profile\ProfileIntakeService;
 use App\Services\Stats\PersonalRecordService;
@@ -37,7 +40,15 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(TrainerChat::class, SdkTrainerChat::class);
         $this->app->bind(PlanGenerator::class, SdkPlanGenerator::class);
         $this->app->bind(SmartLogParser::class, SdkSmartLogParser::class);
-        $this->app->bind(MessageClassifier::class, SdkMessageClassifier::class);
+        $this->app->bind(MessageClassifier::class, fn ($app): MessageClassifier => match ($driver = (string) config('ai.classifier.driver', 'llm')) {
+            'laya', 'jev' => new SystemOneMessageClassifier(
+                $app->make(RuleClassifier::class),
+                SystemOneClient::fromConfig($driver),
+                (float) config('ai.classifier.min_confidence', 0.6),
+                config('ai.classifier.fallback') ? $app->make(SdkMessageClassifier::class) : null,
+            ),
+            default => $app->make(SdkMessageClassifier::class),
+        });
         $this->app->bind(NutritionParser::class, NutritionParserService::class);
         $this->app->bind(PersonalRecords::class, PersonalRecordService::class);
         $this->app->bind(ProfileIntake::class, ProfileIntakeService::class);

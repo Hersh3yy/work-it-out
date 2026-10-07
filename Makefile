@@ -1,4 +1,4 @@
-.PHONY: up down build restart logs shell test test-pg migrate fresh seed pint
+.PHONY: up down build restart logs shell test test-pg migrate fresh seed pint laya classify-eval
 
 up:
 	docker compose up -d
@@ -41,3 +41,11 @@ register-test:
 		-H "Content-Type: application/json" \
 		-H "Accept: application/json" \
 		-d '{"name":"Local Test","email":"local@test.com","password":"password","password_confirmation":"password"}' | python3 -m json.tool
+
+# Classifier lab: run Laya locally (needs `uv tool install "laya[serve]" --python 3.13` once;
+# first start downloads ~2.3 GB of checkpoints). Loopback only; Docker reaches it via host.docker.internal.
+laya:
+	LAYA_HOST=127.0.0.1 LAYA_PORT=8765 LAYA_DEVICE=mps LAYA_PRELOAD=1 laya-serve
+
+classify-eval:
+	php artisan classify:try --file=tests/Evals/classify.txt --driver=rules --driver=laya
