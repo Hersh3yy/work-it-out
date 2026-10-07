@@ -88,4 +88,5 @@ Route::middleware(LocalOnly::class)->prefix('lab/intent')->group(function (): vo
     Route::get('/', [IntentLabController::class, 'options']);
     Route::post('/', [IntentLabController::class, 'classify']);
     Route::post('/eval', [IntentLabController::class, 'evaluate']);
+    Route::post('/explain', [IntentLabController::class, 'explain']);
 });

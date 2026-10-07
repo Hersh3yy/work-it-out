@@ -15,18 +15,21 @@ use App\Exceptions\AiUnavailable;
  */
 final readonly class IntentClassifier
 {
+    public const int EXPLAIN_MAX_WORDS = 30;
+
     public const string QUESTION = 'What does the user mean with this message to their training app?';
 
     /**
+     * @param  array<string, string>|null  $criteria  other option wording to try (lab), default Intent::criteria()
      * @return array{intent: string, confidence: float, probabilities: array<string, float>, ms: float, driver: string}
      *
      * @throws AiUnavailable
      */
-    public function classify(string $text, string $driver = 'laya'): array
+    public function classify(string $text, string $driver = 'laya', ?array $criteria = null): array
     {
         $started = hrtime(true);
 
-        $answer = SystemOneClient::fromConfig($driver)->choice($text, self::QUESTION, Intent::criteria());
+        $answer = SystemOneClient::fromConfig($driver)->choice($text, self::QUESTION, $criteria ?? Intent::criteria());
 
         return [
             'intent' => $answer->choice,
@@ -35,6 +38,44 @@ final readonly class IntentClassifier
             'ms' => round((hrtime(true) - $started) / 1e6, 1),
             'driver' => $driver,
         ];
+    }
+
+    /**
+     * Why this answer: ask again with each word left out and see how much the
+     * winning option's probability drops. A big drop means that word pushed
+     * the model towards its answer; a negative number means it pulled away.
+     *
+     * @param  array<string, string>|null  $criteria
+     * @return array{base: array<string, mixed>, words: list<array{index: int, word: string, without: string, probability_without: float, influence: float}>}
+     *
+     * @throws AiUnavailable
+     */
+    public function explain(string $text, string $driver = 'laya', ?array $criteria = null): array
+    {
+        $base = $this->classify($text, $driver, $criteria);
+        $words = array_values(array_filter(preg_split('/\s+/', trim($text)) ?: [], static fn (string $w): bool => $w !== ''));
+        $client = SystemOneClient::fromConfig($driver);
+        $winner = $base['probabilities'][$base['intent']] ?? $base['confidence'];
+        $influence = [];
+
+        foreach (array_slice($words, 0, self::EXPLAIN_MAX_WORDS) as $index => $word) {
+            $rest = $words;
+            unset($rest[$index]);
+            $without = implode(' ', $rest);
+
+            $answer = $client->choice($without === '' ? '.' : $without, self::QUESTION, $criteria ?? Intent::criteria());
+            $p = $answer->probabilities[$base['intent']] ?? 0.0;
+
+            $influence[] = [
+                'index' => $index,
+                'word' => $word,
+                'without' => $answer->choice,
+                'probability_without' => round($p, 3),
+                'influence' => round($winner - $p, 3),
+            ];
+        }
+
+        return ['base' => $base, 'words' => $influence];
     }
 
     /**

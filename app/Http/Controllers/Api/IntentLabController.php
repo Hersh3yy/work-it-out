@@ -20,16 +20,39 @@ final class IntentLabController extends Controller
 {
     public function classify(Request $request, IntentClassifier $classifier): JsonResponse
     {
-        $data = $request->validate([
-            'text' => ['required', 'string', 'max:2000'],
-            'driver' => ['nullable', Rule::in(['laya', 'jev'])],
-        ]);
+        $data = $this->validated($request);
 
         try {
-            return response()->json($classifier->classify($data['text'], $data['driver'] ?? 'laya'));
+            return response()->json($classifier->classify($data['text'], $data['driver'] ?? 'laya', $data['criteria'] ?? null));
         } catch (AiUnavailable $e) {
             return response()->json(['message' => $e->getMessage()], 503);
         }
+    }
+
+    public function explain(Request $request, IntentClassifier $classifier): JsonResponse
+    {
+        $data = $this->validated($request, maxText: 300);
+
+        try {
+            return response()->json($classifier->explain($data['text'], $data['driver'] ?? 'laya', $data['criteria'] ?? null));
+        } catch (AiUnavailable $e) {
+            return response()->json(['message' => $e->getMessage()], 503);
+        }
+    }
+
+    /**
+     * criteria: optional other option wording, {"option": "what it means"}, 2 to 8 options.
+     *
+     * @return array{text: string, driver?: string, criteria?: array<string, string>}
+     */
+    private function validated(Request $request, int $maxText = 2000): array
+    {
+        return $request->validate([
+            'text' => ['required', 'string', "max:{$maxText}"],
+            'driver' => ['nullable', Rule::in(['laya', 'jev'])],
+            'criteria' => ['nullable', 'array', 'min:2', 'max:8'],
+            'criteria.*' => ['required', 'string', 'max:300'],
+        ]);
     }
 
     public function evaluate(Request $request, IntentClassifier $classifier): JsonResponse
