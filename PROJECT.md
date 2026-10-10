@@ -240,6 +240,11 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-10-10 — pulled the classifier lab; Gemini scored on the eval set
+- Pulled six commits from 2026-10-07 (classifier lab: `SystemOneClient` for Laya and Jev, `SystemOneMessageClassifier`, `ClassifierLab`, `classify:try`, intent lab with `Intent`, `intent:try`, lab pages and JSON routes behind `LocalOnly`, `make laya`, `make lab-api`, eval files). On this laptop: 149 passed on SQLite and on Postgres; CI green on master.
+- Scored the `llm` driver (ClassifierAgent on gemini-3.5-flash-lite) on `tests/Evals/classify.txt`, which the other laptop could not do: 31/31 correct (100%), about 0.7 to 0.8 s per call. Compare Laya `laya-typed-decisions` 21/31 (68%) at about 80 ms. The first run hit the Gemini free tier's per-minute limit after 16 calls ("Application rate limited"); the remaining 14 were re-scored a minute later, all correct.
+- Consequence: the `llm` default stays; Laya stays a lab experiment. The free tier's per-minute cap is a real limit for evals and for more than one user (two AI calls per logged message: classify and parse); a paid key before v0.
+
 ### 2026-10-07 (evening) — explain endpoint, testbed in ~/Herd
 - `POST /api/lab/intent` accepts `criteria` (other option wording, 2 to 8 options); `POST /api/lab/intent/explain` leaves each word out, re-asks and reports how much the winning option's probability moves. Example: "My squat just now was 90 90 95 85 85" picks workout_log at 66%; "squat" +14 points, "now" +10, the numbers about 0. 149 tests.
 - Visual explainer moved out of this repo into a general Astro testbed, `~/Herd/testbed` (Astro 7, Tailwind 4, React, Vue, Svelte; local git, no remote yet). `classifier-lab/` deleted here.
