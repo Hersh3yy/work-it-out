@@ -189,6 +189,39 @@ flowchart LR
 | Observer | Not yet; `UpdateUserStats` is dispatched directly | `LogRecorded` event; stats, profile notes and the check-in planner listen. Hiren: yes (2026-10-04) |
 | Named rules (refactoring.guru: Specification) | `RecordSmartLog` clamps and date rules; the parser normalizer | Each check becomes one small class with a name and a yes/no answer, for example `BareNumberIsNotBodyWeight`, `RepsTimesSetsHasTwoReadings`, `MessageIsNotAboutTraining`. Each has its own test. The conversation asks every rule in turn; a rule that says yes produces its question or its reply |
 
+### Profile creation and linking (proposed 2026-10-10)
+
+Three ways in, one check. A chat account becomes a user only through a one-time link code; nobody is linked by name, phone number or a guess.
+
+```mermaid
+flowchart TB
+  A([You create a profile]) --> D([One-time code: single use, expires in 7 days])
+  D --> G([You send the link: t.me/bot?start=CODE])
+  C([App user taps Connect Telegram]) --> F([The app shows a one-time code or link])
+  B([A stranger texts the bot]) --> E([Polite reply: private beta, nothing saved])
+  G --> H([They tap it: Telegram sends /start CODE from their account])
+  F --> H
+  H --> I{Code valid, unused, not expired?}
+  I -->|no| J([Ignored; 5 misses means a 1 hour pause for that sender])
+  I -->|yes| K([Linked: the Telegram id joins the user, code burned])
+  K --> L([Greets by name; logging works from the first message])
+  L --> M([The profile fills over time: the check-in asks one fact a day])
+```
+
+- Verification is two things together: the code proves the person got your invite (you sent it over a channel you trust), and Telegram proves the account (the Bot API reports the sender's id; it cannot be spoofed by the sender). Telegram deep links carry the code (`https://t.me/<bot>?start=<code>`, letters, digits, `_` and `-`, up to 64 characters) as `/start <code>`; typing `/link <code>` works too.
+- Codes: random, single use, expire after 7 days, stored hashed. `/unlink` removes the link. The same codes connect WhatsApp or another door later, and the app's "Connect Telegram" button creates one for the logged-in user.
+- A stranger with no code gets one polite reply ("Feetness is in private beta; ask the person who invited you for a link") and nothing is stored but a rate-limit counter. Open sign-up in chat is a later decision, because every message costs AI calls.
+- No onboarding wall: linking needs nothing but the code, and logging works at once. Profile facts (training days per week, main goal, body weight with a unit, later date of birth and height for the metrics) are asked one per day by the check-in and can be skipped. Experience level is not asked (a judgment); it is derived from strength standards once there is data.
+- Replaces `php artisan channel:link` as the normal path; the command stays for development.
+
+### Channels: Instagram checked, not chosen (2026-10-10)
+
+Hiren prefers Telegram over WhatsApp and asked about Instagram messaging. Checked against Meta's messaging docs and guides: the Instagram Messaging API only lets a business reply within 24 hours of the user's last message and never start a conversation (a human-agent tag stretches that to 7 days, for real human support only); it needs an Instagram professional account linked to Meta, the `instagram_business_manage_messages` permission through App Review (screencast, usually business verification) and bot disclosure. The daily check-in could not work there, and it brings the same Meta dependency as WhatsApp. Decision: Telegram is the chat door; Instagram is not planned. The doors design keeps it possible as one more adapter.
+
+### Laya and Jev, re-checked (2026-10-10)
+
+Jev: still early access behind a waitlist (released in early access on 2026-09-15 per third-party listings), $0.042 per million input tokens, output free; an OpenRouter listing appeared in search but the page returns 404, so not confirmed. Laya: version 0.4.2, Apache-2.0, three checkpoints (`laya` and `laya-typed-decisions` on ModernBERT-large, 421M parameters; `laya-multilingual` on mmBERT-base, 322M), self-hosted only (`laya-serve`, Jev-compatible `POST /v1/systemone`, CPU Docker compose included), no hosted API. On our own eval set Gemini scored 31/31 against Laya's 21/31 (diary 2026-10-10), so the classify default stays the LLM; the lab is where Laya or Jev get re-scored when either changes.
+
 ### Derived metrics catalogue (2026-10-05)
 
 The goal is awareness and guidance for the user; the metrics below are examples of that, not a list to build. A metric earns its place when it tells the user something they can act on.

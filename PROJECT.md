@@ -240,6 +240,10 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-10-10 (later) — profile creation and linking proposed; Instagram and Laya/Jev checked
+- Hiren asked for a profile creation flow (what if someone texts straight away; how a pre-made profile gets verified), whether Instagram messaging is a viable channel (he wants Telegram, not WhatsApp), and whether Laya and Jev deserve another look. PLAN.md section 4: the linking flow with a mermaid diagram (one-time codes via Telegram deep links, a polite private-beta reply for strangers, no onboarding wall, profile facts asked one a day), Instagram checked and not chosen (24-hour reply window, no outbound start, App Review), Laya and Jev re-checked (Jev still waitlist; Laya 0.4.2 self-hosted only; Gemini 31/31 vs Laya 21/31 on our set).
+- Open for Hiren: strangers get the private-beta reply (recommended) or open sign-up; delete abandoned drafts with their raw text (recommended) or keep it.
+
 ### 2026-10-10 — pulled the classifier lab; Gemini scored on the eval set
 - Pulled six commits from 2026-10-07 (classifier lab: `SystemOneClient` for Laya and Jev, `SystemOneMessageClassifier`, `ClassifierLab`, `classify:try`, intent lab with `Intent`, `intent:try`, lab pages and JSON routes behind `LocalOnly`, `make laya`, `make lab-api`, eval files). On this laptop: 149 passed on SQLite and on Postgres; CI green on master.
 - Scored the `llm` driver (ClassifierAgent on gemini-3.5-flash-lite) on `tests/Evals/classify.txt`, which the other laptop could not do: 31/31 correct (100%), about 0.7 to 0.8 s per call. Compare Laya `laya-typed-decisions` 21/31 (68%) at about 80 ms. The first run hit the Gemini free tier's per-minute limit after 16 calls ("Application rate limited"); the remaining 14 were re-scored a minute later, all correct.
