@@ -8,12 +8,12 @@ In the same project and environment as the app (`Work it out` / `production`):
 
 1. New resource: PostgreSQL. Pick version 18 if offered (17 works too).
 2. Leave "Make it publicly available" off. No port mapping: only the app reaches it, over Coolify's Docker network.
-3. Start it, then copy its **internal** URL (starts with `postgres://`, host is the database's internal hostname). That is `DB_URL` below.
+3. Start it, then copy its **internal** URL (General, "Postgres URL (internal)", starts with `postgres://`, host is the database's internal hostname). That is `DB_URL` below. The default user and database `postgres` are fine for v0. SSL can stay disabled: the URL never leaves Coolify's private Docker network. Do not paste or screenshot that URL anywhere else; it holds the password.
 4. Backups: turn on scheduled backups (daily). Add an S3 bucket when you have one, so a backup survives losing the server.
 
 ## 2. App environment variables
 
-In the app: Environment Variables. Generate `APP_KEY` once on the laptop with `docker compose exec app php artisan key:generate --show` and paste it; keep it the same across deploys.
+In the app: Environment Variables. The container has no `.env` file (Coolify injects the variables), so `php artisan key:generate` has nothing to write to. Run `php artisan key:generate --show` instead (in the app's Terminal in Coolify, or locally): it only prints a key. Paste that as `APP_KEY` and keep it the same across deploys.
 
 ```
 APP_NAME=Feetness
@@ -47,7 +47,7 @@ REGISTRATION_OPEN=false
 - Build: Dockerfile, location `/Dockerfile`, base directory `/` (already set).
 - Ports Mappings: empty. Exposed port 80 only, reached through Coolify's proxy.
 - Health check: the image has one (`/up`); Coolify can use it as well.
-- Deploy.
+- Deploy. Always deploy the latest `master`: the hardened image (php-fpm on loopback, Telegram poller, closed sign-up) landed on 2026-10-12, after the first deployment.
 
 ## 4. After the first deploy
 

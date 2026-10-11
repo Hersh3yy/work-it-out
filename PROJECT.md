@@ -21,16 +21,25 @@
 
 ## Start here (next session, any machine)
 
+**Tomorrow (2026-10-13): get v0 live on Coolify.** Hiren's state at the end of 2026-10-12: Coolify app `work-it-out:master` runs (Dockerfile build, sslip.io URL, `/up` 200) with **no environment variables yet**; Postgres 18 created in the same project, Private, no port mapping. Steps, in order (details in `docs/deploy-coolify.md`):
+
+1. `APP_KEY`: in the app's Terminal in Coolify run `php artisan key:generate --show` (plain `key:generate` fails: there is no `.env` in the container) and copy the printed key.
+2. Production bot: in Telegram, @BotFather, `/newbot` (a second bot, separate from the laptop's dev bot). Copy its token.
+3. App, Environment Variables: paste the block from `docs/deploy-coolify.md` section 2. `DB_URL` = the database's "Postgres URL (internal)". Add `APP_KEY`, `GEMINI_API_KEY`, `TELEGRAM_BOT_TOKEN`, `APP_URL` (the sslip.io address). Keep `REGISTRATION_OPEN=false`, `CACHE_STORE=database`, `QUEUE_CONNECTION=database`.
+4. Deploy the latest `master`. Watch Deployment Logs: migrations run, then `telegram-poller` starts.
+5. In the app's Terminal: `php artisan channel:telegram:setup`, then `php artisan channel:invite hiren.budhrani@mogelijk.nl --name=Hiren`. Open the printed link on the phone, tap Start, text a workout.
+6. Smoke from the laptop: `curl -s -o /dev/null -w '%{http_code}\n' <app url>/up` gives 200; `nc -zv 84.247.178.198 5432 6379 9000 3306` all refused (checked 2026-10-12: refused).
+7. Coolify itself: turn on 2FA; its dashboard (port 8000) and realtime port (6001) are open to the internet over plain HTTP, so give the dashboard a domain with HTTPS and then firewall 8000 and 6001 to your own IP.
+8. If the database password was shared outside Coolify (it was visible in a screenshot in chat), change it and update `DB_URL`.
+
+**Every session:**
+
 1. `git pull` on `master` (the only branch). Read this file, then `PLAN.md`: section 4 holds every decision, section 5 "Next, in order" the build order. The diary below says what happened last.
-2. Stack: PHP 8.5.11, Laravel 13.35, laravel/ai 1.2, Pest 5, Postgres 18. Postgres moved to 18 on 2026-10-12 with a new volume (`postgres18-data`): after `git pull`, `docker compose up -d --remove-orphans` starts an empty database; the app's start script migrates it; re-create your user with `channel:invite`. A laptop still on the old MySQL stack: set the `DB_*` lines in `.env` from `.env.example` (`pgsql`, host `postgres`, port 5432), `docker compose build app`, `docker compose up -d --remove-orphans`, `docker compose exec app composer install`.
+2. Stack: PHP 8.5.11, Laravel 13.35, laravel/ai 1.2, Pest 5, Postgres 18. Postgres moved to 18 on 2026-10-12 with a new volume (`postgres18-data`): after `git pull`, `docker compose build app` and `docker compose up -d --remove-orphans` start an empty database that the app's start script migrates; `docker compose exec app composer install` (the lock changed); re-create your local user with `channel:invite` or `channel:link`. A laptop still on MySQL: set the `DB_*` lines in `.env` from `.env.example` first.
 3. `make test` (SQLite) and `make test-pg` (Postgres) must both be green (168 tests on 2026-10-12).
-4. `.env` for real use: `GEMINI_API_KEY`, `AI_LOG_PROVIDER=gemini`, `AI_LOG_MODEL=gemini-3.5-flash-lite`, `TELEGRAM_BOT_TOKEN`, then `docker compose up -d --force-recreate app`.
-5. Texting the bot:
-   - Once: `docker compose exec app php artisan channel:telegram:setup` (checks the token, sets the menu).
-   - Per person: `docker compose exec app php artisan channel:invite you@example.com --name=You` prints a one-time link; open it on the phone and tap Start.
-   - Keep `make bot` running while you want replies (the laptop must stay awake and online until v0 deploy).
-   - Try the interpreter alone, saving nothing: `docker compose exec app php artisan log:parse "text"`.
-6. Next work item: "Next, in order" step 3 (Sets and drafts) in PLAN.md section 5. Open questions for Hiren: what his 2026-10-10 deadlift lines meant (to label the session), delete abandoned drafts with their raw text (recommended) or keep it.
+4. Local `.env` for real use: `GEMINI_API_KEY`, `AI_LOG_PROVIDER=gemini`, `AI_LOG_MODEL=gemini-3.5-flash-lite`, and the **dev** bot's `TELEGRAM_BOT_TOKEN` (never the production one while the server runs), then `docker compose up -d --force-recreate app`.
+5. Texting the local bot: `channel:telegram:setup` once, `channel:invite you@example.com` per person, `make bot` while you want replies. Interpreter alone, saving nothing: `docker compose exec app php artisan log:parse "text"`.
+6. After v0: "Next, in order" step 3 (Sets and drafts: keep asking while unclear, one weight per set, "2x70" read as 2 reps at 70 kg warm-up).
 7. Work to the gate, `pint`, both suites, push, CI green, diary entry here.
 
 ## Run it
@@ -241,6 +250,12 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-12 (night) — Coolify Postgres created; handoff for tomorrow
+- Hiren created Postgres 18 on Coolify (Private, no port mapping, user and database `postgres`, SSL off on the internal network). `php artisan key:generate` failed in the app container because there is no `.env` there; the fix is `key:generate --show` and pasting into Coolify. The app still has no environment variables and runs the build from 23:26 on 2026-10-11, before the hardening; it needs the env and a redeploy of the latest `master`.
+- Port probe of 84.247.178.198 from the laptop: 22, 80, 443 open; 3306, 5432, 6379, 9000 refused; 8000 (Coolify dashboard, plain HTTP) and 6001 (Coolify realtime) open to the internet. `/up` on the app answered 200.
+- The database's internal URL with its password was visible in a screenshot in chat: change the password if that image is shared anywhere.
+- Start here rewritten as tomorrow's checklist. `docs/deploy-coolify.md`: `key:generate --show`, where to find the internal URL, deploy the latest `master`.
 
 ### 2026-10-12 — Coolify prep, review fixes, upgrades, Postgres 18
 - Hiren's Coolify app (`work-it-out:master`, Dockerfile build, sslip.io URL) runs but has no env yet; he is creating a Postgres there. Clarified: "while not clear, get clarity" (no question cap) and "2x70 = 2 reps at 70 kg warm-up" are defaults for step 3.
