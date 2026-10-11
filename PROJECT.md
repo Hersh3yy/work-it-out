@@ -9,9 +9,9 @@
 
 **What it is** · The real backend for Hiren's fitness app: text a workout or your weight in plain language (Telegram now, an app later), an AI turns it into facts, PHP computes every number from those facts, and you get a receipt. Coaches speak only when asked. API-only; a Nuxt or Flutter frontend comes later. Goal behind it: help Hiren cut fat / build muscle at 105kg, and maybe become a product.
 **This is the backend of record.** The `koala/ai-fitness-coaches-&-tracker` React+Express repo was a throwaway Google AI Studio visualization of the idea, not the plan. Build here.
-**Stack** · Laravel 13 · PHP 8.5 · `laravel/ai` SDK (provider-agnostic) · Sanctum bearer auth · PostgreSQL 17 (SQLite for the fast suite) · Redis (queue/cache) · Pest 4 tests · Docker (Sail-style compose) · Pint
+**Stack** · Laravel 13 · PHP 8.5 · `laravel/ai` SDK (provider-agnostic) · Sanctum bearer auth · PostgreSQL 18 (SQLite for the fast suite) · Redis (queue/cache) · Pest 4 tests · Docker (Sail-style compose) · Pint
 **Goal right now** · Text the bot from the gym and trust what it stores. Telegram is live from the laptop (long polling, `make bot`) with invite links for linking accounts. Next: per-set storage and drafts (n16), then the M2 correctness leftovers, then v0 deploy so the laptop can sleep.
-**Status** · 🟡 Foundation and Interpreter done, M2 mostly done, all on `master`. 163 tests, 447 assertions, green on SQLite and Postgres; CI green; audit clean. Telegram loop works from the laptop (polling). Live parse verified on gemini-3.5-flash-lite. Not yet trustworthy for real sessions: one weight per exercise (real sets differ), no drafts, UTC timezone.
+**Status** · 🟡 Foundation and Interpreter done, M2 mostly done, all on `master`. 168 tests, 459 assertions, green on SQLite and Postgres; CI green; audit clean. Telegram loop works from the laptop (polling). Live parse verified on gemini-3.5-flash-lite. Not yet trustworthy for real sessions: one weight per exercise (real sets differ), no drafts, UTC timezone.
 **Repo** · git@github.com:Hersh3yy/work-it-out.git · one branch only: `master`. Short-lived feature branches are fine, merged and deleted the same session. No `deploy` branch: Coolify deploys `master` manually, auto-deploy off
 **Hosting** · designed for Coolify/VPS (see `.env.example` production block); nothing deployed yet. Heed the VAMS VPS lessons: never expose service ports, rotate keys.
 **ClickUp** · not linked yet. Needs `CLICKUP_API_KEY` in the shell and a list id here as `<!-- clickup_list:ID -->`; then `node ~/.claude/skills/project-map/scripts/clickup-sync.mjs PROJECT.md`
@@ -22,8 +22,8 @@
 ## Start here (next session, any machine)
 
 1. `git pull` on `master` (the only branch). Read this file, then `PLAN.md`: section 4 holds every decision, section 5 "Next, in order" the build order. The diary below says what happened last.
-2. Stack: PHP 8.5 and Postgres 17. A laptop still on the old MySQL stack: set the `DB_*` lines in `.env` from `.env.example` (`pgsql`, host `postgres`, port 5432), `docker compose build app`, `docker compose up -d --remove-orphans`, `docker compose exec app composer install`.
-3. `make test` (SQLite) and `make test-pg` (Postgres) must both be green (163 tests on 2026-10-11).
+2. Stack: PHP 8.5.11, Laravel 13.35, laravel/ai 1.2, Pest 5, Postgres 18. Postgres moved to 18 on 2026-10-12 with a new volume (`postgres18-data`): after `git pull`, `docker compose up -d --remove-orphans` starts an empty database; the app's start script migrates it; re-create your user with `channel:invite`. A laptop still on the old MySQL stack: set the `DB_*` lines in `.env` from `.env.example` (`pgsql`, host `postgres`, port 5432), `docker compose build app`, `docker compose up -d --remove-orphans`, `docker compose exec app composer install`.
+3. `make test` (SQLite) and `make test-pg` (Postgres) must both be green (168 tests on 2026-10-12).
 4. `.env` for real use: `GEMINI_API_KEY`, `AI_LOG_PROVIDER=gemini`, `AI_LOG_MODEL=gemini-3.5-flash-lite`, `TELEGRAM_BOT_TOKEN`, then `docker compose up -d --force-recreate app`.
 5. Texting the bot:
    - Once: `docker compose exec app php artisan channel:telegram:setup` (checks the token, sets the menu).
@@ -215,7 +215,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [ ] Wire `Intent` into the real chat path in place of `MessageKind` once the intents feel right in the lab; `profile_update` and `feeling` need somewhere to go (profile fields, notes) <!-- id:n19 -->
 - [x] Telegram live: invite links (`channel:invite`), account linking with one-time codes, `channel:telegram:setup`, `make bot`, polite stranger reply. Done 2026-10-11 <!-- id:n17 -->
 - [ ] Sets and drafts: per-set storage, exercise kinds, a draft keeps asking while anything is unclear (no cap) and saves only when clear, `cancel`, `/edit` for complete logs <!-- id:n16 -->
-- [ ] v0 deploy: the polling bot as one supervisord worker on a Coolify VPS, registration closed in production, host checklist, smoke from the phone (PLAN.md "v0 deploy") <!-- id:n13 -->
+- [ ] v0 deploy (in progress 2026-10-12; steps in `docs/deploy-coolify.md`; image hardened and rehearsed; waiting on Hiren: Coolify Postgres, env vars, production bot token): the polling bot as one supervisord worker on a Coolify VPS, registration closed in production, host checklist, smoke from the phone (PLAN.md "v0 deploy") <!-- id:n13 -->
 - [ ] M3 Remove nutrition entirely (decided 2026-09-27; waits until after v0), Latika rewritten to recovery/mobility/longevity <!-- id:n4 -->
 - [ ] M4 Simulate: factories + deterministic two-user seeder, streak on read, HTTP scenario suite (PLAN.md section 6), prompting practices and a live eval set of real messages <!-- id:n5 -->
 - [ ] M5 Channel port + the Telegram command set (log, weight, /next, /undo, /coach) + rules-only `/next` + one AI budget shared by HTTP and chat, driven by `channel:simulate`. Profile and stats stay in the app <!-- id:n6 -->
@@ -241,6 +241,13 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-12 — Coolify prep, review fixes, upgrades, Postgres 18
+- Hiren's Coolify app (`work-it-out:master`, Dockerfile build, sslip.io URL) runs but has no env yet; he is creating a Postgres there. Clarified: "while not clear, get clarity" (no question cap) and "2x70 = 2 reps at 70 kg warm-up" are defaults for step 3.
+- Production image: `docker/php-fpm/zzz-app.conf` pins php-fpm to 127.0.0.1:9000 (the image's `zz-docker.conf` binds every interface) with a build guard over every pool; supervisord gains `telegram-poller` (idles without a token) and the queue worker uses `QUEUE_CONNECTION` (database in v0). Rehearsed locally against a scratch database: healthy, `/up` 200, only port 80 listening, register 403, lab 404.
+- /code-review (high): 7 findings, 6 fixed: trustProxies limited to private ranges (was `*`, X-Forwarded-For spoofing defeated rate limits), named `login` and `register` limiters (the unnamed throttles shared one key), closed registration checked in `RegisterRequest::authorize` (no email enumeration), `.env.example` queue on database, stricter php-fpm guard, tests for each. Skipped: the brief two-poller overlap in a rolling deploy (harmless with `CACHE_STORE=database`).
+- Versions: PHP 8.5.11 is the newest stable (8.6 only RC). `composer update` to Laravel 13.35 and current minors; laravel/ai 0.8 to 1.2 (conversations now belong to a participant morph; migration moves rows and rolls back), Pest 4 to 5. Postgres 17 to 18 in compose and CI (fresh volume `postgres18-data`; the 17 volume stays unused). Audit clean. 168 passed on SQLite and Postgres 18; live log verified.
+- `docs/deploy-coolify.md`: Postgres resource, env block, settings, first-run commands, one bot per place, smoke checks, moving servers.
 
 ### 2026-10-11 — Telegram live: invites and linking; model check; rule fixes
 - Hiren wants to start texting tomorrow; asked what Telegram setup needs, when and how to link accounts (best practice), whether Telegram login works for the app page; classifiers parked, Gemini for everything.
