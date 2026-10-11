@@ -5,10 +5,10 @@ declare(strict_types=1);
 use App\Channels\HandleInboundMessage;
 use Tests\Fakes\FakeSmartLogParser;
 
-it('ignores a sender that is not linked and never calls the parser', function (): void {
+it('never parses a message from a sender that is not linked', function (): void {
     $parser = fakeSmartLogParser();
 
-    expect(app(HandleInboundMessage::class)->handle(telegramText('bench 3x5 100', '999')))->toBeNull()
+    expect(app(HandleInboundMessage::class)->handle(telegramText('bench 3x5 100', '999')))->toBe(HandleInboundMessage::STRANGER)
         ->and($parser->calls)->toBe([]);
     $this->assertDatabaseCount('activity_logs', 0);
 });

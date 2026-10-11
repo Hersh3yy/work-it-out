@@ -34,6 +34,7 @@ API on http://localhost:8088. Local AI uses a free Msty model; see `.env.example
 ## Where things are
 
 - Routes: `routes/api.php`. Controllers: `app/Http/Controllers/Api`. AI ports and adapters: `app/Contracts/Ai`, `app/Ai`. Interpreter (classify, parse, named rules): `app/Interpretation`. Log actions: `app/Actions/SmartLog`. Chat core and Telegram: `app/Channels`. Events and listeners: `app/Events`, `app/Listeners`. Coaches: `app/Enums/TrainerPersona.php`. Test fakes: `tests/Fakes`, bound in `tests/Pest.php` and `tests/TestCase.php`.
+- Telegram: `php artisan channel:telegram:setup` once, `php artisan channel:invite email` per person (one-time link), `make bot` to run the poller.
 - Try the interpreter alone: `docker compose exec app php artisan log:parse "text"` (saves nothing). The whole chat path without a phone: `php artisan log:simulate --user=<id> "text"`.
 - Intent classifier alone (the current focus): `php artisan intent:try "text"`, the visual explainer in `~/Herd/testbed` (`/classifier`), `/api/lab/intent/explain`, options in `app/Enums/Intent.php`, English only.
 - Classify step alone, per model: `php artisan classify:try "text"`, `make classify-eval`, or `/lab/classify` in a local browser. Laya runs locally with `make laya`; switch the app with `AI_CLASSIFIER=llm|laya|jev`.

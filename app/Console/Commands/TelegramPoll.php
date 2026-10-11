@@ -88,14 +88,15 @@ final class TelegramPoll extends Command
             $reply = 'Something went wrong on my side, so nothing was saved. Try again.';
         }
 
-        if ($reply === null) {
+        if ($reply === null || $reply === HandleInboundMessage::STRANGER) {
             $this->warn(sprintf(
-                'Ignored a message from unlinked Telegram user %s (%s). Link it: php artisan channel:link you@example.com %s',
+                'Message from unlinked Telegram user %s (%s). Invite them: php artisan channel:invite their@email',
                 $inbound->senderId,
                 $inbound->senderName ?? 'no name',
-                $inbound->senderId,
             ));
+        }
 
+        if ($reply === null) {
             return;
         }
 

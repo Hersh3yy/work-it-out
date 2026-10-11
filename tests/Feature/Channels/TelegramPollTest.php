@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Channels\HandleInboundMessage;
 use App\Models\ChannelIdentity;
 use App\Models\User;
 use Illuminate\Http\Client\Request;
@@ -48,7 +49,7 @@ it('polls once, logs the message and sends the receipt back', function (): void 
     expect(cache('telegram:poll:offset'))->toBe(12);
 });
 
-it('tells the operator how to link an unknown sender and replies nothing', function (): void {
+it('tells the operator how to invite an unknown sender and sends one polite reply', function (): void {
     $parser = fakeSmartLogParser();
     Http::fake([
         '*/getUpdates' => Http::response(['ok' => true, 'result' => [telegramUpdate(20, 'hi', from: 777)]]),
@@ -56,10 +57,11 @@ it('tells the operator how to link an unknown sender and replies nothing', funct
     ]);
 
     $this->artisan('channel:telegram:poll --once')
-        ->expectsOutputToContain('php artisan channel:link you@example.com 777')
+        ->expectsOutputToContain('php artisan channel:invite')
         ->assertSuccessful();
 
-    Http::assertNotSent(fn (Request $r): bool => str_ends_with($r->url(), '/sendMessage'));
+    Http::assertSent(fn (Request $r): bool => str_ends_with($r->url(), '/sendMessage')
+        && $r['text'] === HandleInboundMessage::STRANGER);
     expect($parser->calls)->toBe([]);
 });
 

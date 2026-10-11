@@ -1,4 +1,4 @@
-.PHONY: up down build restart logs shell test test-pg migrate fresh seed pint laya lab-api classify-eval
+.PHONY: up down build restart logs shell test test-pg migrate fresh seed pint bot laya lab-api classify-eval
 
 up:
 	docker compose up -d
@@ -20,6 +20,9 @@ shell:
 
 test:
 	docker compose exec app php artisan test
+
+bot:
+	docker compose exec app php artisan channel:telegram:poll
 
 test-pg:
 	docker compose exec app vendor/bin/pest --configuration=phpunit.pgsql.xml

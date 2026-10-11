@@ -13,6 +13,7 @@ use App\Exceptions\AiUnavailable;
 use App\Interpretation\Rules\BareNumberIsNotBodyWeight;
 use App\Interpretation\Rules\InterpretationRule;
 use App\Interpretation\Rules\RepsTimesSetsHasTwoReadings;
+use App\Interpretation\Rules\WeightedLiftNeedsSetsAndReps;
 use App\Models\User;
 use App\Services\Ai\AiCall;
 
@@ -36,6 +37,7 @@ final readonly class Interpreter
     private const array RULES = [
         BareNumberIsNotBodyWeight::class,
         RepsTimesSetsHasTwoReadings::class,
+        WeightedLiftNeedsSetsAndReps::class,
     ];
 
     public function __construct(

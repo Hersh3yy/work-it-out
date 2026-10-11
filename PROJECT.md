@@ -10,8 +10,8 @@
 **What it is** · The real backend for Hiren's fitness app: text a workout or your weight in plain language (Telegram now, an app later), an AI turns it into facts, PHP computes every number from those facts, and you get a receipt. Coaches speak only when asked. API-only; a Nuxt or Flutter frontend comes later. Goal behind it: help Hiren cut fat / build muscle at 105kg, and maybe become a product.
 **This is the backend of record.** The `koala/ai-fitness-coaches-&-tracker` React+Express repo was a throwaway Google AI Studio visualization of the idea, not the plan. Build here.
 **Stack** · Laravel 13 · PHP 8.5 · `laravel/ai` SDK (provider-agnostic) · Sanctum bearer auth · PostgreSQL 17 (SQLite for the fast suite) · Redis (queue/cache) · Pest 4 tests · Docker (Sail-style compose) · Pint
-**Goal right now** · Text the bot from the gym and trust what it stores. The Telegram loop already runs from the laptop by long polling. Next: per-set storage and drafts (n16), then the M2 correctness leftovers, then v0 deploy so the laptop can sleep.
-**Status** · 🟡 Foundation and Interpreter done, M2 mostly done, all on `master`. 122 tests, 339 assertions, green on SQLite and Postgres; CI green; audit clean. Telegram loop works from the laptop (polling). Live parse verified on gemini-3.5-flash-lite. Not yet trustworthy for real sessions: one weight per exercise (real sets differ), no drafts, UTC timezone.
+**Goal right now** · Text the bot from the gym and trust what it stores. Telegram is live from the laptop (long polling, `make bot`) with invite links for linking accounts. Next: per-set storage and drafts (n16), then the M2 correctness leftovers, then v0 deploy so the laptop can sleep.
+**Status** · 🟡 Foundation and Interpreter done, M2 mostly done, all on `master`. 163 tests, 447 assertions, green on SQLite and Postgres; CI green; audit clean. Telegram loop works from the laptop (polling). Live parse verified on gemini-3.5-flash-lite. Not yet trustworthy for real sessions: one weight per exercise (real sets differ), no drafts, UTC timezone.
 **Repo** · git@github.com:Hersh3yy/work-it-out.git · one branch only: `master`. Short-lived feature branches are fine, merged and deleted the same session. No `deploy` branch: Coolify deploys `master` manually, auto-deploy off
 **Hosting** · designed for Coolify/VPS (see `.env.example` production block); nothing deployed yet. Heed the VAMS VPS lessons: never expose service ports, rotate keys.
 **ClickUp** · not linked yet. Needs `CLICKUP_API_KEY` in the shell and a list id here as `<!-- clickup_list:ID -->`; then `node ~/.claude/skills/project-map/scripts/clickup-sync.mjs PROJECT.md`
@@ -22,15 +22,16 @@
 ## Start here (next session, any machine)
 
 1. `git pull` on `master` (the only branch). Read this file, then `PLAN.md`: section 4 holds every decision, section 5 "Next, in order" the build order. The diary below says what happened last.
-2. Since 2026-10-04 the stack is PHP 8.5 and Postgres 17, not MySQL. On a laptop that last ran the MySQL stack:
-   - `.env` is not in git. Set `DB_CONNECTION=pgsql`, `DB_HOST=postgres`, `DB_PORT=5432`, `DB_DATABASE=work_it_out`, `DB_USERNAME=sail`, `DB_PASSWORD=password` (compare with `.env.example`).
-   - `docker compose build app`, then `docker compose up -d --remove-orphans` (removes the old MySQL container, keeps its volume).
-   - `docker compose exec app composer install` (the lock changed for PHP 8.5). If it is killed with exit 137, install on the host and `docker cp vendor/. work-it-out-app-1:/var/www/html/vendor/`.
-   - The `testing` database is created on a fresh Postgres volume by `docker/postgres/init.sql`.
-3. `make test` (SQLite) and `make test-pg` (Postgres) must both be green before touching anything (122 tests on 2026-10-05).
-4. Real parsing needs in `.env`: `GEMINI_API_KEY`, `AI_LOG_PROVIDER=gemini`, `AI_LOG_MODEL=gemini-3.5-flash-lite` (gemini-2.5 is retired for new keys), then `docker compose up -d --force-recreate app`. Create a user and try it: `docker compose exec app php artisan channel:link you@example.com 1 --provider=simulate`, then `php artisan log:parse "I did deadlift: 90 x3 x 5"` (saves nothing) or `php artisan log:simulate --user=<id> "bench 3x8 80"` (full path).
-5. Next work item: "Next, in order" step 3 (Sets and drafts) in PLAN.md section 5. One open question for Hiren first: delete abandoned drafts with their raw text (recommended) or keep the raw text.
-6. Work to the gate, `pint`, both suites, push the branch, CI green, diary entry here.
+2. Stack: PHP 8.5 and Postgres 17. A laptop still on the old MySQL stack: set the `DB_*` lines in `.env` from `.env.example` (`pgsql`, host `postgres`, port 5432), `docker compose build app`, `docker compose up -d --remove-orphans`, `docker compose exec app composer install`.
+3. `make test` (SQLite) and `make test-pg` (Postgres) must both be green (163 tests on 2026-10-11).
+4. `.env` for real use: `GEMINI_API_KEY`, `AI_LOG_PROVIDER=gemini`, `AI_LOG_MODEL=gemini-3.5-flash-lite`, `TELEGRAM_BOT_TOKEN`, then `docker compose up -d --force-recreate app`.
+5. Texting the bot:
+   - Once: `docker compose exec app php artisan channel:telegram:setup` (checks the token, sets the menu).
+   - Per person: `docker compose exec app php artisan channel:invite you@example.com --name=You` prints a one-time link; open it on the phone and tap Start.
+   - Keep `make bot` running while you want replies (the laptop must stay awake and online until v0 deploy).
+   - Try the interpreter alone, saving nothing: `docker compose exec app php artisan log:parse "text"`.
+6. Next work item: "Next, in order" step 3 (Sets and drafts) in PLAN.md section 5. Open questions for Hiren: what his 2026-10-10 deadlift lines meant (to label the session), delete abandoned drafts with their raw text (recommended) or keep it.
+7. Work to the gate, `pint`, both suites, push, CI green, diary entry here.
 
 ## Run it
 
@@ -212,6 +213,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [x] Classifier lab: Laya and Jev behind `MessageClassifier` (one `SystemOneClient`), `AI_CLASSIFIER` switch with LLM fallback, `classify:try`, `/lab/classify`, labelled eval set. Laya local scores 21/31 (68%) at ~80 ms. Done 2026-10-07 <!-- id:n17 -->
 - [x] Intent lab: `Intent` enum (workout_log, profile_update, feeling, question, nonsense), `IntentClassifier`, `POST /api/lab/intent`, `intent:try`, English eval set, Astro page (moved to `~/Herd/testbed`). Laya 32/38 (84%), ~60 ms. Done 2026-10-07 <!-- id:n18 -->
 - [ ] Wire `Intent` into the real chat path in place of `MessageKind` once the intents feel right in the lab; `profile_update` and `feeling` need somewhere to go (profile fields, notes) <!-- id:n19 -->
+- [x] Telegram live: invite links (`channel:invite`), account linking with one-time codes, `channel:telegram:setup`, `make bot`, polite stranger reply. Done 2026-10-11 <!-- id:n17 -->
 - [ ] Sets and drafts: per-set storage, exercise kinds, a draft keeps asking while anything is unclear (no cap) and saves only when clear, `cancel`, `/edit` for complete logs <!-- id:n16 -->
 - [ ] v0 deploy: the polling bot as one supervisord worker on a Coolify VPS, registration closed in production, host checklist, smoke from the phone (PLAN.md "v0 deploy") <!-- id:n13 -->
 - [ ] M3 Remove nutrition entirely (decided 2026-09-27; waits until after v0), Latika rewritten to recovery/mobility/longevity <!-- id:n4 -->
@@ -239,6 +241,13 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-11 — Telegram live: invites and linking; model check; rule fixes
+- Hiren wants to start texting tomorrow; asked what Telegram setup needs, when and how to link accounts (best practice), whether Telegram login works for the app page; classifiers parked, Gemini for everything.
+- Model: no `gemini-3.6-flash-lite` exists for this key. `gemini-3.6-flash` returned zero exercises for his real session on three runs (multi-line and one line) and took about 12 s; `gemini-3.5-flash-lite` got all five in 2 s. Kept 3.5 lite; the API does not mark it deprecated for this key.
+- Built: `channel_link_codes` migration and model (sha256 hash only), `IssueLinkCode`, `RedeemLinkCode`, stranger handling in `HandleInboundMessage` (invite code via `/start CODE` or `/link CODE` links the account; one polite private-beta reply a day otherwise; five wrong codes an hour, then silence), `TelegramClient::getMe` and `setMyCommands`, `php artisan channel:invite {email}`, `php artisan channel:telegram:setup`, `make bot`. Poller prints the invite hint for unlinked senders.
+- Rules: `RepsTimesSetsHasTwoReadings` now also catches "2x110kg x 5 times" and checks every match in a message (before, the overhead press line matched first and hid the deadlift); new `WeightedLiftNeedsSetsAndReps` asks for missing reps or sets when no other question is open. Live: his session now asks "Was that 2 sets of 5 reps, or 5 sets of 2 reps?". The 70 kg warm-up's missing reps still wait, because a log holds one open question until drafts (n16).
+- PLAN.md: linking marked built, Telegram login for the app noted for later, classifiers parked, model decision. 163 passed on SQLite and Postgres.
 
 ### 2026-10-10 (later) — profile creation and linking proposed; Instagram and Laya/Jev checked
 - Hiren asked for a profile creation flow (what if someone texts straight away; how a pre-made profile gets verified), whether Instagram messaging is a viable channel (he wants Telegram, not WhatsApp), and whether Laya and Jev deserve another look. PLAN.md section 4: the linking flow with a mermaid diagram (one-time codes via Telegram deep links, a polite private-beta reply for strangers, no onboarding wall, profile facts asked one a day), Instagram checked and not chosen (24-hour reply window, no outbound start, App Review), Laya and Jev re-checked (Jev still waitlist; Laya 0.4.2 self-hosted only; Gemini 31/31 vs Laya 21/31 on our set).
