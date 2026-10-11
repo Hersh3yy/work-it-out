@@ -70,6 +70,10 @@ class AppServiceProvider extends ServiceProvider
                 ->by($request->user()?->id ?? $request->ip());
         });
 
+        // Auth: each route its own key, so login failures never lock sign-up.
+        RateLimiter::for('login', fn (Request $request): Limit => Limit::perMinute(5)->by('login|'.$request->ip()));
+        RateLimiter::for('register', fn (Request $request): Limit => Limit::perHour(3)->by('register|'.$request->ip()));
+
         // AI trainer chat: 20 requests per authenticated user per hour.
         RateLimiter::for('trainer-chat', function (Request $request): Limit {
             return Limit::perHour(20)

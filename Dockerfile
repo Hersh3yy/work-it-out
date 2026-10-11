@@ -42,6 +42,13 @@ RUN apk add --no-cache \
 # ─── PHP configuration ───────────────────────────────────────────────────────
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/99-app.ini
 
+# ─── php-fpm: loopback only (overrides the image's zz-docker.conf) ──────────
+COPY docker/php-fpm/zzz-app.conf /usr/local/etc/php-fpm.d/zzz-app.conf
+RUN listens="$(php-fpm -tt 2>&1 | grep -E '[[:space:]]listen = ')" \
+    && echo "$listens" | grep -q 'listen = 127.0.0.1:9000' \
+    && ! echo "$listens" | grep -v 'listen = 127.0.0.1:9000' | grep -q . \
+    || (echo 'every php-fpm pool must listen on 127.0.0.1:9000 only' && exit 1)
+
 # ─── Nginx configuration ─────────────────────────────────────────────────────
 COPY docker/nginx/default.conf /etc/nginx/http.d/default.conf
 

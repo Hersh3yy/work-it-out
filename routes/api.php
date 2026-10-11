@@ -21,8 +21,8 @@ use Illuminate\Support\Facades\Route;
 // Public auth routes
 // -------------------------------------------------------------------------
 Route::prefix('auth')->group(function (): void {
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 });
 
 // -------------------------------------------------------------------------

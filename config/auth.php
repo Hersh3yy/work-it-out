@@ -17,6 +17,12 @@ return [
     |
     */
 
+    /*
+    | Open sign-up over the API. Off in production by default: people join
+    | through a one-time Telegram invite (php artisan channel:invite).
+    */
+    'registration_open' => (bool) env('REGISTRATION_OPEN', env('APP_ENV', 'production') !== 'production'),
+
     'defaults' => [
         'guard' => env('AUTH_GUARD', 'web'),
         'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
