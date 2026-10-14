@@ -4,6 +4,7 @@
   refreshed each session; the Diary at the bottom only grows. App-code changes need a
   green light; the working branch is merged to only when sure.
 -->
+<!-- clickup_list:901508603754 -->
 
 # Feetness (work-it-out) — cockpit
 
@@ -15,7 +16,7 @@
 **Repo** · git@github.com:Hersh3yy/work-it-out.git · one branch only: `master`. Short-lived feature branches are fine, merged and deleted the same session. No `deploy` branch: Coolify deploys `master` manually, auto-deploy off
 **Hosting** · designed for Coolify/VPS (see `.env.example` production block); nothing deployed yet. Heed the VAMS VPS lessons: never expose service ports, rotate keys.
 **ClickUp** · not linked yet. Needs `CLICKUP_API_KEY` in the shell and a list id here as `<!-- clickup_list:ID -->`; then `node ~/.claude/skills/project-map/scripts/clickup-sync.mjs PROJECT.md`
-**Last assessed** · 2026-10-07
+**Last assessed** · 2026-10-14
 
 ---
 
@@ -214,35 +215,35 @@ What the backend must do, in Hiren's words (2026-10-02), and where each lives:
 
 Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, M2.1, then M5.1 to M5.3 with only log, weight, `/next`, `/undo`, then M6.1 with `channel:telegram:poll`. Skip budget, hardening and deploy until after the weekend.
 
-- [x] M0 Sync, green baseline, CI: suite green, SDK claims verified (fatals confirmed), GitHub Actions, deploy branch. Done 2026-10-03 <!-- id:n1 -->
-- [x] M1 Day-one blockers: adapters fixed, payload validated and capped, model name per provider in `config/ai.php`, `AiCall` reports every failure. Done 2026-10-03 <!-- id:n2 -->
-- [ ] M2 Facts-only write path. Done: test safety, facts-only parse with questions, `activity_logs`, `RecordSmartLog`, `RevertSmartLog`, answers on both doors, `StatSheet` port, chat core + Telegram polling, `log:simulate`, one model per job. Left: timezone Europe/Amsterdam, numbers as numbers everywhere, DiaryResource, login/register limiters, conversation ownership. RPG from rules parked <!-- id:n3 -->
-- [x] Foundation: PHP 8.5, Postgres locally, `LogType` and `ChatProvider` enums, `LogRecorded` observer. Done 2026-10-04 <!-- id:n14 -->
-- [x] Interpreter: classify, parse, named rules, polite help for not understood, `log:parse` dry run, prompt examples and retry. Done 2026-10-05 <!-- id:n15 -->
-- [x] Classifier lab: Laya and Jev behind `MessageClassifier` (one `SystemOneClient`), `AI_CLASSIFIER` switch with LLM fallback, `classify:try`, `/lab/classify`, labelled eval set. Laya local scores 21/31 (68%) at ~80 ms. Done 2026-10-07 <!-- id:n17 -->
-- [x] Intent lab: `Intent` enum (workout_log, profile_update, feeling, question, nonsense), `IntentClassifier`, `POST /api/lab/intent`, `intent:try`, English eval set, Astro page (moved to `~/Herd/testbed`). Laya 32/38 (84%), ~60 ms. Done 2026-10-07 <!-- id:n18 -->
-- [ ] Wire `Intent` into the real chat path in place of `MessageKind` once the intents feel right in the lab; `profile_update` and `feeling` need somewhere to go (profile fields, notes) <!-- id:n19 -->
-- [x] Telegram live: invite links (`channel:invite`), account linking with one-time codes, `channel:telegram:setup`, `make bot`, polite stranger reply. Done 2026-10-11 <!-- id:n17 -->
-- [ ] Sets and drafts: per-set storage, exercise kinds, a draft keeps asking while anything is unclear (no cap) and saves only when clear, `cancel`, `/edit` for complete logs <!-- id:n16 -->
-- [ ] v0 deploy (in progress 2026-10-12; steps in `docs/deploy-coolify.md`; image hardened and rehearsed; waiting on Hiren: Coolify Postgres, env vars, production bot token): the polling bot as one supervisord worker on a Coolify VPS, registration closed in production, host checklist, smoke from the phone (PLAN.md "v0 deploy") <!-- id:n13 -->
-- [ ] M3 Remove nutrition entirely (decided 2026-09-27; waits until after v0), Latika rewritten to recovery/mobility/longevity <!-- id:n4 -->
-- [ ] M4 Simulate: factories + deterministic two-user seeder, streak on read, HTTP scenario suite (PLAN.md section 6), prompting practices and a live eval set of real messages <!-- id:n5 -->
-- [ ] M5 Channel port + the Telegram command set (log, weight, /next, /undo, /coach) + rules-only `/next` + one AI budget shared by HTTP and chat, driven by `channel:simulate`. Profile and stats stay in the app <!-- id:n6 -->
-- [ ] M6 Telegram adapter, hardened ingest, host and Coolify checklist, backups, first deploy, first message from the phone. RELEASE 1 <!-- id:n7 -->
-- [ ] M7 AI commands over chat: coach threads with memory, `/plan` <!-- id:n8 -->
-- [ ] M8 Shen next-move with the model on top of the rules path; compact coach context <!-- id:n9 -->
-- [ ] M9 Profile: intake gaps (`asked_field`, skip state, `GET /api/coaches`) and the profile build on explicit request (coach notes citing logs, local model allowed, never overwrites user fields) <!-- id:n10 -->
-- [ ] M10 API contract: Resources everywhere, one envelope, idempotency keys, OpenAPI with drift test, exported fixtures. RELEASE 3 <!-- id:n11 -->
-- [ ] Coach questions with a daily cap: the coach may ask at most N intake or goal questions per day (config), tracks what was asked, and captures short-term and long-term goals (new fields) so answers over chat persist. Lands with M7 or M9 <!-- id:n12 -->
+- [x] M0 Sync, green baseline, CI: suite green, SDK claims verified (fatals confirmed), GitHub Actions, deploy branch. Done 2026-10-03 <!-- id:n1 cu:123kjkdmpp8 -->
+- [x] M1 Day-one blockers: adapters fixed, payload validated and capped, model name per provider in `config/ai.php`, `AiCall` reports every failure. Done 2026-10-03 <!-- id:n2 cu:123kjkdmpp9 -->
+- [ ] M2 Facts-only write path. Done: test safety, facts-only parse with questions, `activity_logs`, `RecordSmartLog`, `RevertSmartLog`, answers on both doors, `StatSheet` port, chat core + Telegram polling, `log:simulate`, one model per job. Left: timezone Europe/Amsterdam, numbers as numbers everywhere, DiaryResource, login/register limiters, conversation ownership. RPG from rules parked <!-- id:n3 cu:123kjkdmppa -->
+- [x] Foundation: PHP 8.5, Postgres locally, `LogType` and `ChatProvider` enums, `LogRecorded` observer. Done 2026-10-04 <!-- id:n14 cu:123kjkdmppb -->
+- [x] Interpreter: classify, parse, named rules, polite help for not understood, `log:parse` dry run, prompt examples and retry. Done 2026-10-05 <!-- id:n15 cu:123kjkdmppc -->
+- [x] Classifier lab: Laya and Jev behind `MessageClassifier` (one `SystemOneClient`), `AI_CLASSIFIER` switch with LLM fallback, `classify:try`, `/lab/classify`, labelled eval set. Laya local scores 21/31 (68%) at ~80 ms. Done 2026-10-07 <!-- id:n17 cu:123kjkdmppd -->
+- [x] Intent lab: `Intent` enum (workout_log, profile_update, feeling, question, nonsense), `IntentClassifier`, `POST /api/lab/intent`, `intent:try`, English eval set, Astro page (moved to `~/Herd/testbed`). Laya 32/38 (84%), ~60 ms. Done 2026-10-07 <!-- id:n18 cu:123kjkdmppf -->
+- [ ] Wire `Intent` into the real chat path in place of `MessageKind` once the intents feel right in the lab; `profile_update` and `feeling` need somewhere to go (profile fields, notes) <!-- id:n19 cu:123kjkdmppg -->
+- [x] Telegram live: invite links (`channel:invite`), account linking with one-time codes, `channel:telegram:setup`, `make bot`, polite stranger reply. Done 2026-10-11 <!-- id:n17 cu:123kjkdmpph -->
+- [ ] Sets and drafts: per-set storage, exercise kinds, a draft keeps asking while anything is unclear (no cap) and saves only when clear, `cancel`, `/edit` for complete logs <!-- id:n16 cu:123kjkdmppj -->
+- [ ] v0 deploy (in progress 2026-10-12; steps in `docs/deploy-coolify.md`; image hardened and rehearsed; waiting on Hiren: Coolify Postgres, env vars, production bot token): the polling bot as one supervisord worker on a Coolify VPS, registration closed in production, host checklist, smoke from the phone (PLAN.md "v0 deploy") <!-- id:n13 cu:123kjkdmppk -->
+- [ ] M3 Remove nutrition entirely (decided 2026-09-27; waits until after v0), Latika rewritten to recovery/mobility/longevity <!-- id:n4 cu:123kjkdmppn -->
+- [ ] M4 Simulate: factories + deterministic two-user seeder, streak on read, HTTP scenario suite (PLAN.md section 6), prompting practices and a live eval set of real messages <!-- id:n5 cu:123kjkdmppp -->
+- [ ] M5 Channel port + the Telegram command set (log, weight, /next, /undo, /coach) + rules-only `/next` + one AI budget shared by HTTP and chat, driven by `channel:simulate`. Profile and stats stay in the app <!-- id:n6 cu:123kjkdmppq -->
+- [ ] M6 Telegram adapter, hardened ingest, host and Coolify checklist, backups, first deploy, first message from the phone. RELEASE 1 <!-- id:n7 cu:123kjkdmppr -->
+- [ ] M7 AI commands over chat: coach threads with memory, `/plan` <!-- id:n8 cu:123kjkdmppt -->
+- [ ] M8 Shen next-move with the model on top of the rules path; compact coach context <!-- id:n9 cu:123kjkdmppu -->
+- [ ] M9 Profile: intake gaps (`asked_field`, skip state, `GET /api/coaches`) and the profile build on explicit request (coach notes citing logs, local model allowed, never overwrites user fields) <!-- id:n10 cu:123kjkdmppv -->
+- [ ] M10 API contract: Resources everywhere, one envelope, idempotency keys, OpenAPI with drift test, exported fixtures. RELEASE 3 <!-- id:n11 cu:123kjkdmppw -->
+- [ ] Coach questions with a daily cap: the coach may ask at most N intake or goal questions per day (config), tracks what was asked, and captures short-term and long-term goals (new fields) so answers over chat persist. Lands with M7 or M9 <!-- id:n12 cu:123kjkdmppx -->
 
 ## Roadmap — far future
 
-- [ ] M11 Voice notes over Telegram behind a Transcriber port <!-- id:f1 -->
-- [ ] M12 Client v1: Flutter (optimistic) or Nuxt 4 (fallback), built only from the contract and fixtures; decide after M10 has been stable two weeks <!-- id:f2 -->
-- [ ] Multi-user linking (link codes, `/link`, `/unlink`), only when a named second person wants in <!-- id:f3 -->
-- [ ] WhatsApp adapter (Meta Cloud API direct), not before Telegram has run two weeks <!-- id:f4 -->
-- [ ] Proactive nudges from Lt. Surge on a missed day (scheduler + `ChatChannel::send`) <!-- id:f5 -->
-- [ ] Perf: cache/aggregate PersonalRecords; watch integration; RAG over training material; per-user timezone; README + CLAUDE.md; package-currency pass <!-- id:f6 -->
+- [ ] M11 Voice notes over Telegram behind a Transcriber port <!-- id:f1 cu:123kjkdmppy -->
+- [ ] M12 Client v1: Flutter (optimistic) or Nuxt 4 (fallback), built only from the contract and fixtures; decide after M10 has been stable two weeks <!-- id:f2 cu:123kjkdmppz -->
+- [ ] Multi-user linking (link codes, `/link`, `/unlink`), only when a named second person wants in <!-- id:f3 cu:123kjkdmpq0 -->
+- [ ] WhatsApp adapter (Meta Cloud API direct), not before Telegram has run two weeks <!-- id:f4 cu:123kjkdmpq1 -->
+- [ ] Proactive nudges from Lt. Surge on a missed day (scheduler + `ChatChannel::send`) <!-- id:f5 cu:123kjkdmpq2 -->
+- [ ] Perf: cache/aggregate PersonalRecords; watch integration; RAG over training material; per-user timezone; README + CLAUDE.md; package-currency pass <!-- id:f6 cu:123kjkdmpq3 -->
 
 ---
 
