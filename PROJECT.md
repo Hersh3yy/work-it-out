@@ -251,6 +251,13 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-10-14 — presentation for Nami, whole project
+- No diff to origin before starting (`master` == `origin/master` at `ccbd154`, one branch).
+- "Feetness for Nami" deck (https://claude.ai/artifact/MVh6RF5P8WVRJ4uqzV1Eoa, private until shared) grew to 16 slides: added where the app lives (the Coolify server's four helpers and the database), how you get in (invite link, Start, linked), and the free-AI waiting line plan (one call instead of two, a queue so nothing is lost; not built yet); roadmap updated. Built with the `explain-like-im-nami` skill (~/.claude/skills).
+- Deck source saved in `docs/presentation-nami/` (deck.json plus one HTML file per slide, the Slides artifact format), so it survives outside claude.ai.
+- Pending from 2026-10-12/13: Coolify env and deploy (Start here), and the throttle work (merge classify and parse into one call; queue with a per-minute limit), which waits for Hiren's go.
+
+
 ### 2026-10-12 (night) — Coolify Postgres created; handoff for tomorrow
 - Hiren created Postgres 18 on Coolify (Private, no port mapping, user and database `postgres`, SSL off on the internal network). `php artisan key:generate` failed in the app container because there is no `.env` there; the fix is `key:generate --show` and pasting into Coolify. The app still has no environment variables and runs the build from 23:26 on 2026-10-11, before the hardening; it needs the env and a redeploy of the latest `master`.
 - Port probe of 84.247.178.198 from the laptop: 22, 80, 443 open; 3306, 5432, 6379, 9000 refused; 8000 (Coolify dashboard, plain HTTP) and 6001 (Coolify realtime) open to the internet. `/up` on the app answered 200.
