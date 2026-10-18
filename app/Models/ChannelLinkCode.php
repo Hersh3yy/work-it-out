@@ -34,6 +34,19 @@ final class ChannelLinkCode extends Model
         return hash('sha256', $code);
     }
 
+    /**
+     * The unused, unexpired code with this value, if any.
+     */
+    public static function findValid(string $code, bool $lock = false): ?self
+    {
+        $query = self::query()
+            ->where('code_hash', self::hash($code))
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now());
+
+        return ($lock ? $query->lockForUpdate() : $query)->first();
+    }
+
     /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {

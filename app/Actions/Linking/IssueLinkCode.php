@@ -11,7 +11,8 @@ use Illuminate\Support\Str;
 
 /**
  * Creates a one-time invite code for a user. The plain code is returned once
- * (it goes into the invite link) and only its hash is stored.
+ * (it goes into the invite link) and only its hash is stored. A new invite
+ * retires the user's older unused ones, so only the latest link works.
  */
 final readonly class IssueLinkCode
 {
@@ -22,6 +23,12 @@ final readonly class IssueLinkCode
      */
     public function handle(User $user): array
     {
+        ChannelLinkCode::query()
+            ->where('user_id', $user->id)
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now())
+            ->update(['expires_at' => now()]);
+
         $code = Str::random(16);
         $expiresAt = now()->addDays(self::VALID_DAYS);
 

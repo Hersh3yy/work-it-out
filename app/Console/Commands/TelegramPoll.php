@@ -96,6 +96,14 @@ final class TelegramPoll extends Command
             ));
         }
 
+        if ($reply === HandleInboundMessage::LINK_FAILED) {
+            $this->warn(sprintf(
+                'Invite link failed for Telegram user %s (%s): expired, used or mistyped. New link: php artisan channel:invite their@email',
+                $inbound->senderId,
+                $inbound->senderName ?? 'no name',
+            ));
+        }
+
         if ($reply === null) {
             return;
         }

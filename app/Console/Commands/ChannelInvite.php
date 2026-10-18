@@ -37,6 +37,17 @@ final class ChannelInvite extends Command
             $this->info("Created user {$email}.");
         }
 
+        $connected = $user->channelIdentities()->where('provider', 'telegram')->pluck('external_id');
+
+        if ($connected->isNotEmpty()) {
+            $this->warn(sprintf(
+                '%s is already connected to Telegram (user %s). This link connects one more Telegram account; to replace the old one, run php artisan channel:unlink %s first.',
+                $user->name,
+                $connected->implode(', '),
+                $email,
+            ));
+        }
+
         ['code' => $code, 'expires_at' => $expiresAt] = $issue->handle($user);
 
         $username = $this->botUsername($telegram);
@@ -48,7 +59,7 @@ final class ChannelInvite extends Command
             $this->line("Invite code for {$user->name}: <info>{$code}</info>");
             $this->line("They open the bot and send: /start {$code}");
         }
-        $this->line('Works once, until '.$expiresAt->format('Y-m-d H:i').'.');
+        $this->line('Works once, until '.$expiresAt->format('Y-m-d H:i').'. Older links for this person no longer work.');
 
         return self::SUCCESS;
     }

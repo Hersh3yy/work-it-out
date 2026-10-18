@@ -60,6 +60,8 @@ php artisan channel:invite you@example.com --name=You
 
 Open the printed link on the phone and tap Start. Text a workout.
 
+If something goes wrong with a link: a new `channel:invite` for the same email makes a fresh link and retires the old one. New phone or new Telegram account: `php artisan channel:unlink you@example.com`, then a new invite. Logs are never lost by unlinking.
+
 ## One bot per place
 
 Telegram allows one poller per bot token. Use one bot for the server (its token in Coolify) and a second bot for the laptop (its token in the local `.env`, with `make bot`). Create the second one with `/newbot` in @BotFather. Never run `make bot` with the production token while the server runs.

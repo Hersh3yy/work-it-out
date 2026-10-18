@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
+use Tests\Fakes\FakeSmartLogParser;
 
 function inviteCodeFor(User $user): string
 {
@@ -118,4 +119,55 @@ it('sets the bot command menu', function (): void {
 
     Http::assertSent(fn (Request $r): bool => str_ends_with($r->url(), '/setMyCommands')
         && array_column($r['commands'], 'command') === ['help', 'undo']);
+});
+
+it('tells a connected person they are connected and uses up their own link', function (): void {
+    $user = linkedUser();
+    $code = inviteCodeFor($user);
+
+    expect(app(HandleInboundMessage::class)->handle(telegramText("/start {$code}")))->toStartWith("You're already connected");
+    expect(ChannelLinkCode::query()->latest('id')->first()->used_at)->not->toBeNull();
+});
+
+it('refuses someone else\'s link from an already connected account and leaves it usable', function (): void {
+    linkedUser();
+    $other = User::factory()->create();
+    $code = inviteCodeFor($other);
+
+    expect(app(HandleInboundMessage::class)->handle(telegramText("/start {$code}")))->toBe(HandleInboundMessage::CONNECTED_ELSEWHERE)
+        ->and(app(HandleInboundMessage::class)->handle(telegramText("/start {$code}", '888')))->toStartWith('Welcome');
+});
+
+it('retires older links when a new invite is made', function (): void {
+    $user = User::factory()->create();
+    $old = inviteCodeFor($user);
+    $new = inviteCodeFor($user);
+    $chat = app(HandleInboundMessage::class);
+
+    expect($chat->handle(telegramText("/start {$old}", '777')))->toBe(HandleInboundMessage::LINK_FAILED)
+        ->and($chat->handle(telegramText("/start {$new}", '777')))->toStartWith('Welcome');
+});
+
+it('warns when inviting someone who is already connected', function (): void {
+    config(['services.telegram.bot_token' => null]);
+    $user = linkedUser();
+
+    expect(Artisan::call('channel:invite', ['email' => $user->email]))->toBe(0)
+        ->and(Artisan::output())->toContain('already connected to Telegram (user 4242)');
+});
+
+it('disconnects a person and keeps their logs; a new invite reconnects them', function (): void {
+    $user = linkedUser();
+    fakeSmartLogParser(FakeSmartLogParser::workout());
+    app(HandleInboundMessage::class)->handle(telegramText('benched 100 3x5'));
+
+    expect(Artisan::call('channel:unlink', ['email' => $user->email]))->toBe(0);
+    $this->assertDatabaseCount('channel_identities', 0);
+    $this->assertDatabaseCount('activity_logs', 1);
+
+    expect(app(HandleInboundMessage::class)->handle(telegramText('/start '.inviteCodeFor($user))))->toStartWith('Welcome');
+});
+
+it('fails clearly when unlinking an unknown email', function (): void {
+    $this->artisan('channel:unlink nobody@example.com')->assertFailed();
 });

@@ -12,6 +12,7 @@ use App\Enums\LogSource;
 use App\Exceptions\AiUnavailable;
 use App\Interpretation\Interpreter;
 use App\Models\ChannelIdentity;
+use App\Models\ChannelLinkCode;
 use App\Models\User;
 use Illuminate\Support\Facades\RateLimiter;
 
@@ -37,7 +38,12 @@ final readonly class HandleInboundMessage
 
     public const string LINK_FAILED = "That link didn't work. It may have expired or been used already, so ask for a new one.";
 
+    public const string CONNECTED_ELSEWHERE = 'This Telegram account is already connected to another Feetness profile, so that link was not used. Ask the person who invited you to check.';
+
     private const int MAX_LINK_ATTEMPTS = 5;
+
+    /** "/start CODE" from an invite link, or "/link CODE" typed by hand. */
+    private const string START_WITH_CODE = '/^\/(?:start|link)(?:@\w+)?\s+([A-Za-z0-9_-]{6,64})\s*$/';
 
     public function __construct(
         private Interpreter $interpreter,
@@ -64,6 +70,11 @@ final readonly class HandleInboundMessage
         }
 
         $text = mb_substr(trim($message->text), 0, 2000);
+
+        if (preg_match(self::START_WITH_CODE, $text, $m)) {
+            return $this->linkWhileConnected($user, $m[1]);
+        }
+
         $command = mb_strtolower((string) strtok($text, ' @'));
 
         return match ($command) {
@@ -110,7 +121,7 @@ final readonly class HandleInboundMessage
     {
         $sender = $message->provider->value.':'.$message->senderId;
 
-        if (preg_match('/^\/(?:start|link)(?:@\w+)?\s+([A-Za-z0-9_-]{6,64})\s*$/', trim($message->text), $m)) {
+        if (preg_match(self::START_WITH_CODE, trim($message->text), $m)) {
             $attempts = 'link-attempts:'.$sender;
 
             if (RateLimiter::tooManyAttempts($attempts, self::MAX_LINK_ATTEMPTS)) {
@@ -141,6 +152,23 @@ final readonly class HandleInboundMessage
         RateLimiter::hit($replied, 86400);
 
         return self::STRANGER;
+    }
+
+    /**
+     * A connected person taps an invite link again: their own link is used up
+     * and they are told they are connected; someone else's link is left alone.
+     */
+    private function linkWhileConnected(User $user, string $code): string
+    {
+        $link = ChannelLinkCode::findValid($code);
+
+        if ($link !== null && $link->user_id !== $user->id) {
+            return self::CONNECTED_ELSEWHERE;
+        }
+
+        $link?->update(['used_at' => now()]);
+
+        return "You're already connected, {$user->name}.\n\n".self::HELP;
     }
 
     private function undo(User $user): string

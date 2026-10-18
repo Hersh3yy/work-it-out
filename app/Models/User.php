@@ -83,6 +83,12 @@ class User extends Authenticatable
         return $this->hasMany(CustomRpgStat::class)->orderByDesc('last_updated_at');
     }
 
+    /** @return HasMany<ChannelIdentity, $this> */
+    public function channelIdentities(): HasMany
+    {
+        return $this->hasMany(ChannelIdentity::class);
+    }
+
     /** @return HasMany<ActivityLog, $this> */
     public function activityLogs(): HasMany
     {

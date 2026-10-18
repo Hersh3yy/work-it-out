@@ -23,12 +23,7 @@ final readonly class RedeemLinkCode
     public function handle(ChatProvider $provider, string $senderId, string $code): ?User
     {
         return DB::transaction(function () use ($provider, $senderId, $code): ?User {
-            $link = ChannelLinkCode::query()
-                ->where('code_hash', ChannelLinkCode::hash($code))
-                ->whereNull('used_at')
-                ->where('expires_at', '>', now())
-                ->lockForUpdate()
-                ->first();
+            $link = ChannelLinkCode::findValid($code, lock: true);
 
             if ($link === null) {
                 return null;

@@ -252,6 +252,10 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-10-18 — profile flow hardened; texting today
+- Hiren wants to text from his phone today, locally and on Coolify, and a profile flow that handles problems gracefully. Live check: the Coolify app answers `/up` 200 but every real page 500 (still no environment variables); nothing deployed since 2026-10-11. Local `.env` has no `TELEGRAM_BOT_TOKEN` yet (Hiren creates the dev bot).
+- Linking edge cases fixed: link tapped again by a connected person (told connected, own link used up), someone else's link from a connected account (refused, link stays usable), new invite retires older unused links, `channel:invite` warns about an existing connection, new `channel:unlink {email}` (keeps logs), poller logs failed invite links for the operator. `ChannelLinkCode::findValid` shared by both paths. 174 passed on SQLite and Postgres.
+
 ### 2026-10-14 — presentation for Nami, whole project
 - No diff to origin before starting (`master` == `origin/master` at `ccbd154`, one branch).
 - "Feetness for Nami" deck (https://claude.ai/artifact/MVh6RF5P8WVRJ4uqzV1Eoa, private until shared) grew to 16 slides: added where the app lives (the Coolify server's four helpers and the database), how you get in (invite link, Start, linked), and the free-AI waiting line plan (one call instead of two, a queue so nothing is lost; not built yet); roadmap updated. Built with the `explain-like-im-nami` skill (~/.claude/skills).
