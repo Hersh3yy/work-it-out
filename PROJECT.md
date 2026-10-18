@@ -22,14 +22,11 @@
 
 ## Start here (next session, any machine)
 
-**Next: finish the v0 deploy (state at the end of 2026-10-18).** Coolify app `work-it-out:master` and Postgres 18 run on 84.247.178.198. All environment variables are saved in Coolify (`DB_URL` full length since 15:33, `TELEGRAM_BOT_TOKEN` since 15:45). Deploys 104 to 107 failed and rolled back (the old, settings-less container from 13:49 still serves, every page 500): 104 to 106 had an empty `DB_URL` (fell back to 127.0.0.1), 107 reached the real database but got `password authentication failed`, because the password was changed in Coolify's Credentials screen, which does not change PostgreSQL. Hiren then set the same new password inside Postgres (`\password postgres` via `docker exec`). No deploy since.
+**v0 is live (2026-10-18).** Coolify app on 84.247.178.198 (http://gbvqkbpmen41pdhf1eqgkzca.84.247.178.198.sslip.io), Postgres 18 beside it, Telegram bot @LarryTheLobsterFromSpongebobBot polling on the server. **Every push to `master` deploys automatically** (GitHub App webhook); a deploy that fails its health check rolls back and the old version keeps running. CI runs in parallel and does not gate the deploy, so run both suites before pushing.
 
-1. Make sure `DB_URL` holds the **new** password: copy it fresh from the Postgres resource ("Postgres URL (internal)"), paste into the app's `DB_URL`, click that row's Update.
-2. Recommended: BotFather `/revoke` for @LarryTheLobsterFromSpongebobBot (its token was visible in a screenshot), paste the new token into `TELEGRAM_BOT_TOKEN`, Update.
-3. Deploy. The start log now prints `==> Database: pgsql host=8xjebo68de4epsymjzpwgf9j port=5432 database=postgres`; then `Migrations complete` and `telegram-poller` spawned.
-4. Over SSH (this laptop's key is installed: `ssh hiren@84.247.178.198`, user in the `docker` group): `A=$(docker ps --format "{{.Names}}" | grep gbvqkbpmen41pdhf1eqgkzca | head -1)`, then `docker exec $A php artisan channel:telegram:setup` and `docker exec $A php artisan channel:invite hiren.budhrani@mogelijk.nl --name=Hiren`. Open the link on the phone, Start, text a workout.
-5. Deployment logs without the Coolify UI: `docker exec coolify-db psql -U coolify -d coolify -Atc "select id,status,created_at from application_deployment_queues order by id desc limit 3"`.
-6. Afterwards: Coolify 2FA, dashboard on a domain with HTTPS, firewall ports 8000 and 6001, SSH key-only (password logins still on). The database password was pasted in chat once (old one, since changed); rotate again if in doubt.
+- Server access: `ssh hiren@84.247.178.198` (this laptop's key; user in the `docker` group). App container: `A=$(docker ps --format "{{.Names}}" | grep gbvqkbpmen41pdhf1eqgkzca | head -1)`, then `docker exec $A php artisan ...` (e.g. `channel:invite email --name=X`, `channel:unlink email`). Deploy history: `docker exec coolify-db psql -U coolify -d coolify -Atc "select id,status,left(commit,7),created_at from application_deployment_queues order by id desc limit 3"`.
+- Open: revoke the bot token (it was visible in a screenshot; the server uses it) and update `TELEGRAM_BOT_TOKEN`; Coolify 2FA, dashboard on HTTPS, firewall ports 8000 and 6001, SSH key-only.
+- Laptop bot: use a separate dev bot token in the local `.env`; never run `make bot` with the production token.
 
 **Every session:**
 
@@ -223,7 +220,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [ ] Wire `Intent` into the real chat path in place of `MessageKind` once the intents feel right in the lab; `profile_update` and `feeling` need somewhere to go (profile fields, notes) <!-- id:n19 cu:123kjkdmppg -->
 - [x] Telegram live: invite links (`channel:invite`), account linking with one-time codes, `channel:telegram:setup`, `make bot`, polite stranger reply. Done 2026-10-11 <!-- id:n17 cu:123kjkdmpph -->
 - [ ] Sets and drafts: per-set storage, exercise kinds, a draft keeps asking while anything is unclear (no cap) and saves only when clear, `cancel`, `/edit` for complete logs <!-- id:n16 cu:123kjkdmppj -->
-- [ ] v0 deploy (in progress 2026-10-12; steps in `docs/deploy-coolify.md`; image hardened and rehearsed; waiting on Hiren: Coolify Postgres, env vars, production bot token): the polling bot as one supervisord worker on a Coolify VPS, registration closed in production, host checklist, smoke from the phone (PLAN.md "v0 deploy") <!-- id:n13 cu:123kjkdmppk -->
+- [x] v0 deploy (live 2026-10-18; steps in `docs/deploy-coolify.md`; image hardened and rehearsed; waiting on Hiren: Coolify Postgres, env vars, production bot token): the polling bot as one supervisord worker on a Coolify VPS, registration closed in production, host checklist, smoke from the phone (PLAN.md "v0 deploy") <!-- id:n13 cu:123kjkdmppk -->
 - [ ] M3 Remove nutrition entirely (decided 2026-09-27; waits until after v0), Latika rewritten to recovery/mobility/longevity <!-- id:n4 cu:123kjkdmppn -->
 - [ ] M4 Simulate: factories + deterministic two-user seeder, streak on read, HTTP scenario suite (PLAN.md section 6), prompting practices and a live eval set of real messages <!-- id:n5 cu:123kjkdmppp -->
 - [ ] M5 Channel port + the Telegram command set (log, weight, /next, /undo, /coach) + rules-only `/next` + one AI budget shared by HTTP and chat, driven by `channel:simulate`. Profile and stats stay in the app <!-- id:n6 cu:123kjkdmppq -->
@@ -249,6 +246,11 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-18 (night) — v0 live; push deploys
+- Deploy 108 (commit 0be8aaf, triggered by the push, `is_webhook` true) finished: start log `==> Database: pgsql host=8xjebo68de4epsymjzpwgf9j port=5432 database=postgres`, 22 migrations, `telegram-poller` listening; public checks: home 200, `/up` 200, register 403, lab 404. No database login failures after 15:51.
+- `channel:telegram:setup` on the server (bot @LarryTheLobsterFromSpongebobBot, menu /help /undo) and `channel:invite` for Hiren (user created, one-time link valid until 2026-10-25).
+- Coolify: auto-deploy enabled, source is the `hersh3yy` GitHub App, so every push to `master` deploys. Docs updated (they said manual).
 
 ### 2026-10-18 (evening) — four failed deploys, each one step closer
 - 104 to 106: `DB_URL` stored empty (encrypted size 200, same as `APP_NAME`; Coolify's per-row Update was not clicked), app fell back to 127.0.0.1. From 106 the new start-script check stopped it at once with the hint.

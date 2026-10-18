@@ -1,6 +1,6 @@
 # Deploying Feetness on Coolify (v0)
 
-v0 is one app container (nginx, php-fpm, queue worker, scheduler, Telegram poller) plus one Postgres database, both on the same Coolify server. No Redis yet. Coolify deploys `master` by hand (auto-deploy off).
+v0 is one app container (nginx, php-fpm, queue worker, scheduler, Telegram poller) plus one Postgres database, both on the same Coolify server. No Redis yet. Every push to `master` deploys automatically (Coolify's GitHub App webhook, verified 2026-10-18). A deploy only replaces the running container when the new one passes its health check; otherwise Coolify rolls back.
 
 ## 1. Postgres
 
