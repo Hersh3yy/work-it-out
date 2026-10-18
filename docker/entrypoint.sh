@@ -65,6 +65,20 @@ php artisan storage:link --force --no-interaction 2>/dev/null || true
 # Wait for the database to be ready, then run migrations.
 # Loops for up to 90 seconds (30 × 3s) before giving up.
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Say which database we are about to use (never the password). In production
+# a host of 127.0.0.1 means DB_URL (or DB_HOST) did not arrive or could not be
+# read, e.g. "DB_URL=" pasted into the value box, or a space or quote before
+# postgres://. Fail fast with that hint instead of retrying for 90 seconds.
+# ---------------------------------------------------------------------------
+DB_TARGET="$(php -r 'require "vendor/autoload.php"; $app = require "bootstrap/app.php"; $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); $c = (new Illuminate\Support\ConfigurationUrlParser)->parseConfiguration(config("database.connections.".config("database.default"))); echo config("database.default")." host=".($c["host"] ?? "-")." port=".($c["port"] ?? "-")." database=".(preg_match("/^[A-Za-z0-9_-]+$/", (string) ($c["database"] ?? "")) ? $c["database"] : "(unreadable)");' 2>/dev/null || echo unknown)"
+echo "==> Database: ${DB_TARGET}"
+if [ "${APP_ENV:-}" = "production" ] && echo "$DB_TARGET" | grep -qE 'host=(127\.0\.0\.1|localhost) '; then
+    echo "ERROR: production is pointing at a database on 127.0.0.1, which is this container."
+    echo "       Check DB_URL in Coolify: the value must start with postgres:// (no 'DB_URL=' in the value, no spaces or quotes)."
+    exit 1
+fi
+
 echo "==> Waiting for database and running migrations..."
 RETRIES=30
 until php artisan migrate --force --no-interaction 2>&1; do

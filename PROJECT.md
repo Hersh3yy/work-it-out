@@ -252,6 +252,11 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-10-18 (later) — first real deploy failed on DB_URL; start script now says why
+- SSH from this laptop to the Coolify server works with the laptop's key (`ssh hiren@84.247.178.198`, user in the `docker` group; password logins still on). Server healthy: 6 cores, 11 GB (1.6 used), disk 10%, nothing unusual on CPU.
+- Hiren pasted the environment variables and deployed (deployment 104, commit 7618f61): build fine, new container failed its health check and Coolify rolled back. Cause: migrations tried `127.0.0.1:5432` (connection refused). All 20 variables are stored with runtime on; Laravel's `ConfigurationUrlParser` turns a `DB_URL` value with `DB_URL=` in front, a leading space or quotes into host 127.0.0.1 (verified locally). Hiren to check the value starts with `postgres://`.
+- `docker/entrypoint.sh` now prints `==> Database: pgsql host=… port=… database=…` (parsed the way Laravel connects; never the password; a malformed name prints as `(unreadable)`) and in production exits at once with a clear hint when the host is 127.0.0.1, instead of retrying for 90 seconds.
+
 ### 2026-10-18 — profile flow hardened; texting today
 - Hiren wants to text from his phone today, locally and on Coolify, and a profile flow that handles problems gracefully. Live check: the Coolify app answers `/up` 200 but every real page 500 (still no environment variables); nothing deployed since 2026-10-11. Local `.env` has no `TELEGRAM_BOT_TOKEN` yet (Hiren creates the dev bot).
 - Linking edge cases fixed: link tapped again by a connected person (told connected, own link used up), someone else's link from a connected account (refused, link stays usable), new invite retires older unused links, `channel:invite` warns about an existing connection, new `channel:unlink {email}` (keeps logs), poller logs failed invite links for the operator. `ChannelLinkCode::findValid` shared by both paths. 174 passed on SQLite and Postgres.
