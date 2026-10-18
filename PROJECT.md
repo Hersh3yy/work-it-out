@@ -22,16 +22,14 @@
 
 ## Start here (next session, any machine)
 
-**Tomorrow (2026-10-13): get v0 live on Coolify.** Hiren's state at the end of 2026-10-12: Coolify app `work-it-out:master` runs (Dockerfile build, sslip.io URL, `/up` 200) with **no environment variables yet**; Postgres 18 created in the same project, Private, no port mapping. Steps, in order (details in `docs/deploy-coolify.md`):
+**Next: finish the v0 deploy (state at the end of 2026-10-18).** Coolify app `work-it-out:master` and Postgres 18 run on 84.247.178.198. All environment variables are saved in Coolify (`DB_URL` full length since 15:33, `TELEGRAM_BOT_TOKEN` since 15:45). Deploys 104 to 107 failed and rolled back (the old, settings-less container from 13:49 still serves, every page 500): 104 to 106 had an empty `DB_URL` (fell back to 127.0.0.1), 107 reached the real database but got `password authentication failed`, because the password was changed in Coolify's Credentials screen, which does not change PostgreSQL. Hiren then set the same new password inside Postgres (`\password postgres` via `docker exec`). No deploy since.
 
-1. `APP_KEY`: in the app's Terminal in Coolify run `php artisan key:generate --show` (plain `key:generate` fails: there is no `.env` in the container) and copy the printed key.
-2. Production bot: in Telegram, @BotFather, `/newbot` (a second bot, separate from the laptop's dev bot). Copy its token.
-3. App, Environment Variables: paste the block from `docs/deploy-coolify.md` section 2. `DB_URL` = the database's "Postgres URL (internal)". Add `APP_KEY`, `GEMINI_API_KEY`, `TELEGRAM_BOT_TOKEN`, `APP_URL` (the sslip.io address). Keep `REGISTRATION_OPEN=false`, `CACHE_STORE=database`, `QUEUE_CONNECTION=database`.
-4. Deploy the latest `master`. Watch Deployment Logs: migrations run, then `telegram-poller` starts.
-5. In the app's Terminal: `php artisan channel:telegram:setup`, then `php artisan channel:invite hiren.budhrani@mogelijk.nl --name=Hiren`. Open the printed link on the phone, tap Start, text a workout.
-6. Smoke from the laptop: `curl -s -o /dev/null -w '%{http_code}\n' <app url>/up` gives 200; `nc -zv 84.247.178.198 5432 6379 9000 3306` all refused (checked 2026-10-12: refused).
-7. Coolify itself: turn on 2FA; its dashboard (port 8000) and realtime port (6001) are open to the internet over plain HTTP, so give the dashboard a domain with HTTPS and then firewall 8000 and 6001 to your own IP.
-8. If the database password was shared outside Coolify (it was visible in a screenshot in chat), change it and update `DB_URL`.
+1. Make sure `DB_URL` holds the **new** password: copy it fresh from the Postgres resource ("Postgres URL (internal)"), paste into the app's `DB_URL`, click that row's Update.
+2. Recommended: BotFather `/revoke` for @LarryTheLobsterFromSpongebobBot (its token was visible in a screenshot), paste the new token into `TELEGRAM_BOT_TOKEN`, Update.
+3. Deploy. The start log now prints `==> Database: pgsql host=8xjebo68de4epsymjzpwgf9j port=5432 database=postgres`; then `Migrations complete` and `telegram-poller` spawned.
+4. Over SSH (this laptop's key is installed: `ssh hiren@84.247.178.198`, user in the `docker` group): `A=$(docker ps --format "{{.Names}}" | grep gbvqkbpmen41pdhf1eqgkzca | head -1)`, then `docker exec $A php artisan channel:telegram:setup` and `docker exec $A php artisan channel:invite hiren.budhrani@mogelijk.nl --name=Hiren`. Open the link on the phone, Start, text a workout.
+5. Deployment logs without the Coolify UI: `docker exec coolify-db psql -U coolify -d coolify -Atc "select id,status,created_at from application_deployment_queues order by id desc limit 3"`.
+6. Afterwards: Coolify 2FA, dashboard on a domain with HTTPS, firewall ports 8000 and 6001, SSH key-only (password logins still on). The database password was pasted in chat once (old one, since changed); rotate again if in doubt.
 
 **Every session:**
 
@@ -251,6 +249,12 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-18 (evening) — four failed deploys, each one step closer
+- 104 to 106: `DB_URL` stored empty (encrypted size 200, same as `APP_NAME`; Coolify's per-row Update was not clicked), app fell back to 127.0.0.1. From 106 the new start-script check stopped it at once with the hint.
+- 107: right host, `password authentication failed`: the password was changed in Coolify's Credentials screen, which does not update PostgreSQL. Hiren synced it with `\password postgres` inside the database container (my attempt to open that prompt for him was blocked by the permission classifier). No deploy after that yet.
+- Server checks over SSH: app and database share the `coolify` network and port 5432 is reachable from the app; the old 13:49 container keeps serving (500, no settings) until a deploy passes its health check.
+- Secrets that appeared in chat today: the old database URL with password (changed since), the bot token in a BotFather screenshot (revoke recommended). Start here rewritten with the exact next steps.
 
 ### 2026-10-18 (later) — first real deploy failed on DB_URL; start script now says why
 - SSH from this laptop to the Coolify server works with the laptop's key (`ssh hiren@84.247.178.198`, user in the `docker` group; password logins still on). Server healthy: 6 cores, 11 GB (1.6 used), disk 10%, nothing unusual on CPU.
