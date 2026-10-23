@@ -7,6 +7,8 @@ namespace App\Channels;
 use App\Actions\SmartLog\SmartLogResult;
 use App\Enums\LogType;
 use App\Models\ExerciseEntry;
+use App\Models\ExerciseSet;
+use Illuminate\Support\Collection;
 
 /**
  * Plain-text chat replies: the receipt for a log and one line per entry.
@@ -36,6 +38,13 @@ final class ReplyComposer
     public function entry(ExerciseEntry $entry): string
     {
         $parts = [$entry->exercise_name];
+        $sets = $entry->setRows()->get();
+
+        if ($sets->count() > 0 && ($sets->pluck('reps')->unique()->count() > 1 || $sets->pluck('weight_kg')->unique()->count() > 1)) {
+            $parts[] = self::setLine($sets);
+
+            return implode(' ', array_filter($parts));
+        }
 
         $parts[] = match (true) {
             $entry->sets !== null && $entry->reps !== null => "{$entry->sets}x{$entry->reps}",
@@ -55,6 +64,24 @@ final class ReplyComposer
         }
 
         return implode(' ', array_filter($parts));
+    }
+
+    /**
+     * "5x5 @ 90, 80, 80, 80, 80 kg" when only the weights differ;
+     * "90×5, 80×4, 80×3 kg" when the reps differ too.
+     *
+     * @param  Collection<int, ExerciseSet>  $sets
+     */
+    private static function setLine(Collection $sets): string
+    {
+        $weight = static fn ($set): string => $set->weight_kg === null ? '?' : self::number($set->weight_kg);
+        $reps = $sets->pluck('reps')->unique();
+
+        if ($reps->count() === 1) {
+            return sprintf('%dx%s @ %s kg', $sets->count(), $reps->first() ?? '?', $sets->map($weight)->implode(', '));
+        }
+
+        return $sets->map(fn ($set): string => $weight($set).'×'.($set->reps ?? '?'))->implode(', ').' kg';
     }
 
     private static function number(mixed $value): string

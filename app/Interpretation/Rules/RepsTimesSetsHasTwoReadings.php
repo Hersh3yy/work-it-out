@@ -32,6 +32,7 @@ final class RepsTimesSetsHasTwoReadings implements InterpretationRule
 
                 $parsed['exercises'][$index]['sets'] = null;
                 $parsed['exercises'][$index]['reps'] = null;
+                $parsed['exercises'][$index]['set_list'] = [];
                 $parsed['questions'] = [[
                     'field' => "exercises.{$index}.sets",
                     'question' => sprintf(

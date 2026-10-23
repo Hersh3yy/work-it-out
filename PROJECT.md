@@ -247,6 +247,11 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-10-23 — per-set storage
+- First real log on production (2026-10-22, "Yesterday did squats 5x5 / 90 80 80 80 80 / And ran 1k in 6:30") was stored as five sets at 90 kg: the date and the run were right, but one weight per exercise squashed the sets (volume 2250 instead of 2050). Gemini had read it correctly (its summary said 90kg, 80kg x4).
+- Built: `exercise_sets` (one row per set, reps and weight each; migration backfills equal sets for existing entries), `ExerciseEntry::replaceSets` keeps the summary columns (sets, reps when equal, top weight), `volumeKg()` from real sets, the parser's `set_list` (schema, instructions, worked example, normalizer), `RecordSmartLog::setsFor`, answers fill missing reps or weight on every set or rebuild equal sets, rules read the set list, receipts ("Squat 5x5 @ 90, 80, 80, 80, 80 kg"; "80×8, 85×6, 90×4 kg"), `set_list` in the API resource and the log receipt. Verified live on gemini-3.5-flash-lite with the exact message: five sets, the run, no question. 183 passed on SQLite and Postgres.
+- Open: correct the 2026-10-21 squat on production (needs Hiren's OK); profile questions (the daily check-in) after drafts.
+
 ### 2026-10-18 (night) — v0 live; push deploys
 - Deploy 108 (commit 0be8aaf, triggered by the push, `is_webhook` true) finished: start log `==> Database: pgsql host=8xjebo68de4epsymjzpwgf9j port=5432 database=postgres`, 22 migrations, `telegram-poller` listening; public checks: home 200, `/up` 200, register 403, lab 404. No database login failures after 15:51.
 - `channel:telegram:setup` on the server (bot @LarryTheLobsterFromSpongebobBot, menu /help /undo) and `channel:invite` for Hiren (user created, one-time link valid until 2026-10-25).

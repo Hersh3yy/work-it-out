@@ -23,6 +23,10 @@ final class ExerciseEntryResource extends JsonResource
             'distance_meters' => $this->distance_meters,
             'notes' => $this->notes,
             'sort_order' => $this->sort_order,
+            'set_list' => $this->setRows->map(fn ($set): array => [
+                'reps' => $set->reps,
+                'weight_kg' => $set->weight_kg === null ? null : (float) $set->weight_kg,
+            ])->all(),
         ];
     }
 }

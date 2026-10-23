@@ -18,13 +18,18 @@ final class WeightedLiftNeedsSetsAndReps implements InterpretationRule
         }
 
         foreach ($parsed['exercises'] ?? [] as $index => $exercise) {
-            if (($exercise['weight_kg'] ?? null) === null) {
+            $listed = is_array($exercise['set_list'] ?? null) ? $exercise['set_list'] : [];
+            $weight = $exercise['weight_kg'] ?? (collect($listed)->pluck('weight_kg')->filter()->max());
+
+            if ($weight === null) {
                 continue;
             }
 
+            $listedHasReps = $listed !== [] && collect($listed)->every(fn (array $set): bool => ($set['reps'] ?? null) !== null);
+
             $missing = match (true) {
-                ($exercise['reps'] ?? null) === null => 'reps',
-                ($exercise['sets'] ?? null) === null => 'sets',
+                ($exercise['reps'] ?? null) === null && ! $listedHasReps => 'reps',
+                ($exercise['sets'] ?? null) === null && $listed === [] => 'sets',
                 default => null,
             };
 
@@ -37,7 +42,7 @@ final class WeightedLiftNeedsSetsAndReps implements InterpretationRule
                 'question' => sprintf(
                     $missing === 'reps' ? 'How many reps per set for %s at %s kg?' : 'How many sets of %s at %s kg?',
                     $exercise['exercise_name'] ?? 'that exercise',
-                    rtrim(rtrim(number_format((float) $exercise['weight_kg'], 2, '.', ''), '0'), '.'),
+                    rtrim(rtrim(number_format((float) $weight, 2, '.', ''), '0'), '.'),
                 ),
             ]];
 

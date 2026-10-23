@@ -74,9 +74,35 @@ final readonly class AnswerOpenQuestion
         }
 
         $entry->update($changes);
+        $this->syncSets($entry, $changes);
         $log->update(['questions' => null]);
 
         return $entry;
+    }
+
+    /**
+     * An answered reps or weight fills the sets that lack it; an answered
+     * number of sets (or a sets-or-reps pair) rebuilds them as equal sets.
+     *
+     * @param  array<string, int|float>  $changes
+     */
+    private function syncSets(ExerciseEntry $entry, array $changes): void
+    {
+        if (array_key_exists('sets', $changes)) {
+            $entry->replaceSets(array_fill(0, (int) $entry->sets, ['reps' => $entry->reps, 'weight_kg' => $entry->weight_kg === null ? null : (float) $entry->weight_kg]));
+
+            return;
+        }
+
+        foreach (['reps', 'weight_kg'] as $column) {
+            if (array_key_exists($column, $changes)) {
+                $entry->fillMissingOnSets($column, $changes[$column]);
+            }
+        }
+
+        if (! $entry->setRows()->exists() && $entry->sets !== null) {
+            $entry->replaceSets(array_fill(0, (int) $entry->sets, ['reps' => $entry->reps, 'weight_kg' => $entry->weight_kg === null ? null : (float) $entry->weight_kg]));
+        }
     }
 
     public function skip(ActivityLog $log): void

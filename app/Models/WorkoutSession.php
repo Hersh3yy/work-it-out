@@ -74,15 +74,11 @@ class WorkoutSession extends Model
     }
 
     /**
-     * Sum of (sets × reps × weight_kg) across all exercise entries.
+     * Total weight moved across all exercises, set by set (reps × weight).
      * Returns 0.0 if no entries have weight data.
      */
     public function getTotalVolumeKgAttribute(): float
     {
-        return $this->exerciseEntries->sum(function (ExerciseEntry $entry): float {
-            return (float) ($entry->sets ?? 0)
-                * (float) ($entry->reps ?? 0)
-                * (float) ($entry->weight_kg ?? 0);
-        });
+        return $this->exerciseEntries->sum(fn (ExerciseEntry $entry): float => $entry->volumeKg());
     }
 }

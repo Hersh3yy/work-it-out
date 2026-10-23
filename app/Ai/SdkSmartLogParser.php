@@ -102,6 +102,13 @@ final readonly class SdkSmartLogParser implements SmartLogParser
             'duration_seconds' => self::int($item['duration_seconds'] ?? null),
             'distance_meters' => self::number($item['distance_meters'] ?? null),
             'notes' => self::text($item['notes'] ?? null, 255),
+            'set_list' => array_slice(array_values(array_map(
+                static fn (mixed $set): array => [
+                    'reps' => is_array($set) ? self::int($set['reps'] ?? null) : null,
+                    'weight_kg' => is_array($set) ? self::number($set['weight_kg'] ?? null) : null,
+                ],
+                is_array($item['set_list'] ?? null) ? $item['set_list'] : [],
+            )), 0, 50),
         ];
     }
 

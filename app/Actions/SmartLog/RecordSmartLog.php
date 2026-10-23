@@ -143,7 +143,7 @@ final readonly class RecordSmartLog
 
             $distance = self::clamp($exercise['distance_meters'] ?? null, 1, 300_000);
 
-            $entries[] = $session->exerciseEntries()->create([
+            $entry = $session->exerciseEntries()->create([
                 'activity_log_id' => $log->id,
                 'exercise_name' => mb_substr($name !== '' ? $name : 'Unknown', 0, 100),
                 'sets' => self::clamp($exercise['sets'] ?? null, 1, 50),
@@ -154,6 +154,14 @@ final readonly class RecordSmartLog
                 'notes' => $exercise['notes'] ?? null,
                 'sort_order' => min($sortOrder++, 255),
             ]);
+
+            $sets = self::setsFor($exercise);
+
+            if ($sets !== []) {
+                $entry->replaceSets($sets);
+            }
+
+            $entries[] = $entry->refresh();
         }
 
         return [$session, $merged, $entries];
@@ -210,6 +218,32 @@ final readonly class RecordSmartLog
             'meal_type' => $parsed['meal_type'] ?? 'snack',
             'food_name' => mb_substr((string) $parsed['food_name'], 0, 150),
         ]);
+    }
+
+    /**
+     * The sets of one exercise: the listed sets when they differ, else the
+     * same reps and weight repeated for the number of sets. A listed set
+     * missing its reps or weight takes the exercise's value.
+     *
+     * @param  array<string, mixed>  $exercise
+     * @return list<array{reps: int|null, weight_kg: float|null}>
+     */
+    private static function setsFor(array $exercise): array
+    {
+        $reps = self::clamp($exercise['reps'] ?? null, 1, 255);
+        $weight = self::clamp($exercise['weight_kg'] ?? null, 0.5, 500);
+        $listed = is_array($exercise['set_list'] ?? null) ? $exercise['set_list'] : [];
+
+        if ($listed !== []) {
+            return array_map(static fn (array $set): array => [
+                'reps' => self::clamp($set['reps'] ?? null, 1, 255) ?? $reps,
+                'weight_kg' => self::clamp($set['weight_kg'] ?? null, 0.5, 500) ?? $weight,
+            ], array_slice($listed, 0, 50));
+        }
+
+        $count = self::clamp($exercise['sets'] ?? null, 1, 50);
+
+        return $count === null ? [] : array_fill(0, (int) $count, ['reps' => $reps, 'weight_kg' => $weight]);
     }
 
     /**

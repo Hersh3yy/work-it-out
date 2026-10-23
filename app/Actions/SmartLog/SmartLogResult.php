@@ -47,6 +47,10 @@ final readonly class SmartLogResult
                 'weight_kg' => $entry->weight_kg === null ? null : (float) $entry->weight_kg,
                 'duration_seconds' => $entry->duration_seconds,
                 'distance_meters' => $entry->distance_meters,
+                'set_list' => $entry->setRows()->get()->map(fn ($set): array => [
+                    'reps' => $set->reps,
+                    'weight_kg' => $set->weight_kg === null ? null : (float) $set->weight_kg,
+                ])->all(),
             ], $this->entries),
             'weight_kg' => $this->weight === null ? null : (float) $this->weight->weight_kg,
             'questions' => $this->log->questions ?? [],
