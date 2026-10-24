@@ -14,6 +14,7 @@ use App\Interpretation\Interpreter;
 use App\Models\ChannelIdentity;
 use App\Models\ChannelLinkCode;
 use App\Models\User;
+use App\Profile\ProfileCheckIn;
 use Illuminate\Support\Facades\RateLimiter;
 
 /**
@@ -21,8 +22,9 @@ use Illuminate\Support\Facades\RateLimiter;
  *
  * Checked in this order: unlinked sender (an invite code links them, anyone
  * else gets one polite reply a day), /start and /help, /undo,
- * an answer to the open question (no AI), then the interpreter (classify,
- * parse, named rules) and the recorder. It knows nothing about Telegram; a
+ * an answer to the open log question (no AI), an answer to the open profile
+ * question (no AI), then the interpreter (classify, parse, named rules) and
+ * the recorder. A receipt may end with one profile question (ProfileCheckIn). It knows nothing about Telegram; a
  * WhatsApp adapter would call the same method.
  */
 final readonly class HandleInboundMessage
@@ -52,6 +54,7 @@ final readonly class HandleInboundMessage
         private AnswerOpenQuestion $answers,
         private ReplyComposer $replies,
         private RedeemLinkCode $links,
+        private ProfileCheckIn $checkIn,
     ) {}
 
     /**
@@ -100,6 +103,12 @@ final readonly class HandleInboundMessage
             return 'Updated: '.$this->replies->entry($answered);
         }
 
+        $profileReply = $this->checkIn->answer($user, $text);
+
+        if ($profileReply !== null) {
+            return $profileReply;
+        }
+
         try {
             $interpretation = $this->interpreter->interpret($user, $text);
         } catch (AiUnavailable) {
@@ -110,7 +119,10 @@ final readonly class HandleInboundMessage
             return (string) $interpretation->reply;
         }
 
-        return $this->replies->receipt($this->record->handle($user, $text, $interpretation->parsed, $source));
+        $receipt = $this->replies->receipt($this->record->handle($user, $text, $interpretation->parsed, $source));
+        $question = $this->checkIn->next($user);
+
+        return $question === null ? $receipt : $receipt."\n\n".$question;
     }
 
     /**

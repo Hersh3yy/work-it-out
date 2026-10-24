@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ExerciseEntryResource;
 use App\Interpretation\Interpreter;
 use App\Models\User;
+use App\Profile\ProfileCheckIn;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -30,6 +31,7 @@ final class SmartLogController extends Controller
         private readonly RecordSmartLog $record,
         private readonly RevertSmartLog $revert,
         private readonly AnswerOpenQuestion $answers,
+        private readonly ProfileCheckIn $checkIn,
     ) {}
 
     public function store(Request $request): JsonResponse
@@ -60,7 +62,7 @@ final class SmartLogController extends Controller
 
         $result = $this->record->handle($user, $message, $interpretation->parsed);
 
-        return response()->json($result->toArray(), Response::HTTP_CREATED);
+        return response()->json([...$result->toArray(), 'profile_question' => $this->checkIn->next($user)], Response::HTTP_CREATED);
     }
 
     /**

@@ -247,6 +247,10 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-10-25 — profile questions (first version)
+- Hiren: go for profile questions, keep the design patterns so later changes stay clean; he may refine profile building later. Built: `profile_prompts` table and model, `ProfileQuestion` interface (Strategy) with `TrainingDaysPerWeek` (fixes the 0% weekly score; dispatches the stats job) and `MainGoal` (number or keyword to `PrimaryGoal`), `config/profile.php` (questions in order, 20 hours between questions, 24 hour answer window, 7 days after a skip), `ProfileCheckIn` (`next`, `answer`), wired into `HandleInboundMessage` after the log-question check and after a receipt, and into the app door's log receipt (`profile_question`). 9 tests; 195 passed on SQLite and Postgres.
+- Not done without Hiren's explicit OK: correcting the 2026-10-21 squat on production to 90/80/80/80/80.
+
 ### 2026-10-23 — per-set storage
 - First real log on production (2026-10-22, "Yesterday did squats 5x5 / 90 80 80 80 80 / And ran 1k in 6:30") was stored as five sets at 90 kg: the date and the run were right, but one weight per exercise squashed the sets (volume 2250 instead of 2050). Gemini had read it correctly (its summary said 90kg, 80kg x4).
 - Built: `exercise_sets` (one row per set, reps and weight each; migration backfills equal sets for existing entries), `ExerciseEntry::replaceSets` keeps the summary columns (sets, reps when equal, top weight), `volumeKg()` from real sets, the parser's `set_list` (schema, instructions, worked example, normalizer), `RecordSmartLog::setsFor`, answers fill missing reps or weight on every set or rebuild equal sets, rules read the set list, receipts ("Squat 5x5 @ 90, 80, 80, 80, 80 kg"; "80×8, 85×6, 90×4 kg"), `set_list` in the API resource and the log receipt. Verified live on gemini-3.5-flash-lite with the exact message: five sets, the run, no question. 183 passed on SQLite and Postgres.
