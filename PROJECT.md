@@ -204,7 +204,7 @@ Data: `users`, `workout_sessions` (ULID) to `exercise_entries` (each remembers t
 What the backend must do, in Hiren's words (2026-10-02), and where each lives:
 - take logs and activities and turn them into an overall profile: exists (`POST /api/log`, RPG, PRs, dashboard); hardened in M2
 - suggestions from history: Shen `/next` (rules in M5, model in M8)
-- feedback: changed 2026-10-04. A log gets a receipt; while something is unclear the bot asks (no cap, 2026-10-06), no coach reactions (M2, M5). Coaches answer on request (M7). The AI never writes assumptions; the qualitative profile build runs only on request (M9)
+- feedback: changed 2026-10-04. A log gets a receipt; while something is unclear the bot asks (no cap, 2026-10-06), no coach reactions (M2, M5). Coaches answer on request (M7). The AI never writes assumptions; the written profile updates itself after each log and cites its sources (2026-10-28)
 - understand the user's high-level plan and ask questions when info is missing, capped per day: intake exists (one question per coach reply, `TrainerAgent::intakeRules`); the daily cap and short/long-term goals are new, item n12
 - accept Telegram and support a frontend: M5/M6 and M10/M12
 
@@ -227,6 +227,9 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [ ] M6 Telegram adapter, hardened ingest, host and Coolify checklist, backups, first deploy, first message from the phone. RELEASE 1 <!-- id:n7 cu:123kjkdmppr -->
 - [ ] M7 AI commands over chat: coach threads with memory, `/plan` <!-- id:n8 cu:123kjkdmppt -->
 - [ ] M8 Shen next-move with the model on top of the rules path; compact coach context <!-- id:n9 cu:123kjkdmppu -->
+- [x] Written profile, rolling: after each log (120 s delay, one call per burst) the AI updates its notes from the current notes and the last 10 logs; every note cites logs or `facts`; versions kept in `profile_versions`; weekly full rebuild; `/me`, `profile:show`, `profile:rebuild`. Done 2026-10-28 <!-- id:n20 -->
+- [ ] Injuries and limitations: a limitation as a user-stated fact (body area as multiple choice, severity, start, status), a feel question before every suggestion while one is active, a one-line check when a logged exercise loads the injured area, red-flag words mean see a doctor. Design in PLAN.md section 4 (2026-10-28) <!-- id:n21 -->
+- [ ] Injury-aware `/next`: body-area load per exercise in the taxonomy, plain code filters Shen's options <!-- id:n22 -->
 - [ ] M9 Profile: intake gaps (`asked_field`, skip state, `GET /api/coaches`) and the profile build on explicit request (coach notes citing logs, local model allowed, never overwrites user fields) <!-- id:n10 cu:123kjkdmppv -->
 - [ ] M10 API contract: Resources everywhere, one envelope, idempotency keys, OpenAPI with drift test, exported fixtures. RELEASE 3 <!-- id:n11 cu:123kjkdmppw -->
 - [ ] Coach questions with a daily cap: the coach may ask at most N intake or goal questions per day (config), tracks what was asked, and captures short-term and long-term goals (new fields) so answers over chat persist. Lands with M7 or M9 <!-- id:n12 cu:123kjkdmppx -->
@@ -246,6 +249,12 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-28 — written profile, rolling; injury design
+- Checked Hiren's profile with him over SSH (he ran read-only commands): 3 sessions, 3 logs, training days 3, no goal, no body weight; the 2026-10-21 squat is still stored as 5x90.
+- Hiren asked for a qualitative profile from all data, updated on each log from the current profile plus the last 10 entries. Built on branch `rolling-profile`: `profile_versions` table and `ProfileVersion`, `ProfileBuilder` port with `SdkProfileBuilder` and `ProfileAgent` (temperature 0.2) and `FakeProfileBuilder` (bound in `TestCase`), `ProfileFacts` (numbers in PHP), `UpdateProfile` (citation check, max 8 notes), `BuildProfile` job (unique per user until it starts, 120 s delay), `RefreshProfile` listener on both log events, weekly `profile:rebuild --all --full`, `profile:show`, `profile:rebuild`, `/me` in Telegram and the bot menu. 17 new tests; 212 passed on SQLite. Not run against a real model on this laptop (no Gemini key): verify on the server with `profile:rebuild` and `profile:show`.
+- Cost: one extra AI call per burst of logs, plus one per user per week.
+- Injury use case designed with Hiren (multiple choice for the body area, a feel question before any suggestion, a check when a risky exercise is logged). In PLAN.md section 4; next to build.
 
 ### 2026-10-25 — profile questions (first version)
 - Hiren: go for profile questions, keep the design patterns so later changes stay clean; he may refine profile building later. Built: `profile_prompts` table and model, `ProfileQuestion` interface (Strategy) with `TrainingDaysPerWeek` (fixes the 0% weekly score; dispatches the stats job) and `MainGoal` (number or keyword to `PrimaryGoal`), `config/profile.php` (questions in order, 20 hours between questions, 24 hour answer window, 7 days after a skip), `ProfileCheckIn` (`next`, `answer`), wired into `HandleInboundMessage` after the log-question check and after a receipt, and into the app door's log receipt (`profile_question`). 9 tests; 195 passed on SQLite and Postgres.

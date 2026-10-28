@@ -18,6 +18,7 @@ final class TelegramSetup extends Command
     public const array COMMANDS = [
         ['command' => 'help', 'description' => 'How to log a workout'],
         ['command' => 'undo', 'description' => 'Remove your last log'],
+        ['command' => 'me', 'description' => 'Your profile and notes'],
     ];
 
     protected $signature = 'channel:telegram:setup';
@@ -41,7 +42,7 @@ final class TelegramSetup extends Command
             return self::FAILURE;
         }
 
-        $this->info(sprintf('Bot @%s is ready (id %s). Command menu set: /help, /undo.', $bot['username'] ?? '?', $bot['id'] ?? '?'));
+        $this->info(sprintf('Bot @%s is ready (id %s). Command menu set: /help, /undo, /me.', $bot['username'] ?? '?', $bot['id'] ?? '?'));
         $this->line('Next: php artisan channel:invite you@example.com, then make bot.');
 
         return self::SUCCESS;

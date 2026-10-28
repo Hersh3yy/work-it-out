@@ -42,6 +42,11 @@ return [
             'provider' => env('AI_CHAT_PROVIDER'),
             'model' => env('AI_CHAT_MODEL'),
         ],
+        // The written profile. Empty means the log job's provider and model.
+        'profile' => [
+            'provider' => env('AI_PROFILE_PROVIDER'),
+            'model' => env('AI_PROFILE_MODEL'),
+        ],
     ],
 
     /*

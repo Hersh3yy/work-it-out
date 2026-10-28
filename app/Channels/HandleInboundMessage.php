@@ -15,13 +15,14 @@ use App\Models\ChannelIdentity;
 use App\Models\ChannelLinkCode;
 use App\Models\User;
 use App\Profile\ProfileCheckIn;
+use App\Profile\ProfileSummary;
 use Illuminate\Support\Facades\RateLimiter;
 
 /**
  * The conversation core every chat provider shares: message in, reply text out.
  *
  * Checked in this order: unlinked sender (an invite code links them, anyone
- * else gets one polite reply a day), /start and /help, /undo,
+ * else gets one polite reply a day), /start and /help, /undo, /me,
  * an answer to the open log question (no AI), an answer to the open profile
  * question (no AI), then the interpreter (classify, parse, named rules) and
  * the recorder. A receipt may end with one profile question (ProfileCheckIn). It knows nothing about Telegram; a
@@ -34,7 +35,8 @@ final readonly class HandleInboundMessage
         ."ran 5k in 28 min\n"
         ."104.5kg (your weight)\n\n"
         ."If I ask for a missing number, just reply with it, or say skip.\n"
-        .'/undo removes your last log.';
+        ."/undo removes your last log.\n"
+        .'/me shows your profile.';
 
     public const string STRANGER = 'Hi! Feetness is in private beta. Ask the person who invited you for a link, then tap it to connect.';
 
@@ -55,6 +57,7 @@ final readonly class HandleInboundMessage
         private ReplyComposer $replies,
         private RedeemLinkCode $links,
         private ProfileCheckIn $checkIn,
+        private ProfileSummary $profile,
     ) {}
 
     /**
@@ -83,6 +86,7 @@ final readonly class HandleInboundMessage
         return match ($command) {
             '/start', '/help' => self::HELP,
             '/undo' => $this->undo($user),
+            '/me', '/profile' => $this->profile->for($user),
             default => $this->freeText($user, $text, $message->provider->logSource()),
         };
     }

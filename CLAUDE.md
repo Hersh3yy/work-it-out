@@ -38,4 +38,5 @@ API on http://localhost:8088. Local AI uses a free Msty model; see `.env.example
 - Try the interpreter alone: `docker compose exec app php artisan log:parse "text"` (saves nothing). The whole chat path without a phone: `php artisan log:simulate --user=<id> "text"`.
 - Intent classifier alone (the current focus): `php artisan intent:try "text"`, the visual explainer in `~/Herd/testbed` (`/classifier`), `/api/lab/intent/explain`, options in `app/Enums/Intent.php`, English only.
 - Classify step alone, per model: `php artisan classify:try "text"`, `make classify-eval`, or `/lab/classify` in a local browser. Laya runs locally with `make laya`; switch the app with `AI_CLASSIFIER=llm|laya|jev`.
+- Written profile: `app/Profile/UpdateProfile.php` (rolling notes with citations), `BuildProfile` job, `profile_versions`. Read it with `php artisan profile:show email`, rewrite now with `php artisan profile:rebuild email [--full]`, `/me` in Telegram.
 - Current build order: `PLAN.md` section 5, "Next, in order". One branch only: `master`. Short feature branches merged and deleted the same session.

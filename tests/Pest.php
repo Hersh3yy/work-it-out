@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Channels\InboundMessage;
 use App\Contracts\Ai\NutritionParser;
 use App\Contracts\Ai\PlanGenerator;
+use App\Contracts\Ai\ProfileBuilder;
 use App\Contracts\Ai\SmartLogParser;
 use App\Contracts\Ai\TrainerChat;
 use App\Enums\ChatProvider;
@@ -13,6 +14,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Fakes\FakeNutritionParser;
 use Tests\Fakes\FakePlanGenerator;
+use Tests\Fakes\FakeProfileBuilder;
 use Tests\Fakes\FakeSmartLogParser;
 use Tests\Fakes\FakeTrainerChat;
 use Tests\TestCase;
@@ -86,6 +88,14 @@ function fakeSmartLogParser(?FakeSmartLogParser $fake = null): FakeSmartLogParse
 {
     $fake ??= FakeSmartLogParser::workout();
     app()->instance(SmartLogParser::class, $fake);
+
+    return $fake;
+}
+
+function fakeProfileBuilder(?FakeProfileBuilder $fake = null): FakeProfileBuilder
+{
+    $fake ??= new FakeProfileBuilder;
+    app()->instance(ProfileBuilder::class, $fake);
 
     return $fake;
 }

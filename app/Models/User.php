@@ -90,6 +90,16 @@ class User extends Authenticatable
     }
 
     /** @return HasMany<ActivityLog, $this> */
+    /**
+     * The written profile, newest version first.
+     *
+     * @return HasMany<ProfileVersion, $this>
+     */
+    public function profileVersions(): HasMany
+    {
+        return $this->hasMany(ProfileVersion::class)->latest('id');
+    }
+
     public function activityLogs(): HasMany
     {
         return $this->hasMany(ActivityLog::class)->latest();

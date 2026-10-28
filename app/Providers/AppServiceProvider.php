@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Ai\SdkMessageClassifier;
 use App\Ai\SdkPlanGenerator;
+use App\Ai\SdkProfileBuilder;
 use App\Ai\SdkSmartLogParser;
 use App\Ai\SdkTrainerChat;
 use App\Ai\SystemOne\SystemOneClient;
@@ -15,6 +16,7 @@ use App\Channels\Telegram\TelegramClient;
 use App\Contracts\Ai\MessageClassifier;
 use App\Contracts\Ai\NutritionParser;
 use App\Contracts\Ai\PlanGenerator;
+use App\Contracts\Ai\ProfileBuilder;
 use App\Contracts\Ai\SmartLogParser;
 use App\Contracts\Ai\TrainerChat;
 use App\Contracts\Channels\ChatChannel;
@@ -40,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(TrainerChat::class, SdkTrainerChat::class);
         $this->app->bind(PlanGenerator::class, SdkPlanGenerator::class);
         $this->app->bind(SmartLogParser::class, SdkSmartLogParser::class);
+        $this->app->bind(ProfileBuilder::class, SdkProfileBuilder::class);
         $this->app->bind(MessageClassifier::class, fn ($app): MessageClassifier => match ($driver = (string) config('ai.classifier.driver', 'llm')) {
             'laya', 'jev' => new SystemOneMessageClassifier(
                 $app->make(RuleClassifier::class),
