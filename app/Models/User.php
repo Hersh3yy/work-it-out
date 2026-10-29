@@ -89,6 +89,12 @@ class User extends Authenticatable
         return $this->hasMany(ChannelIdentity::class);
     }
 
+    /** @return HasMany<Limitation, $this> */
+    public function limitations(): HasMany
+    {
+        return $this->hasMany(Limitation::class);
+    }
+
     /** @return HasMany<ActivityLog, $this> */
     /**
      * The written profile, newest version first.

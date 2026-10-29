@@ -40,3 +40,6 @@ coverage/
 public/hot
 public/storage
 storage/*.key
+
+# The Nuxt client is built and deployed on its own (client/Dockerfile)
+client/

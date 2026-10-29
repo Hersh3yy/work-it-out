@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Interpretation;
 
 use App\Ai\Agents\ClassifierAgent;
+use App\Ai\Agents\LimitationAgent;
 use App\Ai\Agents\SmartLogAgent;
+use App\Contracts\Ai\LimitationParser;
 use App\Contracts\Ai\MessageClassifier;
 use App\Contracts\Ai\SmartLogParser;
 use App\Enums\MessageKind;
@@ -14,12 +16,15 @@ use App\Interpretation\Rules\BareNumberIsNotBodyWeight;
 use App\Interpretation\Rules\InterpretationRule;
 use App\Interpretation\Rules\RepsTimesSetsHasTwoReadings;
 use App\Interpretation\Rules\WeightedLiftNeedsSetsAndReps;
+use App\Limitations\RedFlags;
 use App\Models\User;
 use App\Services\Ai\AiCall;
 
 /**
- * Classify, parse, then the named rules. Saves nothing: every door (chat,
- * app, `log:parse`) gets the same answer and decides what to do with it.
+ * Red-flag words first (plain code), then classify, then parse with the
+ * parser for that kind (workout facts, or a limitation), then the named
+ * rules. Saves nothing: every door (chat, app, `log:parse`) gets the same
+ * answer and decides what to do with it.
  *
  * @throws AiUnavailable when the classifier or parser is down
  */
@@ -43,11 +48,16 @@ final readonly class Interpreter
     public function __construct(
         private MessageClassifier $classifier,
         private SmartLogParser $parser,
+        private LimitationParser $limitations,
         private AiCall $ai,
     ) {}
 
     public function interpret(User $user, string $text): Interpretation
     {
+        if (RedFlags::matches($text)) {
+            return new Interpretation(new Classification(MessageKind::GoalOrInfo, 1.0, 'rules'), reply: RedFlags::REPLY);
+        }
+
         $classification = $this->ai->run($user, ClassifierAgent::class, fn (): Classification => $this->classifier->classify($text));
 
         if ($classification->kind === MessageKind::Unknown) {
@@ -60,6 +70,14 @@ final readonly class Interpreter
 
         if (! $classification->kind->isLoggable()) {
             return new Interpretation($classification, reply: self::NOT_UNDERSTOOD);
+        }
+
+        if ($classification->kind === MessageKind::GoalOrInfo) {
+            $facts = $this->ai->run($user, LimitationAgent::class, fn (): array => $this->limitations->parse($text));
+
+            if ($facts['is_limitation']) {
+                return new Interpretation($classification, limitation: $facts);
+            }
         }
 
         $parsed = $classification->kind === MessageKind::BodyWeight && $classification->decidedBy === 'rules'

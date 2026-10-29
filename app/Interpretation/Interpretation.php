@@ -13,15 +13,24 @@ final readonly class Interpretation
     /**
      * @param  array<string, mixed>|null  $parsed
      */
+    /**
+     * @param  array<string, mixed>|null  $limitation  facts from the LimitationParser when the message states one
+     */
     public function __construct(
         public Classification $classification,
         public ?array $parsed = null,
         public ?string $reply = null,
+        public ?array $limitation = null,
     ) {}
 
     public function shouldRecord(): bool
     {
         return $this->reply === null && $this->parsed !== null;
+    }
+
+    public function isLimitation(): bool
+    {
+        return $this->reply === null && $this->limitation !== null;
     }
 
     /**
@@ -33,7 +42,8 @@ final readonly class Interpretation
             'classification' => $this->classification->toArray(),
             'parsed' => $this->parsed,
             'reply' => $this->reply,
-            'would_record' => $this->shouldRecord(),
+            'limitation' => $this->limitation,
+            'would_record' => $this->shouldRecord() || $this->isLimitation(),
         ];
     }
 }

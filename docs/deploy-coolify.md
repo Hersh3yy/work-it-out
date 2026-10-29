@@ -21,6 +21,8 @@ APP_ENV=production
 APP_DEBUG=false
 APP_KEY=base64:...                 # from key:generate --show
 APP_URL=http://<your sslip.io or domain>
+APP_WEB_URL=https://<the app's domain>  # where /login links point (section 5); defaults to APP_URL
+# CORS_ALLOWED_ORIGINS=https://<the app's domain>   # narrow from * once the app has a domain
 LOG_CHANNEL=stderr
 LOG_LEVEL=info
 
@@ -60,7 +62,21 @@ php artisan channel:invite you@example.com --name=You
 
 Open the printed link on the phone and tap Start. Text a workout.
 
+Run `channel:telegram:setup` again after a deploy that changes the command menu (2026-10-29 added `/login` and `/better`).
+
 If something goes wrong with a link: a new `channel:invite` for the same email makes a fresh link and retires the old one. New phone or new Telegram account: `php artisan channel:unlink you@example.com`, then a new invite. Logs are never lost by unlinking.
+
+## 5. The app (client/)
+
+The phone app is a static Nuxt build served by nginx, built from the same repository as a second Coolify application:
+
+- New resource, same GitHub App and repository, branch `master`.
+- Build pack Dockerfile, base directory `/client`, Dockerfile location `/client/Dockerfile`.
+- Build arguments (not runtime variables, the values are baked into the static files): `NUXT_PUBLIC_API_BASE=https://<api host>/api`, `NUXT_PUBLIC_TELEGRAM_BOT=<bot username without @>`.
+- Ports Mappings empty; exposed port 80 through Coolify's proxy. Give it a domain.
+- Then on the API: set `APP_WEB_URL` to that domain (so `/login` links open the app) and optionally `CORS_ALLOWED_ORIGINS`, and redeploy the API.
+
+The API's own image ignores `client/` (`.dockerignore`), so a client-only commit still triggers an API deploy; it is a fast no-op rebuild from cache.
 
 ## One bot per place
 

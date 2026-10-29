@@ -81,4 +81,10 @@ final class ActivityLog extends Model
     {
         return $this->hasMany(ExerciseEntry::class);
     }
+
+    /** @return HasOne<Limitation, $this> */
+    public function limitation(): HasOne
+    {
+        return $this->hasOne(Limitation::class);
+    }
 }

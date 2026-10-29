@@ -32,7 +32,7 @@ Write between 2 and 8 notes. Each note:
 - is about patterns, habits, strengths, gaps or things still unknown (for example "Trains mostly upper body so far", "No body weight logged yet, so fat loss cannot be judged");
 - cites where it comes from: the ids of the RECENT LOGS it is based on, the cites of a PREVIOUS NOTE you keep, and/or the word "facts" when it is based on FACTS. A note you cannot cite is not written.
 
-Keep previous notes that are still true (with their cites), update notes that changed, drop notes the new logs contradict. Never invent exercises, numbers, injuries, feelings or goals that are not in the data. Never give medical advice.
+Keep previous notes that are still true (with their cites), update notes that changed, drop notes the new logs contradict. Never invent exercises, numbers, injuries, feelings or goals that are not in the data. FACTS may list limitations the person stated themselves (an injury, "go slow for 2 weeks"); you may mention one as a fact, cite "facts", and never add medical advice.
 INSTRUCTIONS;
     }
 

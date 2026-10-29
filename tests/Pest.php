@@ -3,15 +3,20 @@
 declare(strict_types=1);
 
 use App\Channels\InboundMessage;
+use App\Contracts\Ai\LimitationParser;
+use App\Contracts\Ai\MessageClassifier;
 use App\Contracts\Ai\NutritionParser;
 use App\Contracts\Ai\PlanGenerator;
 use App\Contracts\Ai\ProfileBuilder;
 use App\Contracts\Ai\SmartLogParser;
 use App\Contracts\Ai\TrainerChat;
 use App\Enums\ChatProvider;
+use App\Enums\MessageKind;
 use App\Models\ChannelIdentity;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Fakes\FakeLimitationParser;
+use Tests\Fakes\FakeMessageClassifier;
 use Tests\Fakes\FakeNutritionParser;
 use Tests\Fakes\FakePlanGenerator;
 use Tests\Fakes\FakeProfileBuilder;
@@ -100,6 +105,14 @@ function fakeProfileBuilder(?FakeProfileBuilder $fake = null): FakeProfileBuilde
     return $fake;
 }
 
+function fakeLimitationParser(?FakeLimitationParser $fake = null): FakeLimitationParser
+{
+    $fake ??= new FakeLimitationParser;
+    app()->instance(LimitationParser::class, $fake);
+
+    return $fake;
+}
+
 function fakeNutritionParser(?FakeNutritionParser $fake = null): FakeNutritionParser
 {
     $fake ??= new FakeNutritionParser;
@@ -142,4 +155,16 @@ function linkedUser(): User
     ChannelIdentity::create(['user_id' => $user->id, 'provider' => 'telegram', 'external_id' => '4242']);
 
     return $user;
+}
+
+/*
+| A classifier that answers a fixed kind for anything the plain rules do not catch.
+*/
+
+function classifierSays(MessageKind $kind): FakeMessageClassifier
+{
+    $fake = new FakeMessageClassifier($kind);
+    app()->instance(MessageClassifier::class, $fake);
+
+    return $fake;
 }

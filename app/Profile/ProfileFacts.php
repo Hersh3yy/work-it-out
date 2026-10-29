@@ -49,6 +49,13 @@ final readonly class ProfileFacts
                 'latest' => $latest === null ? null : ['date' => $latest->logged_at->toDateString(), 'kg' => (float) $latest->weight_kg],
                 'change_kg' => $first === null || $latest === null ? null : round((float) $latest->weight_kg - (float) $first->weight_kg, 1),
             ],
+            'limitations' => $user->limitations()->active()->latest('started_on')->get()->map(static fn ($l): array => [
+                'area' => $l->areaLabel(),
+                'note' => $l->note,
+                'severity' => $l->severity?->value,
+                'since' => $l->started_on->toDateString(),
+                'until' => $l->expected_until?->toDateString(),
+            ])->values()->all(),
             'totals' => [
                 'workout_sessions' => $user->workoutSessions()->count(),
                 'logged_messages' => $user->activityLogs()->count(),

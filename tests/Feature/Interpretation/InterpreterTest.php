@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Ai\Agents\ClassifierAgent;
 use App\Ai\SdkMessageClassifier;
 use App\Channels\HandleInboundMessage;
-use App\Contracts\Ai\MessageClassifier;
 use App\Enums\MessageKind;
 use App\Interpretation\Interpreter;
 use App\Interpretation\RuleClassifier;
@@ -14,16 +13,7 @@ use App\Interpretation\Rules\RepsTimesSetsHasTwoReadings;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Laravel\Ai\Ai;
-use Tests\Fakes\FakeMessageClassifier;
 use Tests\Fakes\FakeSmartLogParser;
-
-function classifierSays(MessageKind $kind): FakeMessageClassifier
-{
-    $fake = new FakeMessageClassifier($kind);
-    app()->instance(MessageClassifier::class, $fake);
-
-    return $fake;
-}
 
 it('sorts the obvious kinds with plain rules', function (string $text, ?MessageKind $kind): void {
     expect((new RuleClassifier)->classify($text)?->kind)->toBe($kind);

@@ -30,6 +30,10 @@ final readonly class ProfileSummary
         };
         $lines[] = sprintf('Logged so far: %d sessions, %d messages', $facts['totals']['workout_sessions'], $facts['totals']['logged_messages']);
 
+        foreach ($facts['limitations'] as $limitation) {
+            $lines[] = 'Limitation: '.$limitation['area'].', '.$limitation['note'].($limitation['until'] === null ? '' : ', until '.date('j M', strtotime($limitation['until']))).' (/better when healed)';
+        }
+
         $version = $user->profileVersions()->first();
 
         if ($version === null) {

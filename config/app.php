@@ -56,6 +56,9 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // Where the web app lives (sign-in links from /login point here). Defaults to APP_URL.
+    'web_url' => env('APP_WEB_URL', env('APP_URL', 'http://localhost')),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

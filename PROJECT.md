@@ -32,11 +32,12 @@
 
 1. `git pull` on `master` (the only branch). Read this file, then `PLAN.md`: section 4 holds every decision, section 5 "Next, in order" the build order. The diary below says what happened last.
 2. Stack: PHP 8.5.11, Laravel 13.35, laravel/ai 1.2, Pest 5, Postgres 18. Postgres moved to 18 on 2026-10-12 with a new volume (`postgres18-data`): after `git pull`, `docker compose build app` and `docker compose up -d --remove-orphans` start an empty database that the app's start script migrates; `docker compose exec app composer install` (the lock changed); re-create your local user with `channel:invite` or `channel:link`. A laptop still on MySQL: set the `DB_*` lines in `.env` from `.env.example` first.
-3. `make test` (SQLite) and `make test-pg` (Postgres) must both be green (168 tests on 2026-10-12).
+3. `make test` (SQLite) and `make test-pg` (Postgres) must both be green (233 tests on 2026-10-29).
 4. Local `.env` for real use: `GEMINI_API_KEY`, `AI_LOG_PROVIDER=gemini`, `AI_LOG_MODEL=gemini-3.5-flash-lite`, and the **dev** bot's `TELEGRAM_BOT_TOKEN` (never the production one while the server runs), then `docker compose up -d --force-recreate app`.
 5. Texting the local bot: `channel:telegram:setup` once, `channel:invite you@example.com` per person, `make bot` while you want replies. Interpreter alone, saving nothing: `docker compose exec app php artisan log:parse "text"`.
-6. After v0: "Next, in order" step 3 (Sets and drafts: keep asking while unclear, one weight per set, "2x70" read as 2 reps at 70 kg warm-up).
-7. Work to the gate, `pint`, both suites, push, CI green, diary entry here.
+6. The app: `client/` is a Nuxt 4 PWA (`cd client && npm install && npm run dev`, http://localhost:3000, API on 8088). Sign in with the link that `/login` prints (`php artisan log:simulate --user=1 "/login"`). Not deployed yet: Coolify needs a second application built from `client/` (`docs/deploy-coolify.md` section 5) and `APP_WEB_URL` on the API.
+7. Next backend item: the shadow classifier decorator (PLAN.md section 4, 2026-10-29), then the feel question before `/next` while a limitation is active.
+8. Work to the gate, `pint`, both suites, push, CI green, diary entry here.
 
 ## Run it
 
@@ -81,9 +82,9 @@ Browser: `http://localhost:8088/lab/classify` (local and testing only, 404 elsew
 
 ## Status
 
-A free-text message goes through one path on every door: classify (plain rules first, then a model at temperature 0), parse into facts only (the model never invents a number or a judgment), named rules that catch known traps (a bare number is never a body weight; "90 x3 x5" is asked, not guessed), then `RecordSmartLog` writes it in one transaction and answers with a receipt and at most one question. A reply like "30" or "skip" fills or clears that question without AI. `/undo` reverts one log exactly. Stats are recomputed by a listener after commit. Telegram works by long polling from the laptop for linked users only.
+A free-text message goes through one path on every door: classify (plain rules first, then a model at temperature 0), parse into facts only (the model never invents a number or a judgment), named rules that catch known traps (a bare number is never a body weight; "90 x3 x5" is asked, not guessed), then `RecordSmartLog` writes it in one transaction and answers with a receipt and at most one question. A reply like "30", "skip" or "1" fills or clears that question without AI through the answer chain (`app/Conversation/Answers`). "I hurt my back" is a limitation: red-flag words get a see-a-doctor reply before any AI, otherwise the area, severity and duration are stored as facts, the bot asks for the area when unclear, and a later deadlift gets "Lower back OK with the Deadlift?" on its receipt; `/better` closes it. `/undo` reverts one log exactly. Stats and the written profile are recomputed by listeners after commit. Telegram polls on the server for linked users; `/login` mints a one-time link into the app.
 
-What keeps it yellow: the data model stores one weight per exercise while real sets differ (the squat message "90 90 95 85 85" breaks it), so per-set storage and drafts (n16) come before real use; timezone is still UTC; dashboard, body weight and profile endpoints are thinly tested; nothing is deployed, so the bot only answers while the laptop runs the poller.
+What keeps it yellow: the written profile and limitation parsing run on Gemini's free tier (about 16 calls a minute); the client is not deployed and reads only; timezone is still UTC; the classifier decision rests on 31 eval messages, so a shadow run on real traffic comes before any switch; the 2026-10-21 squat on production is still stored as 5x90.
 
 ## Issues
 
@@ -228,7 +229,10 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [ ] M7 AI commands over chat: coach threads with memory, `/plan` <!-- id:n8 cu:123kjkdmppt -->
 - [ ] M8 Shen next-move with the model on top of the rules path; compact coach context <!-- id:n9 cu:123kjkdmppu -->
 - [x] Written profile, rolling: after each log (120 s delay, one call per burst) the AI updates its notes from the current notes and the last 10 logs; every note cites logs or `facts`; versions kept in `profile_versions`; weekly full rebuild; `/me`, `profile:show`, `profile:rebuild`. Done 2026-10-28 <!-- id:n20 -->
-- [ ] Injuries and limitations: a limitation as a user-stated fact (body area as multiple choice, severity, start, status), a feel question before every suggestion while one is active, a one-line check when a logged exercise loads the injured area, red-flag words mean see a doctor. Design in PLAN.md section 4 (2026-10-28) <!-- id:n21 -->
+- [x] Injuries and limitations: a limitation as a user-stated fact (body area as multiple choice, severity, start, status), a one-line check when a logged exercise loads the injured area, red-flag words mean see a doctor, `/better`. Done 2026-10-29; the feel question before a suggestion waits for `/next` <!-- id:n21 -->
+- [x] Sign-in links and the app: `/login` mints a one-time link (15 min, hashed), `POST /api/auth/magic`, `GET /api/me/overview`, `GET /api/logs`, `POST /api/limitations/{id}/resolve`; `client/` is a Nuxt 4 PWA (Tailwind 4, atomic design, sprite) with home, logs and login pages. Done 2026-10-29 <!-- id:n23 -->
+- [ ] Deploy the app: second Coolify application from `client/` (Dockerfile, build args), `APP_WEB_URL` and `CORS_ALLOWED_ORIGINS` on the API, `channel:telegram:setup` for the new menu. Hiren's step, see `docs/deploy-coolify.md` section 5 <!-- id:n25 -->
+- [ ] Shadow classifier: a Decorator around `MessageClassifier` that records the candidate's (Laya on the VPS or Jev via OpenRouter) kind, confidence and latency beside Gemini's on every real message; read the agreement after about 200 messages, then switch with `AI_CLASSIFIER` <!-- id:n24 -->
 - [ ] Injury-aware `/next`: body-area load per exercise in the taxonomy, plain code filters Shen's options <!-- id:n22 -->
 - [ ] M9 Profile: intake gaps (`asked_field`, skip state, `GET /api/coaches`) and the profile build on explicit request (coach notes citing logs, local model allowed, never overwrites user fields) <!-- id:n10 cu:123kjkdmppv -->
 - [ ] M10 API contract: Resources everywhere, one envelope, idempotency keys, OpenAPI with drift test, exported fixtures. RELEASE 3 <!-- id:n11 cu:123kjkdmppw -->
@@ -237,7 +241,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Roadmap — far future
 
 - [ ] M11 Voice notes over Telegram behind a Transcriber port <!-- id:f1 cu:123kjkdmppy -->
-- [ ] M12 Client v1: Flutter (optimistic) or Nuxt 4 (fallback), built only from the contract and fixtures; decide after M10 has been stable two weeks <!-- id:f2 cu:123kjkdmppz -->
+- [ ] M12 Client v1: Nuxt 4 chosen on 2026-10-29 (`client/`, read-only today); writing from the app (log a workout, edit, answer a question) and the Telegram Login Widget come after the API contract <!-- id:f2 cu:123kjkdmppz -->
 - [ ] Multi-user linking (link codes, `/link`, `/unlink`), only when a named second person wants in <!-- id:f3 cu:123kjkdmpq0 -->
 - [ ] WhatsApp adapter (Meta Cloud API direct), not before Telegram has run two weeks <!-- id:f4 cu:123kjkdmpq1 -->
 - [ ] Proactive nudges from Lt. Surge on a missed day (scheduler + `ChatChannel::send`) <!-- id:f5 cu:123kjkdmpq2 -->
@@ -249,6 +253,15 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-29 — limitations built; sign-in links; the app; classifier decision
+- Hiren: profile building must take user input ("i hurt my back and need to go slow for 2 weeks"), use a classifier now, and a Nuxt 4 PWA to see the built profile and the messages. Backend first, patterns kept (ports, actions, chain, observer, named rules).
+- Limitations: `limitations` table, `BodyArea` and `LimitationSeverity` enums, `LimitationParser` port (`SdkLimitationParser` + `LimitationAgent` at temperature 0, `FakeLimitationParser` in tests), `RedFlags` in plain code before any AI (doctor reply, nothing saved), `RecordLimitation` and `ResolveLimitation`, numbered multiple choice for an unclear area, `LimitationCheck` on receipts, `/better`. The if-chain for open questions became an answer chain (`app/Conversation/Answers`, order in `config/conversation.php`). `ProfileFacts`, `/me` and the profile agent see limitations.
+- Sign-in: `/login` mints a hashed one-time link (15 min) to `APP_WEB_URL/login?token=`, `POST /api/auth/magic` trades it for a Sanctum token. New reads: `GET /api/me/overview`, `GET /api/logs`, `POST /api/limitations/{id}/resolve`.
+- App: `client/` is a Nuxt 4.6 single-page PWA (Tailwind 4, atomic design, one SVG sprite, `@vite-pwa/nuxt`), with a Dockerfile (static build behind nginx) and README for Coolify. Verified in the browser against real data: Hiren's messages replayed locally through Gemini, profile rebuilt (3 cited notes including the injury), home and logs pages checked on desktop and at 375 px, `npm run generate` produces `sw.js` and the manifest.
+- Classifier: investigated again. Gemini stays; a shadow decorator comes first; Laya on the VPS or Jev via OpenRouter is Hiren's step. Numbers and reasoning in PLAN.md section 4 (2026-10-29).
+- 233 tests on SQLite and Postgres, Pint clean. Eval case found, not fixed: a 70 kg warm-up line plus "2x110kg x 5 times" comes back from Gemini as one exercise with a set_list, so the sets-or-reps rule does not fire and the "5" answer lands in the warm-up reps.
+- Hiren's steps: the Coolify application for `client/`, `APP_WEB_URL` on the API, revoke the old bot token.
 
 ### 2026-10-28 — written profile, rolling; injury design
 - Checked Hiren's profile with him over SSH (he ran read-only commands): 3 sessions, 3 logs, training days 3, no goal, no body weight; the 2026-10-21 squat is still stored as 5x90.

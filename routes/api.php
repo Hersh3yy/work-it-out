@@ -8,7 +8,9 @@ use App\Http\Controllers\Api\BodyWeightController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DiaryController;
 use App\Http\Controllers\Api\IntentLabController;
+use App\Http\Controllers\Api\MagicLoginController;
 use App\Http\Controllers\Api\NutritionLogController;
+use App\Http\Controllers\Api\OverviewController;
 use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SmartLogController;
@@ -23,6 +25,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->group(function (): void {
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+    Route::post('/magic', [MagicLoginController::class, 'store'])->middleware('throttle:login');
 });
 
 // -------------------------------------------------------------------------
@@ -33,6 +36,11 @@ Route::middleware('auth:sanctum')->group(function (): void {
     // Auth management
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'me']);
+
+    // The app's home: facts, written notes, limitations, recent messages
+    Route::get('/me/overview', [OverviewController::class, 'show']);
+    Route::get('/logs', [OverviewController::class, 'logs']);
+    Route::post('/limitations/{limitation}/resolve', [OverviewController::class, 'resolveLimitation']);
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'show']);

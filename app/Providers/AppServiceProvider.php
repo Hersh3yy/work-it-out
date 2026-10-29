@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Ai\SdkLimitationParser;
 use App\Ai\SdkMessageClassifier;
 use App\Ai\SdkPlanGenerator;
 use App\Ai\SdkProfileBuilder;
@@ -13,6 +14,7 @@ use App\Ai\SystemOne\SystemOneClient;
 use App\Ai\SystemOneMessageClassifier;
 use App\Channels\Telegram\TelegramChannel;
 use App\Channels\Telegram\TelegramClient;
+use App\Contracts\Ai\LimitationParser;
 use App\Contracts\Ai\MessageClassifier;
 use App\Contracts\Ai\NutritionParser;
 use App\Contracts\Ai\PlanGenerator;
@@ -52,6 +54,7 @@ class AppServiceProvider extends ServiceProvider
             ),
             default => $app->make(SdkMessageClassifier::class),
         });
+        $this->app->bind(LimitationParser::class, SdkLimitationParser::class);
         $this->app->bind(NutritionParser::class, NutritionParserService::class);
         $this->app->bind(PersonalRecords::class, PersonalRecordService::class);
         $this->app->bind(ProfileIntake::class, ProfileIntakeService::class);
