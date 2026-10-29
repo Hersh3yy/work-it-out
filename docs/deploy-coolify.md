@@ -68,7 +68,12 @@ If something goes wrong with a link: a new `channel:invite` for the same email m
 
 ## 5. The app (client/)
 
-The phone app is a static Nuxt build served by nginx, built from the same repository as a second Coolify application:
+Decision 2026-10-29: the app deploys on **Netlify**, not Coolify. Steps are in `client/README.md`. What Coolify still needs for that:
+
+- **HTTPS on the API.** The Netlify site is HTTPS and browsers block calls to an `http://` API from it. Point a (sub)domain's A record at 84.247.178.198, set it on the app in Coolify as `https://api.<domain>` and let Coolify issue the Let's Encrypt certificate (sslip.io names get no certificate in practice because of Let's Encrypt's per-domain limits). Then `APP_URL=https://api.<domain>`.
+- `APP_WEB_URL=https://<site>.netlify.app` and `CORS_ALLOWED_ORIGINS` with the same origin, then redeploy.
+
+The Coolify alternative, kept in case Netlify is dropped: a static Nuxt build served by nginx, built from the same repository as a second Coolify application:
 
 - New resource, same GitHub App and repository, branch `master`.
 - Build pack Dockerfile, base directory `/client`, Dockerfile location `/client/Dockerfile`.
