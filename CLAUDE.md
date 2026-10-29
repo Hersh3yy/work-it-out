@@ -10,7 +10,7 @@ You are working in Hiren's fitness-coach backend. Before doing anything:
 
 - No app-code changes without Hiren's explicit green light. Assess, plan and write docs freely; ask before touching `.php`, config, migrations, Docker files.
 - Work on a branch. Merge to `master` only when the milestone's release gate in `PLAN.md` passes and the suite is green.
-- Backend first. Telegram is the main door. The app is `client/` (Nuxt 4 PWA, reads only for now) and signs in with the `/login` link; it only consumes the API's Resources, so the API stays the contract.
+- Backend first. Telegram is the main door. The app is the sibling repository `feetness-app` (Nuxt 4 PWA, reads only for now) and signs in with the `/login` link; it only consumes the API's Resources, so the API stays the contract.
 - No nutrition. It is being deleted in M3; do not extend it.
 - Telegram does: free-text activity log, weight log, limitations ("hurt my back"), answers to open questions, `/undo`, `/me`, `/login`, `/better`; later `/next` and `/coach`. Profile, goals, stats and history live in the app.
 - Every step ships with a test that runs with zero AI calls (the fakes in `tests/Fakes`) or an exact curl. Nothing without a test.
@@ -40,5 +40,5 @@ API on http://localhost:8088. Local AI uses a free Msty model; see `.env.example
 - Classify step alone, per model: `php artisan classify:try "text"`, `make classify-eval`, or `/lab/classify` in a local browser. Laya runs locally with `make laya`; switch the app with `AI_CLASSIFIER=llm|laya|jev`.
 - Written profile: `app/Profile/UpdateProfile.php` (rolling notes with citations), `BuildProfile` job, `profile_versions`. Read it with `php artisan profile:show email`, rewrite now with `php artisan profile:rebuild email [--full]`, `/me` in Telegram.
 - Limitations: `app/Limitations` (`RedFlags` runs before any AI, `ExerciseLoads`, `LimitationCheck`), `app/Actions/Limitations`, the `LimitationParser` port with `SdkLimitationParser` and `LimitationAgent`. Open-question answers without AI: `app/Conversation/Answers`, handler order in `config/conversation.php`. Sign-in links: `app/Actions/Auth`, `POST /api/auth/magic`. App reads: `OverviewController` (`GET /api/me/overview`, `GET /api/logs`).
-- The app: `client/` (Nuxt 4, Tailwind 4, atoms/molecules/organisms/templates, icons in `public/sprite.svg`); run and deploy steps in `client/README.md`. It is excluded from the API image by `.dockerignore`.
+- The app lives in its own repository beside this one, `~/Code/feetness/feetness-app` (Nuxt 4, Tailwind 4, atoms/molecules/organisms/templates, icons in `public/sprite.svg`), deployed on Netlify; run and deploy steps in its README. It only reads this API.
 - Current build order: `PLAN.md` section 5, "Next, in order". One branch only: `master`. Short feature branches merged and deleted the same session.

@@ -66,22 +66,21 @@ Run `channel:telegram:setup` again after a deploy that changes the command menu 
 
 If something goes wrong with a link: a new `channel:invite` for the same email makes a fresh link and retires the old one. New phone or new Telegram account: `php artisan channel:unlink you@example.com`, then a new invite. Logs are never lost by unlinking.
 
-## 5. The app (client/)
+## 5. The app (feetness-app repository)
 
-Decision 2026-10-29: the app deploys on **Netlify**, not Coolify. Steps are in `client/README.md`. What Coolify still needs for that:
+Decision 2026-10-29: the app deploys on **Netlify**, not Coolify, from its own repository (`~/Code/feetness/feetness-app`, moved out of `client/` on 2026-10-30). Steps are in that repository's README. What Coolify still needs for that:
 
 - **HTTPS on the API.** The Netlify site is HTTPS and browsers block calls to an `http://` API from it. Point a (sub)domain's A record at 84.247.178.198, set it on the app in Coolify as `https://api.<domain>` and let Coolify issue the Let's Encrypt certificate (sslip.io names get no certificate in practice because of Let's Encrypt's per-domain limits). Then `APP_URL=https://api.<domain>`.
 - `APP_WEB_URL=https://<site>.netlify.app` and `CORS_ALLOWED_ORIGINS` with the same origin, then redeploy.
 
-The Coolify alternative, kept in case Netlify is dropped: a static Nuxt build served by nginx, built from the same repository as a second Coolify application:
+The Coolify alternative, kept in case Netlify is dropped: a static Nuxt build served by nginx (Dockerfile and nginx.conf in the app repository), as a second Coolify application:
 
-- New resource, same GitHub App and repository, branch `master`.
-- Build pack Dockerfile, base directory `/client`, Dockerfile location `/client/Dockerfile`.
+- New resource, the app repository, its default branch.
+- Build pack Dockerfile, base directory `/`, Dockerfile location `/Dockerfile`.
 - Build arguments (not runtime variables, the values are baked into the static files): `NUXT_PUBLIC_API_BASE=https://<api host>/api`, `NUXT_PUBLIC_TELEGRAM_BOT=<bot username without @>`.
 - Ports Mappings empty; exposed port 80 through Coolify's proxy. Give it a domain.
 - Then on the API: set `APP_WEB_URL` to that domain (so `/login` links open the app) and optionally `CORS_ALLOWED_ORIGINS`, and redeploy the API.
 
-The API's own image ignores `client/` (`.dockerignore`), so a client-only commit still triggers an API deploy; it is a fast no-op rebuild from cache.
 
 ## One bot per place
 

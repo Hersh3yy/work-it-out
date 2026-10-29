@@ -35,7 +35,7 @@
 3. `make test` (SQLite) and `make test-pg` (Postgres) must both be green (233 tests on 2026-10-29).
 4. Local `.env` for real use: `GEMINI_API_KEY`, `AI_LOG_PROVIDER=gemini`, `AI_LOG_MODEL=gemini-3.5-flash-lite`, and the **dev** bot's `TELEGRAM_BOT_TOKEN` (never the production one while the server runs), then `docker compose up -d --force-recreate app`.
 5. Texting the local bot: `channel:telegram:setup` once, `channel:invite you@example.com` per person, `make bot` while you want replies. Interpreter alone, saving nothing: `docker compose exec app php artisan log:parse "text"`.
-6. The app: `client/` is a Nuxt 4 PWA (`cd client && npm install && npm run dev`, http://localhost:3000, API on 8088). Sign in with the link that `/login` prints (`php artisan log:simulate --user=1 "/login"`). Not deployed yet: it goes to Netlify (`netlify.toml`, steps in `client/README.md`); before that the API needs HTTPS on a real domain, then `APP_WEB_URL` and `CORS_ALLOWED_ORIGINS` on the API.
+6. The app is its own repository, `~/Code/feetness/feetness-app` (Nuxt 4 PWA; `npm install && npm run dev`, http://localhost:3000, API on 8088). Sign in with the link that `/login` prints (`php artisan log:simulate --user=1 "/login"`). It deploys on Netlify from that repository; before it can talk to production the API needs HTTPS on a real domain, then `APP_WEB_URL` and `CORS_ALLOWED_ORIGINS` here.
 7. Next backend item: the shadow classifier decorator (PLAN.md section 4, 2026-10-29), then the feel question before `/next` while a limitation is active.
 8. Work to the gate, `pint`, both suites, push, CI green, diary entry here.
 
@@ -231,7 +231,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [x] Written profile, rolling: after each log (120 s delay, one call per burst) the AI updates its notes from the current notes and the last 10 logs; every note cites logs or `facts`; versions kept in `profile_versions`; weekly full rebuild; `/me`, `profile:show`, `profile:rebuild`. Done 2026-10-28 <!-- id:n20 -->
 - [x] Injuries and limitations: a limitation as a user-stated fact (body area as multiple choice, severity, start, status), a one-line check when a logged exercise loads the injured area, red-flag words mean see a doctor, `/better`. Done 2026-10-29; the feel question before a suggestion waits for `/next` <!-- id:n21 -->
 - [x] Sign-in links and the app: `/login` mints a one-time link (15 min, hashed), `POST /api/auth/magic`, `GET /api/me/overview`, `GET /api/logs`, `POST /api/limitations/{id}/resolve`; `client/` is a Nuxt 4 PWA (Tailwind 4, atomic design, sprite) with home, logs and login pages. Done 2026-10-29 <!-- id:n23 -->
-- [ ] Deploy the app on Netlify (decided 2026-10-29; `netlify.toml`, `_redirects`, `_headers` in place): import the repo, set the two `NUXT_PUBLIC_*` variables; first give the API HTTPS on a real domain in Coolify (mixed content otherwise), then `APP_WEB_URL` and `CORS_ALLOWED_ORIGINS` on the API. Hiren's step, see `client/README.md` <!-- id:n25 -->
+- [ ] Deploy the app on Netlify (decided 2026-10-29; the app moved to its own repository `feetness-app` on 2026-10-30 with `netlify.toml`, `_redirects`, `_headers`): import that repository, set the two `NUXT_PUBLIC_*` variables; first give the API HTTPS on a real domain in Coolify (mixed content otherwise), then `APP_WEB_URL` and `CORS_ALLOWED_ORIGINS` on the API. Hiren's step, see `client/README.md` <!-- id:n25 -->
 - [ ] Shadow classifier: a Decorator around `MessageClassifier` that records the candidate's (Laya on the VPS or Jev via OpenRouter) kind, confidence and latency beside Gemini's on every real message; read the agreement after about 200 messages, then switch with `AI_CLASSIFIER` <!-- id:n24 -->
 - [ ] Injury-aware `/next`: body-area load per exercise in the taxonomy, plain code filters Shen's options <!-- id:n22 -->
 - [ ] M9 Profile: intake gaps (`asked_field`, skip state, `GET /api/coaches`) and the profile build on explicit request (coach notes citing logs, local model allowed, never overwrites user fields) <!-- id:n10 cu:123kjkdmppv -->
@@ -253,6 +253,10 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-10-30 — the app in its own repository
+- Hiren wants the Nuxt app as its own GitHub repository for Netlify: `client/` moved to `~/Code/feetness/feetness-app`, `git init` (branch `main`), first commit; removed from this repository together with `netlify.toml`. The app's first day stays in this log (82befb2, 589ed6b). Hiren creates the GitHub repository and connects Netlify.
+- Auth flow explained and self-signup from Telegram discussed: today invite-only (`channel:invite`), options written up for Hiren (admin approval by one tap, invites from existing users). No code change.
 
 ### 2026-10-29 — limitations built; sign-in links; the app; classifier decision
 - Hiren: profile building must take user input ("i hurt my back and need to go slow for 2 weeks"), use a classifier now, and a Nuxt 4 PWA to see the built profile and the messages. Backend first, patterns kept (ports, actions, chain, observer, named rules).
