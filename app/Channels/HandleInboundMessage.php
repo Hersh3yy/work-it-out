@@ -27,7 +27,8 @@ use Illuminate\Support\Facades\RateLimiter;
  * In this order: an unlinked sender (an invite code links them, anyone else
  * gets one polite reply a day), a slash command, an answer to an open
  * question (no AI), then the interpreter decides between a log, a
- * limitation and a coach question. It knows nothing about Telegram; a
+ * limitation and a coach question. Right after a coach answer, a message the
+ * interpreter cannot place ("you got that wrong") is a follow-up for the coach. It knows nothing about Telegram; a
  * WhatsApp adapter would call the same method.
  */
 final readonly class HandleInboundMessage
@@ -102,7 +103,7 @@ final readonly class HandleInboundMessage
             return "Couldn't reach the AI just now, so nothing was saved. Try again in a minute.";
         }
 
-        if ($interpretation->isCoachQuestion()) {
+        if ($interpretation->isCoachQuestion() || ($interpretation->isNotUnderstood() && $this->coach->isTalkingWith($user))) {
             return $this->askCoach($user, $text);
         }
 

@@ -8,6 +8,7 @@ use App\Coach\CoachContext;
 use App\Enums\BodyArea;
 use App\Enums\MessageKind;
 use App\Enums\TrainerPersona;
+use App\Interpretation\Interpreter;
 use App\Models\User;
 use Tests\Fakes\FakeCoachAdvisor;
 use Tests\Fakes\FakeSmartLogParser;
@@ -110,4 +111,25 @@ it('leaves old exchanges out of the context', function (): void {
     $turn->forceFill(['created_at' => now()->subDays(2)])->save();
 
     expect(CoachContext::for($user)->toArray()['recent_exchanges'])->toBe([]);
+});
+
+it('sends an unplaceable reply to the coach right after an answer', function (): void {
+    $user = linkedUser();
+    $user->coachTurns()->create(['question' => 'foam roller?', 'answer' => 'Not on the lower back.']);
+    classifierSays(MessageKind::Unknown);
+    $coach = fakeCoach(new FakeCoachAdvisor('Understood.'));
+
+    expect(app(HandleInboundMessage::class)->handle(telegramText('you hallucinated that, i never asked for that')))->toBe('Understood.')
+        ->and($coach->calls[0]['context']['recent_exchanges'][0]['they_asked'])->toBe('foam roller?');
+});
+
+it('keeps the not-understood reply when there was no recent coach answer', function (): void {
+    $user = linkedUser();
+    $turn = $user->coachTurns()->create(['question' => 'foam roller?', 'answer' => 'Not on the lower back.']);
+    $turn->forceFill(['created_at' => now()->subHours(2)])->save();
+    classifierSays(MessageKind::Unknown);
+    $coach = fakeCoach();
+
+    expect(app(HandleInboundMessage::class)->handle(telegramText('rainbow butterfly')))->toBe(Interpreter::NOT_UNDERSTOOD)
+        ->and($coach->calls)->toBe([]);
 });

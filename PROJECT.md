@@ -257,6 +257,12 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-11-01 (evening) — coach personas rewritten; follow-ups to the coach
+- Hiren: make sure the personas are described well enough, and think about how they would have acted in his back-strain chat. Each `TrainerPersona` now has one style card (`voice()`), used by both the coach and the older HTTP chat (`systemPrompt()` is built from it): who they are, what they reach for first, what they do when you are hurt, when you ask for speed, when you correct them. Latika is recovery, mobility and long-term health, no nutrition. Shared rules added to `CoachAgent`: accept a correction in one line and drop it; no insults, threats, guilt or fear. Those were the general chatbot's failures.
+- Real Gemini, each coach fresh: "face down for sleeping?" all three said side or back with pillows (Shen: "Day 4: ..."; Latika gentler); the correction got "Understood." (Surge), "Got it, my bad. Let's reset." (Shen), an apology (Latika).
+- Found and fixed: "you hallucinated that" was classified unknown and got the not-understood help text. Within 30 minutes of a coach answer (`coach.follow_up_minutes`), an unplaceable message now goes to the coach. Shen refused "why does leg up mean knee pain" as off-topic; the coach's off-topic rule is gone (the classifier already filters), it answers now. Not fixed: without the sleeping context, no coach found the real cause (unsupported knees); it should have asked.
+- 264 tests on both engines.
+
 ### 2026-11-01 (later) — the coach answers; limitation timeline; red-flag screen
 - Hiren: "lets go". Built points 2, 3, 5, 6 of the direction (PLAN.md section 4, 2026-11-01): `CoachContext`, the `CoachAdvisor` port with `SdkCoachAdvisor`/`CoachAgent`/`FakeCoachAdvisor`, `AnswerCoachQuestion` with `coach_turns` and a daily cap, `TrainerPersona::voice()`, classifier examples for plan and explain questions; `RedFlagScreen` + `RedFlagScreenAnswer` in the chain; `limitation_updates`, `ExistingLimitation`, `RecordLimitationUpdate`; leg press now loads the lower back.
 - Hiren mid-session: give some question types more tokens. `AnswerDepth` decides quick, plan or explain from the question in plain code, with its own length instruction and output budget (`maxTokens()` on the agent, read by the SDK).

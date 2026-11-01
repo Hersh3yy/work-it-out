@@ -25,6 +25,10 @@ return [
         'explain' => (int) env('COACH_TOKENS_EXPLAIN', 2000),
     ],
 
+    // After a coach answer, a message the interpreter cannot place counts as a
+    // follow-up for this long ("you got that wrong", "and on the bike?").
+    'follow_up_minutes' => (int) env('COACH_FOLLOW_UP_MINUTES', 30),
+
     // Coach questions per person per day. Logging is never capped.
     'daily_limit' => (int) env('COACH_DAILY_LIMIT', 30),
 

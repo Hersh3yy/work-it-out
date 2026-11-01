@@ -36,6 +36,11 @@ final readonly class Interpretation
         return $this->classification->kind === MessageKind::CoachQuestion;
     }
 
+    public function isNotUnderstood(): bool
+    {
+        return $this->classification->kind === MessageKind::Unknown;
+    }
+
     public function isLimitation(): bool
     {
         return $this->reply === null && $this->limitation !== null;

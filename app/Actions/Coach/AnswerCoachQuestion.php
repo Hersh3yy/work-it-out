@@ -55,6 +55,12 @@ final readonly class AnswerCoachQuestion
         return $answer;
     }
 
+    /** The coach answered within the follow-up window (config coach.follow_up_minutes). */
+    public function isTalkingWith(User $user): bool
+    {
+        return $user->coachTurns()->where('created_at', '>=', now()->subMinutes((int) config('coach.follow_up_minutes')))->exists();
+    }
+
     private static function todaysQuestions(User $user): string
     {
         return 'coach-questions:'.$user->id.':'.today()->toDateString();
