@@ -226,14 +226,16 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [ ] M4 Simulate: factories + deterministic two-user seeder, streak on read, HTTP scenario suite (PLAN.md section 6), prompting practices and a live eval set of real messages <!-- id:n5 cu:123kjkdmppp -->
 - [ ] M5 Channel port + the Telegram command set (log, weight, /next, /undo, /coach) + rules-only `/next` + one AI budget shared by HTTP and chat, driven by `channel:simulate`. Profile and stats stay in the app <!-- id:n6 cu:123kjkdmppq -->
 - [ ] M6 Telegram adapter, hardened ingest, host and Coolify checklist, backups, first deploy, first message from the phone. RELEASE 1 <!-- id:n7 cu:123kjkdmppr -->
-- [ ] M7 AI commands over chat: coach threads with memory, `/plan` <!-- id:n8 cu:123kjkdmppt -->
-- [ ] M8 Shen next-move with the model on top of the rules path; compact coach context <!-- id:n9 cu:123kjkdmppu -->
+- [ ] M7 Coach Q&A over the living context: a `coach_question` gets one model call over a compact `CoachContext` (facts, notes, limitations, recent logs, today), persona style, short by default, writes no facts. Threads and `/plan` later. Direction in PLAN.md section 4 (2026-11-01) <!-- id:n8 cu:123kjkdmppt -->
+- [ ] M8 `/next` with the model on top of the rules path, over the same `CoachContext` <!-- id:n9 cu:123kjkdmppu -->
 - [x] Written profile, rolling: after each log (120 s delay, one call per burst) the AI updates its notes from the current notes and the last 10 logs; every note cites logs or `facts`; versions kept in `profile_versions`; weekly full rebuild; `/me`, `profile:show`, `profile:rebuild`. Done 2026-10-28 <!-- id:n20 -->
 - [x] Injuries and limitations: a limitation as a user-stated fact (body area as multiple choice, severity, start, status), a one-line check when a logged exercise loads the injured area, red-flag words mean see a doctor, `/better`. Done 2026-10-29; the feel question before a suggestion waits for `/next` <!-- id:n21 -->
 - [x] Sign-in links and the app: `/login` mints a one-time link (15 min, hashed), `POST /api/auth/magic`, `GET /api/me/overview`, `GET /api/logs`, `POST /api/limitations/{id}/resolve`; `client/` is a Nuxt 4 PWA (Tailwind 4, atomic design, sprite) with home, logs and login pages. Done 2026-10-29 <!-- id:n23 -->
 - [ ] Deploy the app on Netlify (decided 2026-10-29; the app moved to its own repository `feetness-app` on 2026-10-30 with `netlify.toml`, `_redirects`, `_headers`): import that repository, set the two `NUXT_PUBLIC_*` variables; first give the API HTTPS on a real domain in Coolify (mixed content otherwise), then `APP_WEB_URL` and `CORS_ALLOWED_ORIGINS` on the API. Hiren's step, see `client/README.md` <!-- id:n25 -->
 - [ ] Shadow classifier: a Decorator around `MessageClassifier` that records the candidate's (Laya on the VPS or Jev via OpenRouter) kind, confidence and latency beside Gemini's on every real message; read the agreement after about 200 messages, then switch with `AI_CLASSIFIER` <!-- id:n24 -->
-- [ ] Injury-aware `/next`: body-area load per exercise in the taxonomy, plain code filters Shen's options <!-- id:n22 -->
+- [ ] Injury-aware `/next` and "make me a 40-minute plan": `ExerciseLoads` and recent logs filter in plain code, the model orders and phrases <!-- id:n22 -->
+- [ ] Limitation timeline: dated free-text updates under an active limitation ("70% of yesterday", "sitting hurts after 20 min"), shown in `/me` and the app, read by the coach <!-- id:n26 -->
+- [ ] Red-flag screen asked once when a limitation is recorded, answered through the answer chain <!-- id:n27 -->
 - [ ] M9 Profile: intake gaps (`asked_field`, skip state, `GET /api/coaches`) and the profile build on explicit request (coach notes citing logs, local model allowed, never overwrites user fields) <!-- id:n10 cu:123kjkdmppv -->
 - [ ] M10 API contract: Resources everywhere, one envelope, idempotency keys, OpenAPI with drift test, exported fixtures. RELEASE 3 <!-- id:n11 cu:123kjkdmppw -->
 - [ ] Coach questions with a daily cap: the coach may ask at most N intake or goal questions per day (config), tracks what was asked, and captures short-term and long-term goals (new fields) so answers over chat persist. Lands with M7 or M9 <!-- id:n12 cu:123kjkdmppx -->
@@ -253,6 +255,9 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-11-01 — direction: the living context
+- Hiren shared ten days of chatting with a general chatbot (agent persona) about his strained lower back and said: this is the direction, an LLM that treats your fitness portfolio as a living context and gives legitimate advice; ignore the chatbot's grammar quizzes, do not treat the log as a spec. Written into PLAN.md section 4 (2026-11-01) as eight points mapped on what exists, with a proposed order: `CoachContext`, coach Q&A, red-flag screen, limitation timeline, injury-aware plans. Roadmap M7, M8, n22 reworded; n26, n27 added. No code.
 
 ### 2026-10-30 — the app in its own repository
 - Hiren wants the Nuxt app as its own GitHub repository for Netlify: `client/` moved to `~/Code/feetness/feetness-app`, `git init` (branch `main`), first commit; removed from this repository together with `netlify.toml`. The app's first day stays in this log (82befb2, 589ed6b). Hiren creates the GitHub repository and connects Netlify.
