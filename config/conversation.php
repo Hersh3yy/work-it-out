@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Conversation\Answers\ExerciseQuestionAnswer;
 use App\Conversation\Answers\LimitationChoiceAnswer;
 use App\Conversation\Answers\ProfileQuestionAnswer;
+use App\Conversation\Answers\RedFlagScreenAnswer;
 
 return [
 
@@ -15,6 +16,7 @@ return [
     'answer_handlers' => [
         ExerciseQuestionAnswer::class,
         LimitationChoiceAnswer::class,
+        RedFlagScreenAnswer::class,
         ProfileQuestionAnswer::class,
     ],
 

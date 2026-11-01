@@ -9,6 +9,7 @@ use App\Enums\MessageKind;
 use App\Events\LogRecorded;
 use App\Limitations\ExerciseLoads;
 use App\Limitations\RedFlags;
+use App\Limitations\RedFlagScreen;
 use App\Models\User;
 use App\Profile\ProfileFacts;
 use Illuminate\Support\Facades\Event;
@@ -60,7 +61,7 @@ it('notes a clear area straight away', function (): void {
     fakeLimitationParser(FakeLimitationParser::knee());
 
     expect(app(HandleInboundMessage::class)->handle(telegramText('my left knee hurts a bit when I squat')))
-        ->toStartWith("Noted: knee: left knee hurts when squatting. I'll check with you");
+        ->toBe("Noted: knee: left knee hurts when squatting.\n\n".RedFlagScreen::QUESTION);
     $this->assertDatabaseHas('limitations', ['body_area' => 'knee', 'severity' => 'mild', 'expected_until' => null]);
 });
 

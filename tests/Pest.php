@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Channels\InboundMessage;
+use App\Contracts\Ai\CoachAdvisor;
 use App\Contracts\Ai\LimitationParser;
 use App\Contracts\Ai\MessageClassifier;
 use App\Contracts\Ai\NutritionParser;
@@ -15,6 +16,7 @@ use App\Enums\MessageKind;
 use App\Models\ChannelIdentity;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Fakes\FakeCoachAdvisor;
 use Tests\Fakes\FakeLimitationParser;
 use Tests\Fakes\FakeMessageClassifier;
 use Tests\Fakes\FakeNutritionParser;
@@ -101,6 +103,14 @@ function fakeProfileBuilder(?FakeProfileBuilder $fake = null): FakeProfileBuilde
 {
     $fake ??= new FakeProfileBuilder;
     app()->instance(ProfileBuilder::class, $fake);
+
+    return $fake;
+}
+
+function fakeCoach(?FakeCoachAdvisor $fake = null): FakeCoachAdvisor
+{
+    $fake ??= new FakeCoachAdvisor;
+    app()->instance(CoachAdvisor::class, $fake);
 
     return $fake;
 }

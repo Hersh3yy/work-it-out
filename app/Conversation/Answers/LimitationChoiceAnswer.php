@@ -7,12 +7,13 @@ namespace App\Conversation\Answers;
 use App\Actions\SmartLog\AnswerOpenQuestion;
 use App\Enums\BodyArea;
 use App\Events\LogRecorded;
+use App\Limitations\RedFlagScreen;
 use App\Models\User;
 
 /**
  * The answer to "Where exactly? 1) lower back 2) upper back ...": a number
  * or the area's name. Fills the limitation's body area; "skip" leaves it
- * unspecified.
+ * unspecified. Either way the red-flag screen comes next.
  */
 final readonly class LimitationChoiceAnswer implements AnswerHandler
 {
@@ -34,9 +35,9 @@ final readonly class LimitationChoiceAnswer implements AnswerHandler
         $text = mb_strtolower(trim($text));
 
         if (in_array($text, ['skip', '/skip'], true)) {
-            $open->update(['questions' => null]);
+            $open->update(['questions' => [RedFlagScreen::question()]]);
 
-            return 'OK, noted without the exact area.';
+            return "OK, noted without the exact area.\n\n".RedFlagScreen::QUESTION;
         }
 
         $picked = match (true) {
@@ -50,12 +51,12 @@ final readonly class LimitationChoiceAnswer implements AnswerHandler
 
         $limitation->update(['body_area' => $picked]);
         $open->update([
-            'questions' => null,
+            'questions' => [RedFlagScreen::question()],
             'summary' => 'Limitation: '.$picked->label().', '.$limitation->note,
         ]);
         $open->diaryEntry()->update(['content' => $open->summary]);
         LogRecorded::dispatch($open);
 
-        return 'Got it: '.$limitation->describe().". I'll check with you when a logged exercise loads it. Say /better when it has healed.";
+        return 'Got it: '.$limitation->describe().".\n\n".RedFlagScreen::QUESTION;
     }
 }

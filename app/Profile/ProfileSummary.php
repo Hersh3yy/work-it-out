@@ -32,6 +32,10 @@ final readonly class ProfileSummary
 
         foreach ($facts['limitations'] as $limitation) {
             $lines[] = 'Limitation: '.$limitation['area'].', '.$limitation['note'].($limitation['until'] === null ? '' : ', until '.date('j M', strtotime($limitation['until']))).' (/better when healed)';
+
+            if ($limitation['latest_update'] !== null) {
+                $lines[] = '  Latest, '.date('j M', strtotime($limitation['latest_update']['date'])).': '.$limitation['latest_update']['note'];
+            }
         }
 
         $version = $user->profileVersions()->first();

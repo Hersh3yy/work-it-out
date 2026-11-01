@@ -21,7 +21,7 @@ final class ExerciseLoads
         'romanian' => [BodyArea::LowerBack, BodyArea::Hip],
         'squat' => [BodyArea::LowerBack, BodyArea::Knee, BodyArea::Hip],
         'lunge' => [BodyArea::Knee, BodyArea::Hip],
-        'legpress' => [BodyArea::Knee, BodyArea::Hip],
+        'legpress' => [BodyArea::Knee, BodyArea::Hip, BodyArea::LowerBack],
         'goodmorning' => [BodyArea::LowerBack],
         'clean' => [BodyArea::LowerBack, BodyArea::Shoulder, BodyArea::Wrist],
         'snatch' => [BodyArea::LowerBack, BodyArea::Shoulder, BodyArea::Wrist],
@@ -54,6 +54,31 @@ final class ExerciseLoads
         }
 
         return array_values(array_unique($areas, SORT_REGULAR));
+    }
+
+    /** @var array<string, string> keyword => how a person writes it */
+    private const array NAMES = [
+        'rdl' => 'RDL', 'legpress' => 'leg press', 'goodmorning' => 'good morning',
+        'pullup' => 'pull-up', 'chinup' => 'chin-up', 'box' => 'box jump',
+    ];
+
+    /**
+     * The exercises (as keywords people type) that usually load an area, for
+     * the coach context: "deadlift, RDL, squat, good morning, ...".
+     *
+     * @return list<string>
+     */
+    public static function exercisesLoading(BodyArea $area): array
+    {
+        $names = [];
+
+        foreach (self::LOADS as $keyword => $areas) {
+            if (in_array($area, $areas, true)) {
+                $names[] = self::NAMES[$keyword] ?? $keyword;
+            }
+        }
+
+        return $names;
     }
 
     public static function loads(string $exerciseName, BodyArea $area): bool

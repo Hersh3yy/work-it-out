@@ -9,6 +9,7 @@ use App\Enums\LimitationSeverity;
 use App\Enums\LogSource;
 use App\Enums\LogType;
 use App\Events\LogRecorded;
+use App\Limitations\RedFlagScreen;
 use App\Models\Limitation;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -18,7 +19,8 @@ use Illuminate\Support\Facades\DB;
  * Saves a limitation the user stated, all or nothing: the message as an
  * activity log (so it can be undone and cited), the limitation itself, and a
  * diary line. When the body area is unclear the log carries a numbered
- * question with the parser's candidates; the answer fills the area in.
+ * question with the parser's candidates; the answer fills the area in and
+ * the red-flag screen follows. A clear area goes straight to the screen.
  *
  * Fires LogRecorded after commit, so the written profile picks it up.
  */
@@ -41,7 +43,7 @@ final readonly class RecordLimitation
                 'log_type' => LogType::General,
                 'raw_message' => $message,
                 'summary' => 'Limitation: '.($area?->label() ?? 'area to confirm').', '.$note,
-                'questions' => $candidates === [] ? null : [[
+                'questions' => $candidates === [] ? [RedFlagScreen::question()] : [[
                     'field' => 'limitation.body_area',
                     'question' => $this->question($candidates),
                     'options' => array_map(static fn (BodyArea $c): string => $c->value, $candidates),

@@ -1,0 +1,122 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Coach;
+
+use App\Limitations\ExerciseLoads;
+use App\Models\ActivityLog;
+use App\Models\CoachTurn;
+use App\Models\Limitation;
+use App\Models\LimitationUpdate;
+use App\Models\User;
+use App\Profile\ProfileFacts;
+
+/**
+ * The living context the coach answers from: what plain code computed
+ * (ProfileFacts), the written profile notes, the person's own recent
+ * messages, their stated limitations with how each is going and what loads
+ * it, and the last few questions they asked with the answers given.
+ *
+ * Everything here is either a stored fact or the person's own words. The
+ * model gets nothing else, so it cannot "remember" what it was never told.
+ * Size is capped by config/coach.php, not by how long someone has logged.
+ */
+final readonly class CoachContext
+{
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function __construct(private array $data) {}
+
+    public static function for(User $user): self
+    {
+        $facts = ProfileFacts::for($user)->toArray();
+        unset($facts['limitations']);
+
+        return new self([
+            'today' => today()->toDateString(),
+            'facts' => $facts,
+            'profile_notes' => array_column($user->profileVersions()->first()?->notes ?? [], 'text'),
+            'limitations' => self::limitations($user),
+            'recent_logs' => self::recentLogs($user),
+            'recent_exchanges' => self::recentTurns($user),
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(): array
+    {
+        return $this->data;
+    }
+
+    public function toJson(): string
+    {
+        return (string) json_encode($this->data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private static function limitations(User $user): array
+    {
+        $updates = (int) config('coach.context.limitation_updates');
+
+        return $user->limitations()->active()->with('updates')->latest('started_on')->get()
+            ->map(static fn (Limitation $l): array => [
+                'area' => $l->areaLabel(),
+                'what_they_said' => $l->note,
+                'severity' => $l->severity?->value,
+                'since' => $l->started_on->toDateString(),
+                'day' => $l->day(),
+                'until' => $l->expected_until?->toDateString(),
+                'red_flags_screen' => $l->red_flags ?? 'not answered',
+                'how_it_is_going' => $l->updates->take($updates)->map(static fn (LimitationUpdate $u): array => [
+                    'date' => $u->logged_on->toDateString(),
+                    'said' => $u->note,
+                ])->values()->all(),
+                'exercises_that_load_it' => $l->body_area === null ? [] : ExerciseLoads::exercisesLoading($l->body_area),
+            ])->values()->all();
+    }
+
+    /**
+     * Newest first, the person's own words and what was saved.
+     *
+     * @return list<array<string, string>>
+     */
+    private static function recentLogs(User $user): array
+    {
+        $chars = (int) config('coach.context.message_chars');
+
+        return $user->activityLogs()->limit((int) config('coach.context.recent_logs'))->get()
+            ->map(static fn (ActivityLog $log): array => [
+                'date' => $log->logged_on->toDateString(),
+                'message' => mb_strimwidth($log->raw_message, 0, $chars, '…'),
+                'saved_as' => mb_strimwidth($log->summary, 0, $chars, '…'),
+            ])->values()->all();
+    }
+
+    /**
+     * The last few questions within the window, oldest first so they read as
+     * a conversation.
+     *
+     * @return list<array<string, string>>
+     */
+    private static function recentTurns(User $user): array
+    {
+        $chars = (int) config('coach.context.turn_chars');
+
+        return $user->coachTurns()
+            ->where('created_at', '>=', now()->subHours((int) config('coach.context.turn_hours')))
+            ->limit((int) config('coach.context.turns'))
+            ->get()
+            ->reverse()
+            ->map(static fn (CoachTurn $t): array => [
+                'at' => $t->created_at->format('Y-m-d H:i'),
+                'they_asked' => mb_strimwidth($t->question, 0, $chars, '…'),
+                'you_answered' => mb_strimwidth($t->answer, 0, $chars, '…'),
+            ])->values()->all();
+    }
+}

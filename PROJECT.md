@@ -25,7 +25,7 @@
 **v0 is live (2026-10-18).** Coolify app on 84.247.178.198 (http://gbvqkbpmen41pdhf1eqgkzca.84.247.178.198.sslip.io), Postgres 18 beside it, Telegram bot @LarryTheLobsterFromSpongebobBot polling on the server. **Every push to `master` deploys automatically** (GitHub App webhook); a deploy that fails its health check rolls back and the old version keeps running. CI runs in parallel and does not gate the deploy, so run both suites before pushing.
 
 - Server access: `ssh hiren@84.247.178.198` (this laptop's key; user in the `docker` group). App container: `A=$(docker ps --format "{{.Names}}" | grep gbvqkbpmen41pdhf1eqgkzca | head -1)`, then `docker exec $A php artisan ...` (e.g. `channel:invite email --name=X`, `channel:unlink email`). Deploy history: `docker exec coolify-db psql -U coolify -d coolify -Atc "select id,status,left(commit,7),created_at from application_deployment_queues order by id desc limit 3"`.
-- Open: revoke the bot token (it was visible in a screenshot; the server uses it) and update `TELEGRAM_BOT_TOKEN`; Coolify 2FA, dashboard on HTTPS, firewall ports 8000 and 6001, SSH key-only.
+- Open: everything in `docs/alpha-launch.md` (new bot token, paid Gemini, firewall 8000/6001/6002, 2FA, backups, API domain with HTTPS, the app on Netlify, inviting testers).
 - Laptop bot: use a separate dev bot token in the local `.env`; never run `make bot` with the production token.
 
 **Every session:**
@@ -226,7 +226,8 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [ ] M4 Simulate: factories + deterministic two-user seeder, streak on read, HTTP scenario suite (PLAN.md section 6), prompting practices and a live eval set of real messages <!-- id:n5 cu:123kjkdmppp -->
 - [ ] M5 Channel port + the Telegram command set (log, weight, /next, /undo, /coach) + rules-only `/next` + one AI budget shared by HTTP and chat, driven by `channel:simulate`. Profile and stats stay in the app <!-- id:n6 cu:123kjkdmppq -->
 - [ ] M6 Telegram adapter, hardened ingest, host and Coolify checklist, backups, first deploy, first message from the phone. RELEASE 1 <!-- id:n7 cu:123kjkdmppr -->
-- [ ] M7 Coach Q&A over the living context: a `coach_question` gets one model call over a compact `CoachContext` (facts, notes, limitations, recent logs, today), persona style, short by default, writes no facts. Threads and `/plan` later. Direction in PLAN.md section 4 (2026-11-01) <!-- id:n8 cu:123kjkdmppt -->
+- [x] M7 Coach Q&A over the living context: `CoachContext`, `CoachAdvisor` port, `AnswerCoachQuestion`, `AnswerDepth` (quick, plan, explain), `coach_turns`, daily cap. Done 2026-11-01; threads and `/plan` later <!-- id:n8 cu:123kjkdmppt -->
+- [ ] Our own knowledge: a reviewed `knowledge/` folder of topic notes with sources, matched by tags into the coach context. Proposal in PLAN.md section 4 (2026-11-01), waiting for Hiren <!-- id:n28 -->
 - [ ] M8 `/next` with the model on top of the rules path, over the same `CoachContext` <!-- id:n9 cu:123kjkdmppu -->
 - [x] Written profile, rolling: after each log (120 s delay, one call per burst) the AI updates its notes from the current notes and the last 10 logs; every note cites logs or `facts`; versions kept in `profile_versions`; weekly full rebuild; `/me`, `profile:show`, `profile:rebuild`. Done 2026-10-28 <!-- id:n20 -->
 - [x] Injuries and limitations: a limitation as a user-stated fact (body area as multiple choice, severity, start, status), a one-line check when a logged exercise loads the injured area, red-flag words mean see a doctor, `/better`. Done 2026-10-29; the feel question before a suggestion waits for `/next` <!-- id:n21 -->
@@ -234,8 +235,8 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [ ] Deploy the app on Netlify (decided 2026-10-29; the app moved to its own repository `feetness-app` on 2026-10-30 with `netlify.toml`, `_redirects`, `_headers`): import that repository, set the two `NUXT_PUBLIC_*` variables; first give the API HTTPS on a real domain in Coolify (mixed content otherwise), then `APP_WEB_URL` and `CORS_ALLOWED_ORIGINS` on the API. Hiren's step, see `client/README.md` <!-- id:n25 -->
 - [ ] Shadow classifier: a Decorator around `MessageClassifier` that records the candidate's (Laya on the VPS or Jev via OpenRouter) kind, confidence and latency beside Gemini's on every real message; read the agreement after about 200 messages, then switch with `AI_CLASSIFIER` <!-- id:n24 -->
 - [ ] Injury-aware `/next` and "make me a 40-minute plan": `ExerciseLoads` and recent logs filter in plain code, the model orders and phrases <!-- id:n22 -->
-- [ ] Limitation timeline: dated free-text updates under an active limitation ("70% of yesterday", "sitting hurts after 20 min"), shown in `/me` and the app, read by the coach <!-- id:n26 -->
-- [ ] Red-flag screen asked once when a limitation is recorded, answered through the answer chain <!-- id:n27 -->
+- [x] Limitation timeline: dated updates under an active limitation, a new duration moves the end, `/me`, the overview API and the coach read them. Done 2026-11-01 <!-- id:n26 -->
+- [x] Red-flag screen asked once when a limitation is recorded, answered through the answer chain. Done 2026-11-01 <!-- id:n27 -->
 - [ ] M9 Profile: intake gaps (`asked_field`, skip state, `GET /api/coaches`) and the profile build on explicit request (coach notes citing logs, local model allowed, never overwrites user fields) <!-- id:n10 cu:123kjkdmppv -->
 - [ ] M10 API contract: Resources everywhere, one envelope, idempotency keys, OpenAPI with drift test, exported fixtures. RELEASE 3 <!-- id:n11 cu:123kjkdmppw -->
 - [ ] Coach questions with a daily cap: the coach may ask at most N intake or goal questions per day (config), tracks what was asked, and captures short-term and long-term goals (new fields) so answers over chat persist. Lands with M7 or M9 <!-- id:n12 cu:123kjkdmppx -->
@@ -255,6 +256,13 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-11-01 (later) — the coach answers; limitation timeline; red-flag screen
+- Hiren: "lets go". Built points 2, 3, 5, 6 of the direction (PLAN.md section 4, 2026-11-01): `CoachContext`, the `CoachAdvisor` port with `SdkCoachAdvisor`/`CoachAgent`/`FakeCoachAdvisor`, `AnswerCoachQuestion` with `coach_turns` and a daily cap, `TrainerPersona::voice()`, classifier examples for plan and explain questions; `RedFlagScreen` + `RedFlagScreenAnswer` in the chain; `limitation_updates`, `ExistingLimitation`, `RecordLimitationUpdate`; leg press now loads the lower back.
+- Hiren mid-session: give some question types more tokens. `AnswerDepth` decides quick, plan or explain from the question in plain code, with its own length instruction and output budget (`maxTokens()` on the agent, read by the SDK).
+- Real Gemini on Hiren's back messages: "30 min, 3 things" gave a chest-supported row, a padded machine and the bike; "foam roller?" one line; "why does sitting hurt" used his "20 minutes" update. First version repeated the see-a-doctor line every time; the rule now only fires on a warning sign.
+- 258 tests on SQLite and Postgres, Pint clean. Two migrations (`limitation_updates` with `limitations.red_flags`, `coach_turns`).
+- Hiren asked about our own knowledge (learned along the way, books and blogs, RAG): proposal in PLAN.md section 4, not built. `docs/alpha-launch.md` lists his steps to get testers on Telegram and the app this week.
 
 ### 2026-11-01 — direction: the living context
 - Hiren shared ten days of chatting with a general chatbot (agent persona) about his strained lower back and said: this is the direction, an LLM that treats your fitness portfolio as a living context and gives legitimate advice; ignore the chatbot's grammar quizzes, do not treat the log as a spec. Written into PLAN.md section 4 (2026-11-01) as eight points mapped on what exists, with a proposed order: `CoachContext`, coach Q&A, red-flag screen, limitation timeline, injury-aware plans. Roadmap M7, M8, n22 reworded; n26, n27 added. No code.

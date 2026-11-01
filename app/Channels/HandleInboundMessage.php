@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Channels;
 
 use App\Actions\Auth\IssueLoginLink;
+use App\Actions\Coach\AnswerCoachQuestion;
 use App\Actions\Limitations\RecordLimitation;
+use App\Actions\Limitations\RecordLimitationUpdate;
 use App\Actions\Limitations\ResolveLimitation;
 use App\Actions\Linking\RedeemLinkCode;
 use App\Actions\SmartLog\RecordSmartLog;
@@ -14,7 +16,9 @@ use App\Conversation\Answers\AnswerChain;
 use App\Enums\LogSource;
 use App\Exceptions\AiUnavailable;
 use App\Interpretation\Interpreter;
+use App\Limitations\ExistingLimitation;
 use App\Limitations\LimitationCheck;
+use App\Limitations\RedFlagScreen;
 use App\Models\ChannelIdentity;
 use App\Models\ChannelLinkCode;
 use App\Models\User;
@@ -27,9 +31,10 @@ use Illuminate\Support\Facades\RateLimiter;
  *
  * Checked in this order: unlinked sender (an invite code links them, anyone
  * else gets one polite reply a day), commands (/help, /undo, /me, /login,
- * /better), the answer chain (open log question, limitation choice, profile
- * question; no AI), then the interpreter (classify, parse, named rules) and
- * the recorder. A receipt may end with a limitation check and one profile
+ * /better), the answer chain (open log question, limitation choice, red-flag
+ * screen, profile question; no AI), then the interpreter (classify, parse,
+ * named rules) and the recorder, a limitation (new, or an update on one we
+ * have), or the coach for a question. A receipt may end with a limitation check and one profile
  * question. It knows nothing about Telegram; a WhatsApp adapter would call
  * the same method.
  */
@@ -41,8 +46,9 @@ final readonly class HandleInboundMessage
         ."104.5kg (your weight)\n\n"
         ."If I ask for a missing number, just reply with it, or say skip.\n"
         ."/undo removes your last log.\n"
-        ."/me shows your profile, /login opens the app.\n"
-        .'Tell me about an injury ("hurt my back, going slow for 2 weeks") and I\'ll keep it in mind; /better when it has healed.';
+        ."/me shows your profile, /login opens the app.\n\n"
+        ."Ask me anything about your training: \"30 min, 3 things, go\", \"foam roller for my back?\"\n\n"
+        .'Tell me about an injury ("hurt my back, going slow for 2 weeks") and how it is going ("back is better today"); /better when it has healed.';
 
     public const string STRANGER = 'Hi! Feetness is in private beta. Ask the person who invited you for a link, then tap it to connect.';
 
@@ -68,6 +74,8 @@ final readonly class HandleInboundMessage
         private ResolveLimitation $resolve,
         private LimitationCheck $limitationCheck,
         private IssueLoginLink $loginLinks,
+        private AnswerCoachQuestion $coach,
+        private RecordLimitationUpdate $limitationUpdates,
     ) {}
 
     /**
@@ -117,6 +125,14 @@ final readonly class HandleInboundMessage
             return "Couldn't reach the AI just now, so nothing was saved. Try again in a minute.";
         }
 
+        if ($interpretation->isCoachQuestion()) {
+            try {
+                return $this->coach->handle($user, $text);
+            } catch (AiUnavailable) {
+                return "Couldn't reach the coach just now. Try again in a minute.";
+            }
+        }
+
         if ($interpretation->isLimitation()) {
             return $this->noteLimitation($user, $text, $interpretation->limitation, $source);
         }
@@ -141,11 +157,24 @@ final readonly class HandleInboundMessage
      */
     private function noteLimitation(User $user, string $text, array $facts, LogSource $source): string
     {
+        $existing = ExistingLimitation::for($user, $facts);
+
+        if ($existing !== null) {
+            $this->limitationUpdates->handle($existing, $text, $facts, $source);
+            $until = $existing->expected_until === null ? '' : ', until '.$existing->expected_until->format('j M');
+
+            return 'Noted for your '.$existing->areaLabel().', day '.$existing->day().$until.'. Say /better when it has healed.';
+        }
+
         $limitation = $this->limitations->handle($user, $text, $facts, $source);
-        $question = $limitation->activityLog->questions[0]['question'] ?? null;
+        $question = $limitation->activityLog->questions[0] ?? null;
+
+        if (($question['field'] ?? null) === RedFlagScreen::FIELD) {
+            return 'Noted: '.$limitation->describe().".\n\n".$question['question'];
+        }
 
         if ($question !== null) {
-            return $question;
+            return $question['question'];
         }
 
         return 'Noted: '.$limitation->describe().". I'll check with you when a logged exercise loads it, and keep suggestions light. Say /better when it has healed.";

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Interpretation;
 
+use App\Enums\MessageKind;
+
 /**
  * What the interpreter made of one message: the kind, the facts to record,
  * or a reply that ends the turn with nothing saved.
@@ -26,6 +28,12 @@ final readonly class Interpretation
     public function shouldRecord(): bool
     {
         return $this->reply === null && $this->parsed !== null;
+    }
+
+    /** A question for the coach. Doors that can answer it do; the rest show the reply. */
+    public function isCoachQuestion(): bool
+    {
+        return $this->classification->kind === MessageKind::CoachQuestion;
     }
 
     public function isLimitation(): bool

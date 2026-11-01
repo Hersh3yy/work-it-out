@@ -95,6 +95,16 @@ class User extends Authenticatable
         return $this->hasMany(Limitation::class);
     }
 
+    /**
+     * Newest first.
+     *
+     * @return HasMany<CoachTurn, $this>
+     */
+    public function coachTurns(): HasMany
+    {
+        return $this->hasMany(CoachTurn::class)->latest('created_at')->latest('id');
+    }
+
     /** @return HasMany<ActivityLog, $this> */
     /**
      * The written profile, newest version first.

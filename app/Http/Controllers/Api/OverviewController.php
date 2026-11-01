@@ -36,7 +36,7 @@ final class OverviewController extends Controller
                 'kind' => $version?->kind,
                 'items' => $version?->notes ?? [],
             ],
-            'limitations' => LimitationResource::collection($user->limitations()->active()->latest('started_on')->get()),
+            'limitations' => LimitationResource::collection($user->limitations()->active()->with('updates')->latest('started_on')->get()),
             'recent_logs' => ActivityLogResource::collection(
                 $user->activityLogs()->with(['exerciseEntries.setRows', 'limitation'])->limit(10)->get(),
             ),

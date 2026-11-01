@@ -103,6 +103,19 @@ PROMPT,
         };
     }
 
+    /**
+     * The voice for coach answers: style only, one line. Facts and rules are
+     * the same for every coach (App\Ai\Agents\CoachAgent).
+     */
+    public function voice(): string
+    {
+        return match ($this) {
+            self::LtSurge => 'direct and clipped, like a demanding military coach who respects effort; no filler, no cheerleading, never cruel.',
+            self::Shen => 'energetic and practical, like a performance coach who thinks in training cycles and recovery windows; enthusiasm backed by substance.',
+            self::Latika => 'warm and unhurried, like a coach who cares about recovery, mobility and how the body feels; never shaming.',
+        };
+    }
+
     public function downMessage(): string
     {
         return match ($this) {

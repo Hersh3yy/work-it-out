@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -20,14 +21,19 @@ use Illuminate\Support\Carbon;
  * @property string|null $activity_log_id
  * @property BodyArea|null $body_area
  * @property LimitationSeverity|null $severity
+ * @property string|null $red_flags null until the screen is answered, then clear or flagged
  * @property string $note
  * @property Carbon $started_on
  * @property Carbon|null $expected_until
  * @property Carbon|null $resolved_at
  */
-#[Fillable(['user_id', 'activity_log_id', 'body_area', 'severity', 'note', 'started_on', 'expected_until', 'resolved_at'])]
+#[Fillable(['user_id', 'activity_log_id', 'body_area', 'severity', 'red_flags', 'note', 'started_on', 'expected_until', 'resolved_at'])]
 final class Limitation extends Model
 {
+    public const string RED_FLAGS_CLEAR = 'clear';
+
+    public const string RED_FLAGS_FLAGGED = 'flagged';
+
     protected function casts(): array
     {
         return [
@@ -73,5 +79,21 @@ final class Limitation extends Model
     public function activityLog(): BelongsTo
     {
         return $this->belongsTo(ActivityLog::class);
+    }
+
+    /**
+     * Newest first.
+     *
+     * @return HasMany<LimitationUpdate, $this>
+     */
+    public function updates(): HasMany
+    {
+        return $this->hasMany(LimitationUpdate::class)->latest('logged_on')->latest('id');
+    }
+
+    /** Day 1 is the day it started. */
+    public function day(): int
+    {
+        return (int) $this->started_on->copy()->startOfDay()->diffInDays(today()) + 1;
     }
 }

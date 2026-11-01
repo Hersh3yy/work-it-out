@@ -35,11 +35,15 @@ it('replies politely to nonsense and saves nothing', function (): void {
     $this->assertDatabaseCount('activity_logs', 0);
 });
 
-it('answers a coach question honestly until coach chat exists', function (): void {
-    linkedUser();
+it('marks a coach question and gives doors without a coach an honest reply', function (): void {
+    $user = linkedUser();
     classifierSays(MessageKind::CoachQuestion);
 
-    expect(app(HandleInboundMessage::class)->handle(telegramText('what should I train today?')))->toBe(Interpreter::COACH_LATER);
+    $interpretation = app(Interpreter::class)->interpret($user, 'what should I train today?');
+
+    expect($interpretation->isCoachQuestion())->toBeTrue()
+        ->and($interpretation->reply)->toBe(Interpreter::COACH_LATER)
+        ->and($interpretation->shouldRecord())->toBeFalse();
     $this->assertDatabaseCount('activity_logs', 0);
 });
 
