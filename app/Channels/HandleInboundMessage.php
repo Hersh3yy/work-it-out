@@ -4,52 +4,34 @@ declare(strict_types=1);
 
 namespace App\Channels;
 
-use App\Actions\Auth\IssueLoginLink;
 use App\Actions\Coach\AnswerCoachQuestion;
-use App\Actions\Limitations\RecordLimitation;
-use App\Actions\Limitations\RecordLimitationUpdate;
-use App\Actions\Limitations\ResolveLimitation;
 use App\Actions\Linking\RedeemLinkCode;
 use App\Actions\SmartLog\RecordSmartLog;
-use App\Actions\SmartLog\RevertSmartLog;
 use App\Conversation\Answers\AnswerChain;
+use App\Conversation\Commands\ChatCommands;
+use App\Conversation\Commands\HelpCommand;
+use App\Conversation\LimitationConversation;
 use App\Enums\LogSource;
 use App\Exceptions\AiUnavailable;
 use App\Interpretation\Interpreter;
-use App\Limitations\ExistingLimitation;
 use App\Limitations\LimitationCheck;
-use App\Limitations\RedFlagScreen;
 use App\Models\ChannelIdentity;
 use App\Models\ChannelLinkCode;
 use App\Models\User;
 use App\Profile\ProfileCheckIn;
-use App\Profile\ProfileSummary;
 use Illuminate\Support\Facades\RateLimiter;
 
 /**
  * The conversation core every chat provider shares: message in, reply text out.
  *
- * Checked in this order: unlinked sender (an invite code links them, anyone
- * else gets one polite reply a day), commands (/help, /undo, /me, /login,
- * /better), the answer chain (open log question, limitation choice, red-flag
- * screen, profile question; no AI), then the interpreter (classify, parse,
- * named rules) and the recorder, a limitation (new, or an update on one we
- * have), or the coach for a question. A receipt may end with a limitation check and one profile
- * question. It knows nothing about Telegram; a WhatsApp adapter would call
- * the same method.
+ * In this order: an unlinked sender (an invite code links them, anyone else
+ * gets one polite reply a day), a slash command, an answer to an open
+ * question (no AI), then the interpreter decides between a log, a
+ * limitation and a coach question. It knows nothing about Telegram; a
+ * WhatsApp adapter would call the same method.
  */
 final readonly class HandleInboundMessage
 {
-    public const string HELP = "Text me what you did, for example:\n"
-        ."bench 3x8 80kg, then incline db 3x10 30\n"
-        ."ran 5k in 28 min\n"
-        ."104.5kg (your weight)\n\n"
-        ."If I ask for a missing number, just reply with it, or say skip.\n"
-        ."/undo removes your last log.\n"
-        ."/me shows your profile, /login opens the app.\n\n"
-        ."Ask me anything about your training: \"30 min, 3 things, go\", \"foam roller for my back?\"\n\n"
-        .'Tell me about an injury ("hurt my back, going slow for 2 weeks") and how it is going ("back is better today"); /better when it has healed.';
-
     public const string STRANGER = 'Hi! Feetness is in private beta. Ask the person who invited you for a link, then tap it to connect.';
 
     public const string LINK_FAILED = "That link didn't work. It may have expired or been used already, so ask for a new one.";
@@ -62,20 +44,16 @@ final readonly class HandleInboundMessage
     private const string START_WITH_CODE = '/^\/(?:start|link)(?:@\w+)?\s+([A-Za-z0-9_-]{6,64})\s*$/';
 
     public function __construct(
+        private ChatCommands $commands,
+        private AnswerChain $answers,
         private Interpreter $interpreter,
         private RecordSmartLog $record,
-        private RevertSmartLog $revert,
-        private AnswerChain $answers,
         private ReplyComposer $replies,
-        private RedeemLinkCode $links,
-        private ProfileCheckIn $checkIn,
-        private ProfileSummary $profile,
-        private RecordLimitation $limitations,
-        private ResolveLimitation $resolve,
         private LimitationCheck $limitationCheck,
-        private IssueLoginLink $loginLinks,
+        private ProfileCheckIn $checkIn,
+        private LimitationConversation $limitations,
         private AnswerCoachQuestion $coach,
-        private RecordLimitationUpdate $limitationUpdates,
+        private RedeemLinkCode $links,
     ) {}
 
     /**
@@ -99,16 +77,15 @@ final readonly class HandleInboundMessage
             return $this->linkWhileConnected($user, $m[1]);
         }
 
-        $command = mb_strtolower((string) strtok($text, ' @'));
+        if (str_starts_with($text, '/')) {
+            $command = $this->commands->find((string) strtok($text, ' @'));
 
-        return match ($command) {
-            '/start', '/help' => self::HELP,
-            '/undo' => $this->undo($user),
-            '/me', '/profile' => $this->profile->for($user),
-            '/login', '/app' => $this->login($user),
-            '/better', '/healed' => $this->better($user),
-            default => $this->freeText($user, $text, $message->provider->logSource()),
-        };
+            if ($command !== null) {
+                return $command->reply($user);
+            }
+        }
+
+        return $this->freeText($user, $text, $message->provider->logSource());
     }
 
     private function freeText(User $user, string $text, LogSource $source): string
@@ -126,15 +103,11 @@ final readonly class HandleInboundMessage
         }
 
         if ($interpretation->isCoachQuestion()) {
-            try {
-                return $this->coach->handle($user, $text);
-            } catch (AiUnavailable) {
-                return "Couldn't reach the coach just now. Try again in a minute.";
-            }
+            return $this->askCoach($user, $text);
         }
 
         if ($interpretation->isLimitation()) {
-            return $this->noteLimitation($user, $text, $interpretation->limitation, $source);
+            return $this->limitations->reply($user, $text, $interpretation->limitation, $source);
         }
 
         if (! $interpretation->shouldRecord()) {
@@ -152,50 +125,13 @@ final readonly class HandleInboundMessage
         return implode("\n\n", array_filter($lines));
     }
 
-    /**
-     * @param  array<string, mixed>  $facts
-     */
-    private function noteLimitation(User $user, string $text, array $facts, LogSource $source): string
+    private function askCoach(User $user, string $question): string
     {
-        $existing = ExistingLimitation::for($user, $facts);
-
-        if ($existing !== null) {
-            $this->limitationUpdates->handle($existing, $text, $facts, $source);
-            $until = $existing->expected_until === null ? '' : ', until '.$existing->expected_until->format('j M');
-
-            return 'Noted for your '.$existing->areaLabel().', day '.$existing->day().$until.'. Say /better when it has healed.';
+        try {
+            return $this->coach->handle($user, $question);
+        } catch (AiUnavailable) {
+            return "Couldn't reach the coach just now. Try again in a minute.";
         }
-
-        $limitation = $this->limitations->handle($user, $text, $facts, $source);
-        $question = $limitation->activityLog->questions[0] ?? null;
-
-        if (($question['field'] ?? null) === RedFlagScreen::FIELD) {
-            return 'Noted: '.$limitation->describe().".\n\n".$question['question'];
-        }
-
-        if ($question !== null) {
-            return $question['question'];
-        }
-
-        return 'Noted: '.$limitation->describe().". I'll check with you when a logged exercise loads it, and keep suggestions light. Say /better when it has healed.";
-    }
-
-    private function login(User $user): string
-    {
-        return 'Your sign-in link for the Feetness app (works once, '.IssueLoginLink::VALID_MINUTES." minutes):\n".$this->loginLinks->handle($user);
-    }
-
-    private function better(User $user): string
-    {
-        $limitation = $user->limitations()->active()->latest('started_on')->first();
-
-        if ($limitation === null) {
-            return 'Nothing to resolve: no active injury or limitation on file.';
-        }
-
-        $this->resolve->handle($limitation);
-
-        return 'Glad to hear it. '.ucfirst($limitation->areaLabel()).' marked as healed; suggestions go back to normal.';
     }
 
     /**
@@ -223,7 +159,7 @@ final readonly class HandleInboundMessage
 
             RateLimiter::clear($attempts);
 
-            return "Welcome, {$user->name}! Your account is connected.\n\n".self::HELP;
+            return "Welcome, {$user->name}! Your account is connected.\n\n".HelpCommand::TEXT;
         }
 
         logger()->info('Chat message from unlinked sender', ['provider' => $message->provider->value, 'sender_id' => $message->senderId]);
@@ -253,24 +189,6 @@ final readonly class HandleInboundMessage
 
         $link?->update(['used_at' => now()]);
 
-        return "You're already connected, {$user->name}.\n\n".self::HELP;
-    }
-
-    private function undo(User $user): string
-    {
-        $log = $user->activityLogs()->where('created_at', '>=', now()->subDay())->first();
-
-        if ($log === null) {
-            return 'Nothing to undo from the last 24 hours.';
-        }
-
-        $entries = $log->exerciseEntries()->orderBy('sort_order')->get();
-        $removed = $entries->isEmpty()
-            ? $log->summary
-            : $entries->map($this->replies->entry(...))->implode(', ');
-
-        $this->revert->handle($log);
-
-        return "Removed: {$removed}";
+        return "You're already connected, {$user->name}.\n\n".HelpCommand::TEXT;
     }
 }

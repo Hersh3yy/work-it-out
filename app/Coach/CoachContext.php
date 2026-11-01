@@ -62,23 +62,32 @@ final readonly class CoachContext
      */
     private static function limitations(User $user): array
     {
-        $updates = (int) config('coach.context.limitation_updates');
-
         return $user->limitations()->active()->with('updates')->latest('started_on')->get()
-            ->map(static fn (Limitation $l): array => [
-                'area' => $l->areaLabel(),
-                'what_they_said' => $l->note,
-                'severity' => $l->severity?->value,
-                'since' => $l->started_on->toDateString(),
-                'day' => $l->day(),
-                'until' => $l->expected_until?->toDateString(),
-                'red_flags_screen' => $l->red_flags ?? 'not answered',
-                'how_it_is_going' => $l->updates->take($updates)->map(static fn (LimitationUpdate $u): array => [
-                    'date' => $u->logged_on->toDateString(),
-                    'said' => $u->note,
-                ])->values()->all(),
-                'exercises_that_load_it' => $l->body_area === null ? [] : ExerciseLoads::exercisesLoading($l->body_area),
-            ])->values()->all();
+            ->map(self::limitation(...))
+            ->values()->all();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function limitation(Limitation $limitation): array
+    {
+        $howItIsGoing = $limitation->updates
+            ->take((int) config('coach.context.limitation_updates'))
+            ->map(static fn (LimitationUpdate $update): array => ['date' => $update->logged_on->toDateString(), 'said' => $update->note])
+            ->values()->all();
+
+        return [
+            'area' => $limitation->areaLabel(),
+            'what_they_said' => $limitation->note,
+            'severity' => $limitation->severity?->value,
+            'since' => $limitation->started_on->toDateString(),
+            'day' => $limitation->day(),
+            'until' => $limitation->expected_until?->toDateString(),
+            'red_flags_screen' => $limitation->red_flags ?? 'not answered',
+            'how_it_is_going' => $howItIsGoing,
+            'exercises_that_load_it' => $limitation->body_area === null ? [] : ExerciseLoads::exercisesLoading($limitation->body_area),
+        ];
     }
 
     /**

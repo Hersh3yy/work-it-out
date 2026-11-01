@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Channels\HandleInboundMessage;
+use App\Conversation\Commands\HelpCommand;
 use Tests\Fakes\FakeSmartLogParser;
 
 it('never parses a message from a sender that is not linked', function (): void {
@@ -72,7 +73,7 @@ it('replies and saves nothing when the AI is down', function (): void {
 it('answers /start and /help', function (string $command): void {
     linkedUser();
 
-    expect(app(HandleInboundMessage::class)->handle(telegramText($command)))->toBe(HandleInboundMessage::HELP);
+    expect(app(HandleInboundMessage::class)->handle(telegramText($command)))->toBe(HelpCommand::TEXT);
 })->with(['/start', '/help', '/help@FeetnessBot']);
 
 it('describes an undone workout with the saved names, not the AI summary', function (): void {

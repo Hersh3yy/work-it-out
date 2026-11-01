@@ -26,6 +26,12 @@ final class LimitationUpdate extends Model
         return ['logged_on' => 'date'];
     }
 
+    /** @return BelongsTo<ActivityLog, $this> */
+    public function activityLog(): BelongsTo
+    {
+        return $this->belongsTo(ActivityLog::class);
+    }
+
     /** @return BelongsTo<Limitation, $this> */
     public function limitation(): BelongsTo
     {

@@ -33,11 +33,10 @@ final readonly class AnswerCoachQuestion
      */
     public function handle(User $user, string $question): string
     {
-        $limit = (int) config('coach.daily_limit');
-        $key = 'coach-questions:'.$user->id.':'.today()->toDateString();
+        $dailyLimit = (int) config('coach.daily_limit');
 
-        if (RateLimiter::tooManyAttempts($key, $limit)) {
-            return "That's today's {$limit} coach questions used. Logging still works as usual; ask me again tomorrow.";
+        if (RateLimiter::tooManyAttempts(self::todaysQuestions($user), $dailyLimit)) {
+            return "That's today's {$dailyLimit} coach questions used. Logging still works as usual; ask me again tomorrow.";
         }
 
         $context = CoachContext::for($user);
@@ -45,7 +44,7 @@ final readonly class AnswerCoachQuestion
         $depth = AnswerDepth::for($question);
         $answer = $this->ai->run($user, CoachAgent::class, fn (): string => $this->advisor->answer($context, $persona, $question, $depth));
 
-        RateLimiter::hit($key, 86400);
+        RateLimiter::hit(self::todaysQuestions($user), 86400);
         $user->coachTurns()->create([
             'question' => mb_substr($question, 0, 2000),
             'answer' => $answer,
@@ -54,5 +53,10 @@ final readonly class AnswerCoachQuestion
         ]);
 
         return $answer;
+    }
+
+    private static function todaysQuestions(User $user): string
+    {
+        return 'coach-questions:'.$user->id.':'.today()->toDateString();
     }
 }

@@ -26,6 +26,8 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class RecordLimitation
 {
+    public const string AREA_QUESTION_FIELD = 'limitation.body_area';
+
     /**
      * @param  array{is_limitation: bool, body_area: string|null, candidates: list<string>, severity: string|null, duration_days: int|null, started_days_ago: int|null, note: string}  $facts
      */
@@ -44,7 +46,7 @@ final readonly class RecordLimitation
                 'raw_message' => $message,
                 'summary' => 'Limitation: '.($area?->label() ?? 'area to confirm').', '.$note,
                 'questions' => $candidates === [] ? [RedFlagScreen::question()] : [[
-                    'field' => 'limitation.body_area',
+                    'field' => self::AREA_QUESTION_FIELD,
                     'question' => $this->question($candidates),
                     'options' => array_map(static fn (BodyArea $c): string => $c->value, $candidates),
                 ]],

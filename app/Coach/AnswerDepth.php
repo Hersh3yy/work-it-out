@@ -18,15 +18,15 @@ enum AnswerDepth: string
     case Plan = 'plan';
     case Explain = 'explain';
 
-    private const string EXPLAIN = '/\b(why|how (does|do|is|come|can)|what (does|is|are|happens)|explain|waarom|hoe (werkt|kan|komt)|wat (doet|is))\b/iu';
+    private const string ASKS_WHY_OR_HOW = '/\b(why|how (does|do|is|come|can)|what (does|is|are|happens)|explain|waarom|hoe (werkt|kan|komt)|wat (doet|is))\b/iu';
 
-    private const string PLAN = '/\b(plan|routine|session|workout|schedule|\d+\s*(min|minutes|mins)\b|\d+\s*(things|exercises|moves))|\bsuperset\b/iu';
+    private const string ASKS_FOR_A_SESSION = '/\b(plan|routine|session|workout|schedule|\d+\s*(min|minutes|mins)\b|\d+\s*(things|exercises|moves))|\bsuperset\b/iu';
 
     public static function for(string $question): self
     {
         return match (true) {
-            (bool) preg_match(self::EXPLAIN, $question) => self::Explain,
-            (bool) preg_match(self::PLAN, $question) => self::Plan,
+            (bool) preg_match(self::ASKS_WHY_OR_HOW, $question) => self::Explain,
+            (bool) preg_match(self::ASKS_FOR_A_SESSION, $question) => self::Plan,
             default => self::Quick,
         };
     }

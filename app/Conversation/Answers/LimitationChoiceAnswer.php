@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Conversation\Answers;
 
+use App\Actions\Limitations\RecordLimitation;
 use App\Actions\SmartLog\AnswerOpenQuestion;
 use App\Enums\BodyArea;
 use App\Events\LogRecorded;
@@ -26,7 +27,7 @@ final readonly class LimitationChoiceAnswer implements AnswerHandler
         $open = $this->answers->openFor($user);
         $question = $open?->questions[0] ?? null;
 
-        if ($open === null || ($question['field'] ?? null) !== 'limitation.body_area') {
+        if ($open === null || ($question['field'] ?? null) !== RecordLimitation::AREA_QUESTION_FIELD) {
             return null;
         }
 
