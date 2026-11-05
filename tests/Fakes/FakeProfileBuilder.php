@@ -39,9 +39,9 @@ final class FakeProfileBuilder implements ProfileBuilder
         return $this;
     }
 
-    public function build(ProfileFacts $facts, array $previousNotes, array $recentLogs): array
+    public function build(ProfileFacts $facts, array $previousNotes, array $recentEntries): array
     {
-        $this->calls[] = ['facts' => $facts->toArray(), 'previous' => $previousNotes, 'logs' => $recentLogs];
+        $this->calls[] = ['facts' => $facts->toArray(), 'previous' => $previousNotes, 'logs' => $recentEntries];
 
         if ($this->shouldFail) {
             throw new RuntimeException('Fake profile outage');
@@ -51,7 +51,7 @@ final class FakeProfileBuilder implements ProfileBuilder
             return $this->notes;
         }
 
-        $newest = $recentLogs[0]['id'] ?? null;
+        $newest = $recentEntries[0]['id'] ?? null;
 
         return array_values(array_filter([
             $newest === null ? null : ['text' => 'Logged training recently.', 'cites' => [$newest]],

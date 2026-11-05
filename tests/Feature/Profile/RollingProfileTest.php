@@ -11,6 +11,7 @@ use App\Exceptions\AiUnavailable;
 use App\Jobs\BuildProfile;
 use App\Listeners\RefreshProfile;
 use App\Models\BodyWeightLog;
+use App\Models\CoachTurn;
 use App\Models\ProfileVersion;
 use App\Models\User;
 use App\Profile\ProfileFacts;
@@ -146,6 +147,44 @@ it('keeps a note citing an older log that still exists, and drops it once that l
     expect(app(UpdateProfile::class)->handle($user))->toBeNull();
 });
 
+it('shows the writer the coach questions as entries it can cite', function (): void {
+    Queue::fake();
+    $user = User::factory()->create();
+    $log = logFor($user, 'incline bench 5x5 60');
+    $this->travel(1)->minutes();
+    $turn = $user->coachTurns()->create(['question' => 'What should I do on Saturday? I am scared of squats', 'answer' => 'Machine chest press 3x10 at 50 kg.']);
+
+    $fake = fakeProfileBuilder()->returning([
+        ['text' => 'Goal: scared of squats, wants them back.', 'cites' => ['coach:'.$turn->id]],
+        ['text' => 'Strength: incline bench 5x5 at 60.', 'cites' => [$log]],
+    ]);
+    $version = app(UpdateProfile::class)->handle($user);
+
+    expect($fake->calls[0]['logs'][0])->toBe(['id' => 'coach:'.$turn->id, 'date' => today()->toDateString(), 'type' => 'coach_question', 'message' => 'What should I do on Saturday? I am scared of squats', 'saved_as' => 'coach answered: Machine chest press 3x10 at 50 kg.'])
+        ->and($fake->calls[0]['logs'][1]['id'])->toBe($log)
+        ->and($fake->calls[0]['logs'][1]['saved_as'])->toBe('Workout (Bench Press 3x8 @ 80 kg)')
+        ->and($version->notes)->toHaveCount(2)
+        ->and($version->based_on_log_id)->toBe($log);
+
+    CoachTurn::query()->whereKey($turn->id)->delete();
+    config(['profile.rolling.recent_turns' => 0]);
+
+    expect(app(UpdateProfile::class)->handle($user)->notes)->toBe([['text' => 'Strength: incline bench 5x5 at 60.', 'cites' => [$log]]]);
+});
+
+it('comes back later when the AI is overloaded', function (): void {
+    Queue::fake();
+    $user = User::factory()->create();
+    logFor($user);
+    fakeProfileBuilder()->failing();
+
+    $job = (new BuildProfile($user))->withFakeQueueInteractions();
+    $job->handle(app(UpdateProfile::class));
+
+    $job->assertReleased(config('profile.rolling.retry_seconds'));
+    expect($user->profileVersions()->count())->toBe(0);
+});
+
 it('caps the number of notes', function (): void {
     Queue::fake();
     $user = User::factory()->create();
@@ -153,7 +192,7 @@ it('caps the number of notes', function (): void {
 
     fakeProfileBuilder()->returning(array_map(fn (int $i): array => ['text' => "Note {$i}", 'cites' => ['facts']], range(1, 12)));
 
-    expect(app(UpdateProfile::class)->handle($user)->notes)->toHaveCount(8);
+    expect(app(UpdateProfile::class)->handle($user)->notes)->toHaveCount(10);
 });
 
 it('writes nothing for a user with no logs and no notes', function (): void {

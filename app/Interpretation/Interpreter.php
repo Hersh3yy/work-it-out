@@ -16,6 +16,7 @@ use App\Interpretation\Rules\BareNumberIsNotBodyWeight;
 use App\Interpretation\Rules\InterpretationRule;
 use App\Interpretation\Rules\RepsTimesSetsHasTwoReadings;
 use App\Interpretation\Rules\WeightedLiftNeedsSetsAndReps;
+use App\Interpretation\Rules\WorkoutNeedsAnExercise;
 use App\Limitations\RedFlags;
 use App\Models\User;
 use App\Services\Ai\AiCall;
@@ -43,6 +44,7 @@ final readonly class Interpreter
         BareNumberIsNotBodyWeight::class,
         RepsTimesSetsHasTwoReadings::class,
         WeightedLiftNeedsSetsAndReps::class,
+        WorkoutNeedsAnExercise::class,
     ];
 
     public function __construct(

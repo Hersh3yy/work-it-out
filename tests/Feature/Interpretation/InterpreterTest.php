@@ -10,6 +10,7 @@ use App\Interpretation\Interpreter;
 use App\Interpretation\RuleClassifier;
 use App\Interpretation\Rules\BareNumberIsNotBodyWeight;
 use App\Interpretation\Rules\RepsTimesSetsHasTwoReadings;
+use App\Interpretation\Rules\WorkoutNeedsAnExercise;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Laravel\Ai\Ai;
@@ -128,4 +129,14 @@ it('prints what the interpreter made of a message and saves nothing', function (
         ->assertSuccessful();
 
     $this->assertDatabaseCount('activity_logs', 0);
+});
+
+it('asks again instead of saving a workout with no exercise rows', function (): void {
+    $rule = new WorkoutNeedsAnExercise;
+    $hollow = ['log_type' => 'workout', 'summary' => 'Chest Supported Row, Preacher Curls', 'exercises' => [], 'questions' => []];
+
+    expect($rule->apply('so i did row and curls', $hollow)->stopReply)->toBe(WorkoutNeedsAnExercise::REPLY)
+        ->and($rule->apply('45 min session', $hollow + ['duration_minutes' => 45])->stopReply)->toBeNull()
+        ->and($rule->apply('row 41kg 5x10', ['log_type' => 'workout', 'summary' => 'Row', 'exercises' => [lift('Row', 41.0, 5, 10)]])->stopReply)->toBeNull()
+        ->and($rule->apply('walked the dog', ['log_type' => 'general', 'summary' => 'Walk', 'exercises' => []])->stopReply)->toBeNull();
 });

@@ -56,6 +56,7 @@ it('gives the coach what was logged today and the last exchange', function (): v
     $context = $coach->calls[1]['context'];
     expect($context['recent_logs'][0]['message'])->toBe('lat pulldown 3x10 50')
         ->and($context['recent_logs'][0]['date'])->toBe(today()->toDateString())
+        ->and($context['recent_logs'][0]['exercises'])->toBe(['Lat Pulldown 3x10 @ 50 kg'])
         ->and($context['recent_exchanges'])->toHaveCount(1)
         ->and($context['recent_exchanges'][0]['they_asked'])->toBe('make a plan for 40 min');
 });
@@ -108,7 +109,7 @@ it('keeps the context the same size however long someone has logged', function (
 it('leaves old exchanges out of the context', function (): void {
     $user = User::factory()->create();
     $turn = $user->coachTurns()->create(['question' => 'foam roller?', 'answer' => 'No, not on the lower back.']);
-    $turn->forceFill(['created_at' => now()->subDays(2)])->save();
+    $turn->forceFill(['created_at' => now()->subDays(4)])->save();
 
     expect(CoachContext::for($user)->toArray()['recent_exchanges'])->toBe([]);
 });

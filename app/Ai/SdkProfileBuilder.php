@@ -16,12 +16,12 @@ use App\Profile\ProfileFacts;
  */
 final readonly class SdkProfileBuilder implements ProfileBuilder
 {
-    public function build(ProfileFacts $facts, array $previousNotes, array $recentLogs): array
+    public function build(ProfileFacts $facts, array $previousNotes, array $recentEntries): array
     {
         $prompt = json_encode([
             'FACTS' => $facts->toArray(),
             'PREVIOUS NOTES' => $previousNotes,
-            'RECENT LOGS' => $recentLogs,
+            'RECENT ENTRIES' => $recentEntries,
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
         $raw = (new ProfileAgent)->prompt(

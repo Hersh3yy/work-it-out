@@ -11,11 +11,13 @@ use App\Models\Limitation;
 use App\Models\LimitationUpdate;
 use App\Models\User;
 use App\Profile\ProfileFacts;
+use App\Services\Exercises\ExerciseLine;
 
 /**
  * The living context the coach answers from: what plain code computed
  * (ProfileFacts), the written profile notes, the person's own recent
- * messages, their stated limitations with how each is going and what loads
+ * messages with the exercises saved from each (sets and loads, worded as
+ * their receipts were), their stated limitations with how each is going and what loads
  * it, and the last few questions they asked with the answers given.
  *
  * Everything here is either a stored fact or the person's own words. The
@@ -91,20 +93,34 @@ final readonly class CoachContext
     }
 
     /**
-     * Newest first, the person's own words and what was saved.
+     * Newest first, the person's own words, what was saved, and the saved
+     * exercises with their sets and loads.
      *
-     * @return list<array<string, string>>
+     * @return list<array<string, mixed>>
      */
     private static function recentLogs(User $user): array
     {
+        $lines = app(ExerciseLine::class);
+
+        return $user->activityLogs()->with('exerciseEntries')->limit((int) config('coach.context.recent_logs'))->get()
+            ->map(static fn (ActivityLog $log): array => self::log($log, $lines))
+            ->values()->all();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function log(ActivityLog $log, ExerciseLine $lines): array
+    {
         $chars = (int) config('coach.context.message_chars');
 
-        return $user->activityLogs()->limit((int) config('coach.context.recent_logs'))->get()
-            ->map(static fn (ActivityLog $log): array => [
-                'date' => $log->logged_on->toDateString(),
-                'message' => mb_strimwidth($log->raw_message, 0, $chars, '…'),
-                'saved_as' => mb_strimwidth($log->summary, 0, $chars, '…'),
-            ])->values()->all();
+        return [
+            'date' => $log->logged_on->toDateString(),
+            'kind' => $log->log_type->value,
+            'message' => mb_strimwidth($log->raw_message, 0, $chars, '…'),
+            'saved_as' => mb_strimwidth($log->summary, 0, $chars, '…'),
+            'exercises' => $log->exerciseEntries->sortBy('sort_order')->map($lines->for(...))->values()->all(),
+        ];
     }
 
     /**

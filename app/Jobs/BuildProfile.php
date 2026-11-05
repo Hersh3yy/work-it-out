@@ -17,13 +17,16 @@ use Illuminate\Foundation\Queue\Queueable;
  *
  * Unique per user while it waits, so five messages in a row make one update.
  * The lock lifts when it starts, so a log sent during the AI call queues the next one.
- * An AI outage is already reported by AiCall; the next log simply tries again.
+ * An AI outage (a 503, a timeout) is already reported by AiCall; the job
+ * comes back after profile.rolling.retry_seconds until its tries run out.
  */
 final class BuildProfile implements ShouldBeUniqueUntilProcessing, ShouldQueue
 {
     use Queueable;
 
     public int $uniqueFor = 600;
+
+    public int $tries = 3;
 
     public function __construct(
         public readonly User $user,
@@ -40,7 +43,9 @@ final class BuildProfile implements ShouldBeUniqueUntilProcessing, ShouldQueue
         try {
             $update->handle($this->user, $this->kind);
         } catch (AiUnavailable) {
-            // Reported by AiCall. Nothing saved; the next log triggers a new try.
+            if ($this->attempts() < $this->tries) {
+                $this->release((int) config('profile.rolling.retry_seconds'));
+            }
         }
     }
 }

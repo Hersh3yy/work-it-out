@@ -13,15 +13,15 @@ return [
         'recent_logs' => (int) env('COACH_RECENT_LOGS', 12),
         'message_chars' => 300,
         'limitation_updates' => 5,
-        'turns' => 4,
-        'turn_hours' => 12,
+        'turns' => 6,
+        'turn_hours' => 72,
         'turn_chars' => 600,
     ],
 
     // Output budget per answer depth (App\Coach\AnswerDepth).
     'max_tokens' => [
-        'quick' => (int) env('COACH_TOKENS_QUICK', 600),
-        'plan' => (int) env('COACH_TOKENS_PLAN', 1000),
+        'quick' => (int) env('COACH_TOKENS_QUICK', 800),
+        'plan' => (int) env('COACH_TOKENS_PLAN', 1500),
         'explain' => (int) env('COACH_TOKENS_EXPLAIN', 2000),
     ],
 
