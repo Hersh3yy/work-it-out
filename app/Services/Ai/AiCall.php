@@ -16,8 +16,9 @@ use Throwable;
  * Reports failures with the user id, provider and agent class (never the
  * prompt text or any secret) and rethrows AiUnavailable so HTTP and chat
  * callers handle outages identically. Before the call it puts the user, the
- * agent and the start time in the request context, which is how
- * RecordAiCall knows whose call the SDK's event belongs to.
+ * agent and the start time in the hidden request context (hidden so log
+ * lines stay clean), which is how RecordAiCall knows whose call the SDK's
+ * event belongs to.
  */
 final class AiCall
 {
@@ -37,7 +38,7 @@ final class AiCall
      */
     public function run(User $user, string $agent, Closure $call): mixed
     {
-        Context::add([
+        Context::addHidden([
             self::CONTEXT_USER_ID => $user->id,
             self::CONTEXT_AGENT => $agent,
             self::CONTEXT_STARTED_AT => hrtime(true),

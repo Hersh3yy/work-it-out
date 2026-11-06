@@ -268,6 +268,9 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-11-06 (evening) — flash overloaded; profile falls back to lite
+- First `profile:rebuild --full` on `gemini-3.5-flash` got Google's 503 "high demand"; nothing saved. `SdkProfileBuilder` now tries the profile model and, on a 503, once more on the log model (the SDK's own failover is one model per provider, so this is ours); the version records the model that answered. `AiCall` tags the context as hidden so the user, job and start time stop appearing on every log line. 283 tests.
+
 ### 2026-11-06 (later) — AI usage recorded; coaches status
 - Hiren asked how to see Gemini costs and per-user usage, and said yes to usage scanning. Built on `ai-usage`: `ai_calls` table and `AiCallRecord`, `RecordAiCall` on the SDK's `AgentPrompted` and `AgentFailed`, `AiCall` tags the request context (user, job, start time), `UsageReport` (plain PHP, cost from `config/ai.php` prices, unpriced models named), `php artisan ai:usage`, weekly report to `storage/logs/ai-usage.log`, `AI_MONTHLY_TOKENS_PER_USER` checked in `AnswerCoachQuestion`. 7 tests with the SDK's own event classes, zero AI calls; 282 on SQLite. Prices are null until Hiren fills them from Google's pricing page.
 - Coaches status written into PLAN.md section 4 (2026-11-06): three voices, one shared brain, Surge for everyone, no `/coach` yet; Hiren's order is foundation first, then the three-pronged advice. Roadmap n34.

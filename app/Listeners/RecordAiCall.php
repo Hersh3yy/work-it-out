@@ -47,11 +47,11 @@ final class RecordAiCall
      */
     private function fromContext(string $agentClass): array
     {
-        $startedAt = Context::get(AiCall::CONTEXT_STARTED_AT);
+        $startedAt = Context::getHidden(AiCall::CONTEXT_STARTED_AT);
 
         return [
-            'user_id' => Context::get(AiCall::CONTEXT_USER_ID),
-            'agent' => Context::get(AiCall::CONTEXT_AGENT) ?? $agentClass,
+            'user_id' => Context::getHidden(AiCall::CONTEXT_USER_ID),
+            'agent' => Context::getHidden(AiCall::CONTEXT_AGENT) ?? $agentClass,
             'duration_ms' => $startedAt === null ? null : (int) round((hrtime(true) - $startedAt) / 1_000_000),
             'created_at' => now(),
         ];
