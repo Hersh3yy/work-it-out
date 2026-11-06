@@ -18,12 +18,13 @@ final readonly class UsageReport
     public const array GROUPS = ['user', 'job', 'model', 'day'];
 
     /**
-     * @return array{rows: list<array<string, mixed>>, total: array<string, mixed>, unpriced: list<string>}
+     * @return array{rows: list<array<string, mixed>>, total: array<string, mixed>, unpriced: list<string>, errors: array<string, int>}
      */
     public function since(CarbonInterface $since, string $by): array
     {
         $rows = [];
         $unpriced = [];
+        $errors = [];
 
         foreach (AiCallRecord::query()->with('user')->since($since)->orderBy('created_at')->cursor() as $call) {
             $key = $this->groupOf($call, $by);
@@ -32,6 +33,10 @@ final readonly class UsageReport
 
             if ($cost === null && $call->model !== null && $call->totalTokens() > 0) {
                 $unpriced[$call->model] = $call->model;
+            }
+
+            if ($call->failed) {
+                $errors[$call->error ?? 'unknown'] = ($errors[$call->error ?? 'unknown'] ?? 0) + 1;
             }
 
             $row['calls']++;
@@ -51,7 +56,9 @@ final readonly class UsageReport
             }
         }
 
-        return ['rows' => array_map(self::rounded(...), array_values($rows)), 'total' => self::rounded($total), 'unpriced' => array_values($unpriced)];
+        arsort($errors);
+
+        return ['rows' => array_map(self::rounded(...), array_values($rows)), 'total' => self::rounded($total), 'unpriced' => array_values($unpriced), 'errors' => $errors];
     }
 
     /**

@@ -82,7 +82,7 @@ it('reports calls, tokens and cost per job from the price table', function (): v
     config(['ai.prices' => ['gemini-3.5-flash-lite' => ['input' => 0.10, 'output' => 0.40], 'mystery' => ['input' => null, 'output' => null]]]);
     $user = User::factory()->create(['email' => 'hiren@example.com']);
     AiCallRecord::create(['user_id' => $user->id, 'agent' => CoachAgent::class, 'model' => 'gemini-3.5-flash-lite', 'input_tokens' => 1_000_000, 'output_tokens' => 500_000, 'created_at' => now()]);
-    AiCallRecord::create(['user_id' => $user->id, 'agent' => CoachAgent::class, 'model' => 'gemini-3.5-flash-lite', 'failed' => true, 'created_at' => now()]);
+    AiCallRecord::create(['user_id' => $user->id, 'agent' => CoachAgent::class, 'model' => 'gemini-3.5-flash-lite', 'failed' => true, 'error' => 'ProviderOverloadedException', 'created_at' => now()]);
     AiCallRecord::create(['user_id' => $user->id, 'agent' => ClassifierAgent::class, 'model' => 'mystery', 'input_tokens' => 10, 'output_tokens' => 5, 'created_at' => now()]);
     AiCallRecord::create(['user_id' => $user->id, 'agent' => ClassifierAgent::class, 'model' => 'gemini-3.5-flash-lite', 'input_tokens' => 99, 'output_tokens' => 1, 'created_at' => now()->subDays(40)]);
 
@@ -95,14 +95,16 @@ it('reports calls, tokens and cost per job from the price table', function (): v
         ->and($usage['total']['calls'])->toBe(3)
         ->and($usage['total']['cost'])->toBe(0.30)
         ->and($usage['unpriced'])->toBe(['mystery'])
+        ->and($usage['errors'])->toBe(['ProviderOverloadedException' => 1])
         ->and(app(UsageReport::class)->since(now()->subDays(30), 'user')['rows'][0]['group'])->toBe('hiren@example.com');
 });
 
 it('prints the usage table', function (): void {
     AiCallRecord::create(['agent' => CoachAgent::class, 'model' => 'gemini-3.5-flash-lite', 'input_tokens' => 10, 'output_tokens' => 5, 'created_at' => now()]);
+    AiCallRecord::create(['agent' => CoachAgent::class, 'failed' => true, 'error' => 'ProviderOverloadedException', 'created_at' => now()]);
 
     expect(Artisan::call('ai:usage', ['--since' => '7d', '--by' => 'model']))->toBe(0)
-        ->and(Artisan::output())->toContain('gemini-3.5-flash-lite')->toContain('No price in config/ai.php')
+        ->and(Artisan::output())->toContain('gemini-3.5-flash-lite')->toContain('No price in config/ai.php')->toContain('Failed calls: ProviderOverloadedException x1.')
         ->and(Artisan::call('ai:usage', ['--by' => 'colour']))->toBe(1);
 });
 

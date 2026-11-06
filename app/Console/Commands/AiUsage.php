@@ -33,6 +33,10 @@ final class AiUsage extends Command
             array_map(self::row(...), [...$usage['rows'], $usage['total']]),
         );
 
+        if ($usage['errors'] !== []) {
+            $this->warn('Failed calls: '.collect($usage['errors'])->map(static fn (int $n, string $error): string => "{$error} x{$n}")->implode(', ').'.');
+        }
+
         if ($usage['unpriced'] !== []) {
             $this->warn('No price in config/ai.php for: '.implode(', ', $usage['unpriced']).'. Their tokens are counted, their cost is not.');
         }
