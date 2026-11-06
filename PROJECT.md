@@ -233,6 +233,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [ ] M6 Telegram adapter, hardened ingest, host and Coolify checklist, backups, first deploy, first message from the phone. RELEASE 1 <!-- id:n7 cu:123kjkdmppr -->
 - [x] M7 Coach Q&A over the living context: `CoachContext`, `CoachAdvisor` port, `AnswerCoachQuestion`, `AnswerDepth` (quick, plan, explain), `coach_turns`, daily cap. Done 2026-11-01; threads and `/plan` later <!-- id:n8 cu:123kjkdmppt -->
 - [x] Coach and profile prompts rewritten from the two-week audit: what a good answer is made of, loads as numbers, depth rules for "what should I do", saved exercises and 72 hours of exchanges in the coach context, labelled profile notes that also read the coach questions, retry on 503, hollow workouts asked again. Done 2026-11-05 <!-- id:n29 -->
+- [x] AI usage: every model call in `ai_calls` (user, job, model, tokens, duration, failed) from the SDK's events; `php artisan ai:usage --since=30d --by=user|job|model|day` with cost from a price table; weekly report to `storage/logs/ai-usage.log`; `AI_MONTHLY_TOKENS_PER_USER` pauses coach questions. Done 2026-11-06 <!-- id:n33 -->
 - [ ] Onboarding intake: on the first link ask goal, days a week, body weight and anything hurting in a row, then the trickle as today <!-- id:n30 -->
 - [ ] A profile answer stays correctable for a few minutes ("No, general fitness" re-answers instead of logging); a limitation takes its start from the log that first mentioned it; a check-in on an active limitation every few days with numbered choices <!-- id:n31 -->
 - [ ] A model per answer depth: cheap for quick, bigger for plan and explain (`config/ai.php` jobs), so the tokens go where the message is worth it <!-- id:n32 -->
@@ -249,6 +250,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [ ] M9 Profile: intake gaps (`asked_field`, skip state, `GET /api/coaches`) and the profile build on explicit request (coach notes citing logs, local model allowed, never overwrites user fields) <!-- id:n10 cu:123kjkdmppv -->
 - [ ] M10 API contract: Resources everywhere, one envelope, idempotency keys, OpenAPI with drift test, exported fixtures. RELEASE 3 <!-- id:n11 cu:123kjkdmppw -->
 - [ ] Coach questions with a daily cap: the coach may ask at most N intake or goal questions per day (config), tracks what was asked, and captures short-term and long-term goals (new fields) so answers over chat persist. Lands with M7 or M9 <!-- id:n12 cu:123kjkdmppx -->
+- [ ] Coaches, after the foundation: `/coach` to pick Surge, Shen or Latika in Telegram; then the three-pronged answer (decided then: the person picks the lens, or three short takes in one call). Status in PLAN.md section 4 (2026-11-06) <!-- id:n34 -->
 
 ## Roadmap — far future
 
@@ -265,6 +267,10 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-11-06 (later) — AI usage recorded; coaches status
+- Hiren asked how to see Gemini costs and per-user usage, and said yes to usage scanning. Built on `ai-usage`: `ai_calls` table and `AiCallRecord`, `RecordAiCall` on the SDK's `AgentPrompted` and `AgentFailed`, `AiCall` tags the request context (user, job, start time), `UsageReport` (plain PHP, cost from `config/ai.php` prices, unpriced models named), `php artisan ai:usage`, weekly report to `storage/logs/ai-usage.log`, `AI_MONTHLY_TOKENS_PER_USER` checked in `AnswerCoachQuestion`. 7 tests with the SDK's own event classes, zero AI calls; 282 on SQLite. Prices are null until Hiren fills them from Google's pricing page.
+- Coaches status written into PLAN.md section 4 (2026-11-06): three voices, one shared brain, Surge for everyone, no `/coach` yet; Hiren's order is foundation first, then the three-pronged advice. Roadmap n34.
 
 ### 2026-11-06 — first real profile on the new prompt; labels enforced
 - Hiren ran `profile:rebuild --full` on the server with gemini-3.5-flash-lite: 5 notes, every one cited; the limitation note found the deadlift origin in the 27 Oct log, the goal note read the coach question (`coach:6`). But no labels at all, and no Rhythm, Balance, Responds or Gaps notes, the four a coach needs most; the strength note was the records table; conditioning had no trend.

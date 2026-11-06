@@ -50,6 +50,23 @@ return [
     ],
 
     /*
+    | Prices per million tokens in USD, keyed by model, from the provider's
+    | pricing page (https://ai.google.dev/pricing for Gemini). Read by
+    | php artisan ai:usage. A model without a price is reported as unpriced;
+    | nothing is guessed.
+    */
+    'prices' => [
+        'gemini-3.5-flash-lite' => ['input' => null, 'output' => null],
+        'gemini-3.5-flash' => ['input' => null, 'output' => null],
+    ],
+
+    /*
+    | Tokens one person may use per calendar month before coach questions
+    | pause until the 1st (logging is never capped). 0 means no cap.
+    */
+    'monthly_tokens_per_user' => (int) env('AI_MONTHLY_TOKENS_PER_USER', 0),
+
+    /*
     | The classify step (what kind of message is this). Plain rules always run
     | first. "llm" asks ClassifierAgent on the log job's model; "laya" and "jev"
     | ask a typed-decision (System One) model over HTTP: Laya self-hosted with
