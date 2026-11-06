@@ -7,6 +7,7 @@ namespace App\Ai;
 use App\Ai\Agents\ProfileAgent;
 use App\Contracts\Ai\ProfileBuilder;
 use App\Exceptions\AiUnavailable;
+use App\Profile\NoteLabel;
 use App\Profile\ProfileFacts;
 
 /**
@@ -34,18 +35,26 @@ final readonly class SdkProfileBuilder implements ProfileBuilder
             throw AiUnavailable::because(ProfileAgent::class, 'payload missing notes');
         }
 
-        return array_values(array_filter(array_map(static function (mixed $note): ?array {
-            if (! is_array($note) || ! is_string($note['text'] ?? null) || trim($note['text']) === '') {
-                return null;
-            }
+        return array_values(array_filter(array_map(self::note(...), $raw['notes'])));
+    }
 
-            $cites = is_array($note['cites'] ?? null) ? $note['cites'] : [];
+    /**
+     * @return array{text: string, cites: list<string>}|null
+     */
+    private static function note(mixed $note): ?array
+    {
+        if (! is_array($note) || ! is_string($note['text'] ?? null) || trim($note['text']) === '') {
+            return null;
+        }
 
-            return [
-                'text' => mb_substr(trim($note['text']), 0, 240),
-                'cites' => array_slice(array_values(array_filter($cites, 'is_string')), 0, 10),
-            ];
-        }, $raw['notes'])));
+        $cites = is_array($note['cites'] ?? null) ? $note['cites'] : [];
+        $label = is_string($note['label'] ?? null) ? NoteLabel::tryFrom(mb_strtolower($note['label'])) : null;
+        $text = mb_substr(trim($note['text']), 0, 240);
+
+        return [
+            'text' => $label === null ? $text : $label->prefix($text),
+            'cites' => array_slice(array_values(array_filter($cites, 'is_string')), 0, 10),
+        ];
     }
 
     public function modelName(): ?string

@@ -266,6 +266,11 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-11-06 — first real profile on the new prompt; labels enforced
+- Hiren ran `profile:rebuild --full` on the server with gemini-3.5-flash-lite: 5 notes, every one cited; the limitation note found the deadlift origin in the 27 Oct log, the goal note read the coach question (`coach:6`). But no labels at all, and no Rhythm, Balance, Responds or Gaps notes, the four a coach needs most; the strength note was the records table; conditioning had no trend.
+- Built: `App\Profile\NoteLabel` (the nine sections with what a coach needs from each, Strategy), the label as an enum field in `ProfileAgent`'s structured output so a note cannot come back without its section, the prompt built from the enum ("one note for every label the data says anything about, always gaps"), `SdkProfileBuilder` prefixes the text with the label. 275 tests on SQLite.
+- Hiren's step: `AI_PROFILE_MODEL=gemini-3.5-flash` in Coolify (the profile runs once per burst; the lite model stops early), redeploy, rerun `profile:rebuild --full` and `profile:show`.
+
 ### 2026-11-05 — audit of two weeks of use; coach and profile prompts rewritten
 - Hiren used it for two weeks and asked for a usage check and an audit. He ran a read-only script over SSH (`storage/app/audit/`, gitignored); findings in PLAN.md section 4 (2026-11-05): a hollow workout, a lost profile rewrite (503), three-line answers to "what should I do", a copied voice sentence, "moderate weight", a 12-hour memory, thin notes, a goal correction logged as an activity, a limitation dated a week late, no body weight.
 - Hiren: he misses the coach stuff and advice that is not vanilla; more tokens per answer are fine; focus on chat, profile, recommendations, onboarding; the app waits. He asked to see the advice I would give and what Surge and Shen should say: written in chat as the benchmark, then the prompts rewritten toward it.
