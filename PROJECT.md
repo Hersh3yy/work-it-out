@@ -268,6 +268,10 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-11-07 — exploration: chats, outages, models, cost
+- Hiren is not satisfied with the latest chats and asked to explore prompts, other models (Kimi, DeepSeek), our own knowledge, cost with reasoning and the classifier, outages, and whether the bot knows a message failed. Read-only over SSH; written up in `docs/exploration-2026-11-07.md`, no code.
+- Main findings: most bad moments are plain code (answers with words around the number become junk logs or go to the coach; a lost message on a connection error, resent by hand and double-counted); the AI library already fails over to a second provider and can set thinking per agent; the profile rewrite is about 85% of the cost, mostly hidden thinking tokens on Flash; a classifier buys speed and outage resistance, not money; laravel/ai 1.2 ships `Classification` with a TypeSafe gateway. Proposed order in that document, section 8.
+
 ### 2026-11-06 (evening) — flash overloaded; profile falls back to lite
 - First `profile:rebuild --full` on `gemini-3.5-flash` got Google's 503 "high demand"; nothing saved. `SdkProfileBuilder` now tries the profile model and, on a 503, once more on the log model (the SDK's own failover is one model per provider, so this is ours); the version records the model that answered. `AiCall` tags the context as hidden so the user, job and start time stop appearing on every log line. 283 tests.
 
