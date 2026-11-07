@@ -138,6 +138,24 @@ What the answer could have been with the same data, as Lt. Surge: bench is done 
 
 Most of the gap is the data the model is handed, not the model. Points 1 to 3 and 5 are plain code.
 
+## 10. Token budget and prompt changes
+
+Measured: the last seven coach answers were 17 to 65 words; the two recorded coach calls returned 59 and 74 output tokens against budgets of 800 (quick) and 1,500 (plan). The budget never binds. What keeps answers thin is the length line in the prompt ("at most 5 short lines").
+
+The same "now what next ?" answered without a length limit (Claude, playing the model, same context) came to 137 words, about 190 tokens: what to do, the load and where it came from, why it fits today, when the session ends, one question back. On Flash-Lite the extra ~130 output tokens cost about $0.0003 per answer, roughly 2 cents a month for a person asking twice a day. Being cheap here buys nothing and costs the answer its reasons. The cost lever is the profile's hidden thinking (section 5), not coach length.
+
+Proposed, in order of effect (not built; each is small):
+
+1. Length by need, not by line count. Replace the per-depth line caps with: quick, as long as it needs and rarely more than 8 short lines; plan, the list plus one line of why per item where it matters; explain, up to 12 lines. Keep `max_tokens` only as a ceiling against runaway output (1,500 for all depths). When they said how much they want ("1 or 2 more things", "40 min"), match it exactly.
+2. A `today` block in `CoachContext`: the exercises logged today with sets and loads, total sets per muscle area, and the person's own words about time or what is left. Plain code.
+3. An `already_suggested` list: exercise names from the coach's answers in the last 72 hours, so "do not repeat advice" is checkable instead of buried in prose. Plain code.
+4. Voice tone examples without exercises. Today Lt. Surge's example names chest-supported row, leg curl and incline walk, and those words recur in answers. Use a tone example about something else ("Done is done. Two more things, then home.").
+5. Ask about the limitation at most once a day: only when `recent_exchanges` from today has not asked already.
+6. Every load names its source: "38 kg, from Thursday's 41" or "start at 12 kg dumbbells, no record yet". The prompt half-says this; make it one clear line.
+7. Close the session when they said they are nearly done ("you are done after the walk"), and give the way back for a feared lift with its criterion when the goal mentions it ("fine back means goblet squats next week").
+
+How to check it: replay last week's real coach questions with their context as it was, old prompt against new, on Gemini, and read the pairs side by side. Seven questions, about 14 calls, a fraction of a cent.
+
 ## Sources
 
 - Gemini 3.5 Flash-Lite prices: [maximem.ai](https://www.maximem.ai/blog/gemini-api-pricing-2026), [OpenRouter](https://openrouter.ai/google/gemini-3.5-flash-lite), [eesel.ai](https://www.eesel.ai/blog/gemini-3-5-flash-lite-pricing)
