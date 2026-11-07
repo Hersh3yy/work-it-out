@@ -119,6 +119,25 @@ The advice is "vanilla" partly because the model has nothing of ours to lean on.
 6. The first two knowledge notes.
 7. Shadow classifier through the library's `Classification`.
 
+## 9. Seen from the model's seat
+
+The exact coach prompt production builds for "now what next ?" on 7 Nov (about 2,100 words: rules, Lt. Surge's voice, the context) was answered once by Claude playing the model, to see what the model sees. Gemini's real answer was three items: Pallof press 3x12 at 15 kg, bird-dog 3x8, treadmill 1000 m at 2.5%.
+
+What makes the job hard from inside:
+
+1. The context contradicts itself. Bench appears twice today (3 sets at 70 and an 8-set entry with sets 6 to 8 unknown), so the model cannot tell 8 sets from 11. Junk rows sit between real ones ("5 reps each set", "No, general fitness"). The goal says `lose_fat` though Hiren corrected it. Step 1 (section 8) stops new junk; the existing rows stay until Hiren says to clean them.
+2. The 5 Nov session has `exercises: []`: the row at 41 kg, preacher curls and hamstring curls exist only in the raw message, so "a logged lift continues from its last top set" has nothing structured to continue from.
+3. Today's session is not a thing in the context. "1 or 2 more things then done" from the earlier message is buried in `recent_logs`; Gemini gave three. A `today` block (what was done so far, sets and volume, what they said about time left) would make the answer obvious.
+4. The voice card's tone example is made of exercises ("chest-supported row 4x12 at 40, leg curl 3x15, incline walk 10 min"). The model leans on those words: chest-supported row and incline walk appear in most answers. A tone example without exercise content would stop the priming.
+5. `how_it_is_going` is empty, so the rule "end with one line asking how it is today" fires on every answer. It should ask at most once a day, using `recent_exchanges`.
+6. Gemini repeated Pallof press and bird-dog from the day before, against the rule "do not repeat advice". The rule is there; the context does not mark which exercises were already suggested, so the model has to dig through prose.
+7. Records split "Bench Press" and "Bench Press Barbell" as two lifts; name normalisation.
+8. "now what next ?" is sized quick (800 tokens). Mid-session "what next" is a small plan; fine at five lines, but the depth rule could treat "next" as a plan.
+
+What the answer could have been with the same data, as Lt. Surge: bench is done (eight sets is plenty of chest), so two things to finish: chest-supported row 3x10 at 40 kg (from Thursday's 41 kg) with the chest on the pad to balance the pushing, then 15 minutes of brisk incline walking for the fat-loss part; core stays for Sunday as planned; one line asking how the back felt during the bench.
+
+Most of the gap is the data the model is handed, not the model. Points 1 to 3 and 5 are plain code.
+
 ## Sources
 
 - Gemini 3.5 Flash-Lite prices: [maximem.ai](https://www.maximem.ai/blog/gemini-api-pricing-2026), [OpenRouter](https://openrouter.ai/google/gemini-3.5-flash-lite), [eesel.ai](https://www.eesel.ai/blog/gemini-3-5-flash-lite-pricing)
