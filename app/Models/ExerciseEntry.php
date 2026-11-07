@@ -80,6 +80,23 @@ class ExerciseEntry extends Model
     }
 
     /**
+     * Fill one set's weight or reps (the answer to "what weight for the 6th
+     * set?"). False when that set does not exist.
+     */
+    public function updateSet(int $position, string $column, int|float $value): bool
+    {
+        $updated = $this->setRows()->where('position', $position)->update([$column => $value]);
+
+        if ($updated === 0) {
+            return false;
+        }
+
+        $this->refreshSummary();
+
+        return true;
+    }
+
+    /**
      * Total weight moved: the sum of reps times weight over the sets, or the
      * summary columns for an entry without set rows.
      */

@@ -22,7 +22,7 @@ final readonly class LimitationChoiceAnswer implements AnswerHandler
         private AnswerOpenQuestion $answers,
     ) {}
 
-    public function handle(User $user, string $text): ?string
+    public function handle(User $user, string $text): ?Answer
     {
         $open = $this->answers->openFor($user);
         $question = $open?->questions[0] ?? null;
@@ -38,7 +38,7 @@ final readonly class LimitationChoiceAnswer implements AnswerHandler
         if (in_array($text, ['skip', '/skip'], true)) {
             $open->update(['questions' => [RedFlagScreen::question()]]);
 
-            return "OK, noted without the exact area.\n\n".RedFlagScreen::QUESTION;
+            return new Answer("OK, noted without the exact area.\n\n".RedFlagScreen::QUESTION);
         }
 
         $picked = match (true) {
@@ -58,6 +58,6 @@ final readonly class LimitationChoiceAnswer implements AnswerHandler
         $open->diaryEntry()->update(['content' => $open->summary]);
         LogRecorded::dispatch($open);
 
-        return 'Got it: '.$limitation->describe().".\n\n".RedFlagScreen::QUESTION;
+        return new Answer('Got it: '.$limitation->describe().".\n\n".RedFlagScreen::QUESTION);
     }
 }

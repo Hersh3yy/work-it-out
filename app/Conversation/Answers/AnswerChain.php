@@ -11,15 +11,15 @@ use App\Models\User;
  */
 final readonly class AnswerChain
 {
-    public function handle(User $user, string $text): ?string
+    public function handle(User $user, string $text): ?Answer
     {
         foreach (config('conversation.answer_handlers', []) as $class) {
             /** @var AnswerHandler $handler */
             $handler = app($class);
-            $reply = $handler->handle($user, $text);
+            $answer = $handler->handle($user, $text);
 
-            if ($reply !== null) {
-                return $reply;
+            if ($answer !== null) {
+                return $answer;
             }
         }
 

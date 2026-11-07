@@ -49,13 +49,9 @@ final readonly class ProfileCheckIn
      */
     public function answer(User $user, string $text): ?string
     {
-        $prompt = ProfilePrompt::query()
-            ->where('user_id', $user->id)
-            ->whereNull('answered_at')
-            ->whereNull('skipped_at')
-            ->where('asked_at', '>', now()->subHours((int) config('profile.answer_window_hours')))
-            ->latest('asked_at')
-            ->first();
+        $correction = self::correction($text);
+        $prompt = $this->openPrompt($user) ?? ($correction === null ? null : $this->justAnswered($user));
+        $text = $correction ?? $text;
 
         $question = $prompt === null ? null : $this->question($prompt->question_key);
 
@@ -76,6 +72,33 @@ final readonly class ProfileCheckIn
         }
 
         return $confirmation;
+    }
+
+    private function openPrompt(User $user): ?ProfilePrompt
+    {
+        return ProfilePrompt::query()
+            ->where('user_id', $user->id)
+            ->whereNull('answered_at')
+            ->whereNull('skipped_at')
+            ->where('asked_at', '>', now()->subHours((int) config('profile.answer_window_hours')))
+            ->latest('asked_at')
+            ->first();
+    }
+
+    /** The question answered a moment ago, which "No, general fitness" corrects. */
+    private function justAnswered(User $user): ?ProfilePrompt
+    {
+        return ProfilePrompt::query()
+            ->where('user_id', $user->id)
+            ->where('answered_at', '>', now()->subMinutes((int) config('profile.correction_minutes')))
+            ->latest('answered_at')
+            ->first();
+    }
+
+    /** "No, general fitness" gives "general fitness"; a reply that corrects nothing gives null. */
+    private static function correction(string $text): ?string
+    {
+        return preg_match('/^\s*(?:no|nope|nah|actually|sorry|i mean|wait|correction)\b[\s,.:;!-]*(.+)$/iu', $text, $m) ? $m[1] : null;
     }
 
     private function firstOpen(User $user): ?ProfileQuestion

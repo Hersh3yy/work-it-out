@@ -16,7 +16,7 @@ use App\Models\User;
 interface AnswerHandler
 {
     /**
-     * The reply when the text answers this handler's open question, else null.
+     * The answer when the text answers this handler's open question, else null.
      */
-    public function handle(User $user, string $text): ?string;
+    public function handle(User $user, string $text): ?Answer;
 }

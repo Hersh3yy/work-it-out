@@ -22,6 +22,9 @@ return [
     /* An asked question can be answered for this long. */
     'answer_window_hours' => 24,
 
+    /* "No, general fitness" this soon after answering replaces the answer. */
+    'correction_minutes' => 10,
+
     /* A skipped question is not asked again for this many days. */
     'skip_days' => 7,
 

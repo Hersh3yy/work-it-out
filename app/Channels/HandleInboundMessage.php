@@ -26,10 +26,11 @@ use Illuminate\Support\Facades\RateLimiter;
  *
  * In this order: an unlinked sender (an invite code links them, anyone else
  * gets one polite reply a day), a slash command, an answer to an open
- * question (no AI), then the interpreter decides between a log, a
- * limitation and a coach question. Right after a coach answer, a message the
- * interpreter cannot place ("you got that wrong") is a follow-up for the coach. It knows nothing about Telegram; a
- * WhatsApp adapter would call the same method.
+ * question (no AI; words after the answer go on as their own message), then
+ * the interpreter decides between a log, a limitation and a coach question.
+ * Right after a coach answer, a message the interpreter cannot place ("you got
+ * that wrong") is a follow-up for the coach. It knows nothing about Telegram;
+ * a WhatsApp adapter would call the same method.
  */
 final readonly class HandleInboundMessage
 {
@@ -91,12 +92,17 @@ final readonly class HandleInboundMessage
 
     private function freeText(User $user, string $text, LogSource $source): string
     {
-        $answered = $this->answers->handle($user, $text);
+        $answer = $this->answers->handle($user, $text);
 
-        if ($answered !== null) {
-            return $answered;
-        }
+        return match (true) {
+            $answer === null => $this->interpret($user, $text, $source),
+            $answer->followUp === null => $answer->reply,
+            default => $answer->reply."\n\n".$this->interpret($user, $answer->followUp, $source),
+        };
+    }
 
+    private function interpret(User $user, string $text, LogSource $source): string
+    {
         try {
             $interpretation = $this->interpreter->interpret($user, $text);
         } catch (AiUnavailable) {

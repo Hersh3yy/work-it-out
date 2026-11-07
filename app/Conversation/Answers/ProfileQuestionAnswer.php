@@ -16,8 +16,10 @@ final readonly class ProfileQuestionAnswer implements AnswerHandler
         private ProfileCheckIn $checkIn,
     ) {}
 
-    public function handle(User $user, string $text): ?string
+    public function handle(User $user, string $text): ?Answer
     {
-        return $this->checkIn->answer($user, $text);
+        $reply = $this->checkIn->answer($user, $text);
+
+        return $reply === null ? null : new Answer($reply);
     }
 }

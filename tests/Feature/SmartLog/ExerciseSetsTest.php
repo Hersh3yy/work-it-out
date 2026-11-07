@@ -9,6 +9,7 @@ use App\Ai\SdkSmartLogParser;
 use App\Channels\HandleInboundMessage;
 use App\Channels\ReplyComposer;
 use App\Contracts\Stats\PersonalRecords;
+use App\Interpretation\NumberReply;
 use App\Interpretation\Rules\WeightedLiftNeedsSetsAndReps;
 use App\Models\User;
 use Laravel\Ai\Ai;
@@ -95,7 +96,7 @@ it('fills missing reps on every set from one answer', function (): void {
         ['questions' => [['field' => 'exercises.0.reps', 'question' => 'How many reps per set for Squat at 90 kg?']]],
     ))->log;
 
-    $entry = app(AnswerOpenQuestion::class)->answer($log, '5');
+    $entry = app(AnswerOpenQuestion::class)->answer($log, NumberReply::from('5'));
 
     expect($entry->setRows()->pluck('reps')->all())->toBe([5, 5, 5])
         ->and($entry->setRows()->pluck('weight_kg')->map(fn ($w): float => (float) $w)->all())->toBe([90.0, 80.0, 80.0])
@@ -109,7 +110,7 @@ it('rebuilds equal sets when the sets-or-reps question is answered', function ()
         ['questions' => [['field' => 'exercises.0.sets', 'question' => '?', 'pair' => [3, 5]]]],
     ))->log;
 
-    $entry = app(AnswerOpenQuestion::class)->answer($log, '5');
+    $entry = app(AnswerOpenQuestion::class)->answer($log, NumberReply::from('5'));
 
     expect($entry->setRows()->pluck('reps')->all())->toBe([3, 3, 3, 3, 3]);
 });

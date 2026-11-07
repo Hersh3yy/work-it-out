@@ -11,6 +11,7 @@ use App\Exceptions\AiUnavailable;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ExerciseEntryResource;
 use App\Interpretation\Interpreter;
+use App\Interpretation\NumberReply;
 use App\Models\User;
 use App\Profile\ProfileCheckIn;
 use Illuminate\Http\JsonResponse;
@@ -80,7 +81,8 @@ final class SmartLogController extends Controller
             return response()->json(['message' => 'This log has no open question.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $entry = $this->answers->answer($activityLog, $request->string('value')->value());
+        $reply = NumberReply::from($request->string('value')->value());
+        $entry = $reply !== null && $reply->isWholeAnswer() ? $this->answers->answer($activityLog, $reply) : null;
 
         if ($entry === null) {
             return response()->json(['message' => 'That is not a value for the open question. Send a number, or skip it.'], Response::HTTP_UNPROCESSABLE_ENTITY);

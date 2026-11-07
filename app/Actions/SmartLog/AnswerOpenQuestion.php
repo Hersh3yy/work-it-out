@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\SmartLog;
 
+use App\Interpretation\NumberReply;
 use App\Models\ActivityLog;
 use App\Models\ExerciseEntry;
 use App\Models\User;
@@ -11,10 +12,12 @@ use App\Models\User;
 /**
  * Fills in the value a log's open question asked for, without AI.
  *
- * The question names its field ("exercises.1.weight_kg"), so a reply like
- * "30", "32.5 kg", "5k" or "28 min" can be written straight into that entry.
- * A sets-or-reps question carries the two counts, so the answer fills both.
- * Only the user's latest log, and only for six hours.
+ * The question names its field ("exercises.1.weight_kg", or one set's value,
+ * "exercises.0.set_list.5.weight_kg"), so a reply like "30", "32.5 kg", "5k"
+ * or "28 min" can be written straight into that entry or set. A unit that
+ * does not fit the field ("12 kg" for reps) is not an answer. A sets-or-reps
+ * question carries the two counts, so the answer fills both. Only the user's
+ * latest log, and only for six hours.
  */
 final readonly class AnswerOpenQuestion
 {
@@ -29,6 +32,17 @@ final readonly class AnswerOpenQuestion
         'distance_meters' => [1, 300_000],
     ];
 
+    /** @var array<string, list<string>> field => units a reply may name */
+    private const array UNITS = [
+        'weight_kg' => ['', 'kg', 'kgs', 'kilo', 'kilos'],
+        'sets' => ['', 'set', 'sets', 'x'],
+        'reps' => ['', 'rep', 'reps', 'x', 'times'],
+        'duration_seconds' => ['', 'm', 'min', 'mins', 'minute', 'minutes', 's', 'sec', 'secs', 'second', 'seconds'],
+        'distance_meters' => ['', 'm', 'meter', 'meters', 'metre', 'metres', 'k', 'km'],
+    ];
+
+    private const string FIELD = '/^exercises\.(\d+)\.(?:set_list\.(\d+)\.)?(weight_kg|sets|reps|duration_seconds|distance_meters)$/';
+
     public function openFor(User $user): ?ActivityLog
     {
         $log = $user->activityLogs()
@@ -39,29 +53,37 @@ final readonly class AnswerOpenQuestion
     }
 
     /**
-     * The updated entry, or null when the text is not an answer to the question.
+     * The updated entry, or null when the reply does not answer the question.
      */
-    public function answer(ActivityLog $log, string $text): ?ExerciseEntry
+    public function answer(ActivityLog $log, NumberReply $reply): ?ExerciseEntry
     {
-        $field = (string) ($log->questions[0]['field'] ?? '');
-
-        if (! preg_match('/^exercises\.(\d+)\.(weight_kg|sets|reps|duration_seconds|distance_meters)$/', $field, $target)
-            || ! preg_match('/^\s*(\d+(?:[.,]\d+)?)\s*([a-z]*)\s*$/i', $text, $reply)) {
+        if (! preg_match(self::FIELD, (string) ($log->questions[0]['field'] ?? ''), $target)) {
             return null;
         }
 
-        $column = $target[2];
-        $value = $this->toColumnUnit($column, (float) str_replace(',', '.', $reply[1]), strtolower($reply[2]));
+        [, $entryIndex, $setIndex, $column] = $target;
+
+        if (! in_array($reply->unit, self::UNITS[$column], true)) {
+            return null;
+        }
+
+        $value = $this->toColumnUnit($column, $reply->value, $reply->unit);
         [$min, $max] = self::RANGES[$column];
 
-        $entry = $log->exerciseEntries()->orderBy('sort_order')->skip((int) $target[1])->first();
+        $entry = $log->exerciseEntries()->orderBy('sort_order')->skip((int) $entryIndex)->first();
 
         if ($entry === null || $value < $min) {
             return null;
         }
 
         $value = min($value, $max);
-        $changes = [$column => $column === 'weight_kg' ? $value : (int) round($value)];
+        $value = $column === 'weight_kg' ? $value : (int) round($value);
+
+        if ($setIndex !== '') {
+            return $this->answerOneSet($log, $entry, (int) $setIndex + 1, $column, $value);
+        }
+
+        $changes = [$column => $value];
 
         $pair = $log->questions[0]['pair'] ?? null;
 
@@ -103,6 +125,17 @@ final readonly class AnswerOpenQuestion
         if (! $entry->setRows()->exists() && $entry->sets !== null) {
             $entry->replaceSets(array_fill(0, (int) $entry->sets, ['reps' => $entry->reps, 'weight_kg' => $entry->weight_kg === null ? null : (float) $entry->weight_kg]));
         }
+    }
+
+    private function answerOneSet(ActivityLog $log, ExerciseEntry $entry, int $position, string $column, int|float $value): ?ExerciseEntry
+    {
+        if (! in_array($column, ['weight_kg', 'reps'], true) || ! $entry->updateSet($position, $column, $value)) {
+            return null;
+        }
+
+        $log->update(['questions' => null]);
+
+        return $entry;
     }
 
     public function skip(ActivityLog $log): void

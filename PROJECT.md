@@ -252,6 +252,8 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [ ] Coach questions with a daily cap: the coach may ask at most N intake or goal questions per day (config), tracks what was asked, and captures short-term and long-term goals (new fields) so answers over chat persist. Lands with M7 or M9 <!-- id:n12 cu:123kjkdmppx -->
 - [ ] Coaches, after the foundation: `/coach` to pick Surge, Shen or Latika in Telegram; then the three-pronged answer (decided then: the person picks the lens, or three short takes in one call). Status in PLAN.md section 4 (2026-11-06) <!-- id:n34 -->
 
+- [ ] Body map: a humanoid figure in the app with a score per area (chest, back, legs, arms, core, stamina), computed in plain PHP from logged lifts and runs (est. one-rep max per movement against body weight standards, run pace and distance), shown with the logs behind each score; needs body weight logged. Hiren's idea 2026-11-07 <!-- id:n35 -->
+
 ## Roadmap — far future
 
 - [ ] M11 Voice notes over Telegram behind a Transcriber port <!-- id:f1 cu:123kjkdmppy -->
@@ -267,6 +269,10 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-11-07 (later) — real replies: words around the number, answer plus question, corrections
+- Step 1 of `docs/exploration-2026-11-07.md` section 8, with Hiren's go. `App\Interpretation\NumberReply` reads a reply that starts with a number ("5 reps each set", "about 32.5 kg", "70kg....now what next ?"); a second number means a new log, not an answer. Answer handlers now return an `Answer` (reply plus follow-up); `HandleInboundMessage` sends the follow-up through the interpreter, so the question part reaches the coach. `AnswerOpenQuestion` checks the unit against the field ("12 kg" is not reps) and fills one set's value (`exercises.0.set_list.5.weight_kg`, the field the model asked on 7 Nov) through `ExerciseEntry::updateSet`. `ProfileCheckIn` takes a correction ("No, general fitness") within `profile.correction_minutes` of answering. 299 tests on both engines; real Gemini run of the 7 Nov bench sequence locally: reps filled, set weight filled, coach answered the rest.
+- Hiren's idea, not built: a body map in the profile and the app (a humanoid figure with scores for chest, back, legs, arms, stamina). Roadmap n35.
 
 ### 2026-11-07 — exploration: chats, outages, models, cost
 - Hiren is not satisfied with the latest chats and asked to explore prompts, other models (Kimi, DeepSeek), our own knowledge, cost with reasoning and the classifier, outages, and whether the bot knows a message failed. Read-only over SSH; written up in `docs/exploration-2026-11-07.md`, no code.

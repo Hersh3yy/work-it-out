@@ -24,7 +24,7 @@ final readonly class RedFlagScreenAnswer implements AnswerHandler
         private AnswerOpenQuestion $answers,
     ) {}
 
-    public function handle(User $user, string $text): ?string
+    public function handle(User $user, string $text): ?Answer
     {
         $open = $this->answers->openFor($user);
 
@@ -37,7 +37,7 @@ final readonly class RedFlagScreenAnswer implements AnswerHandler
         if (in_array($answer, ['skip', '/skip'], true)) {
             $open->update(['questions' => null]);
 
-            return 'OK, skipped.';
+            return new Answer('OK, skipped.');
         }
 
         $result = match (true) {
@@ -54,6 +54,6 @@ final readonly class RedFlagScreenAnswer implements AnswerHandler
         $open->update(['questions' => null]);
         LogRecorded::dispatch($open);
 
-        return $result === Limitation::RED_FLAGS_FLAGGED ? RedFlagScreen::FLAGGED_REPLY : RedFlagScreen::CLEAR_REPLY;
+        return new Answer($result === Limitation::RED_FLAGS_FLAGGED ? RedFlagScreen::FLAGGED_REPLY : RedFlagScreen::CLEAR_REPLY);
     }
 }
