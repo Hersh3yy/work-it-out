@@ -8,7 +8,6 @@ use App\Ai\Data\TrainerReply;
 use App\Contracts\Ai\TrainerChat;
 use App\Enums\TrainerPersona;
 use App\Models\User;
-use RuntimeException;
 
 /**
  * In-memory TrainerChat for tests: queue canned replies, record every call,
@@ -16,24 +15,17 @@ use RuntimeException;
  */
 final class FakeTrainerChat implements TrainerChat
 {
+    use FailsOnRequest;
+
     /** @var list<array{user_id: int, message: string, conversation_id: string|null, coach: TrainerPersona|null}> */
     public array $calls = [];
 
     /** @var list<string> */
     private array $replies;
 
-    private bool $shouldFail = false;
-
     public function __construct(string ...$replies)
     {
         $this->replies = $replies === [] ? ['Fake trainer reply.'] : array_values($replies);
-    }
-
-    public function failing(): self
-    {
-        $this->shouldFail = true;
-
-        return $this;
     }
 
     public function send(
@@ -49,9 +41,7 @@ final class FakeTrainerChat implements TrainerChat
             'coach' => $coach,
         ];
 
-        if ($this->shouldFail) {
-            throw new RuntimeException('Fake AI outage');
-        }
+        $this->failIfAsked();
 
         $reply = count($this->replies) > 1 ? array_shift($this->replies) : $this->replies[0];
 

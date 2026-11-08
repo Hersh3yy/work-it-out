@@ -6,7 +6,6 @@ namespace Tests\Fakes;
 
 use App\Contracts\Ai\SmartLogParser;
 use App\Models\User;
-use RuntimeException;
 
 /**
  * In-memory SmartLogParser for tests. Returns a canned facts-only payload;
@@ -14,10 +13,10 @@ use RuntimeException;
  */
 final class FakeSmartLogParser implements SmartLogParser
 {
+    use FailsOnRequest;
+
     /** @var list<array{user_id: int, message: string}> */
     public array $calls = [];
-
-    private bool $shouldFail = false;
 
     /**
      * @param  array<string, mixed>  $payload
@@ -71,20 +70,11 @@ final class FakeSmartLogParser implements SmartLogParser
         ]);
     }
 
-    public function failing(): self
-    {
-        $this->shouldFail = true;
-
-        return $this;
-    }
-
     public function parse(User $user, string $message): array
     {
         $this->calls[] = ['user_id' => $user->id, 'message' => $message];
 
-        if ($this->shouldFail) {
-            throw new RuntimeException('Fake AI outage');
-        }
+        $this->failIfAsked();
 
         return $this->payload + ['log_type' => 'general', 'summary' => $message, 'exercises' => [], 'questions' => []];
     }

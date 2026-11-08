@@ -49,5 +49,30 @@
         <server name="PULSE_ENABLED" value="false" force="true"/>
         <server name="TELESCOPE_ENABLED" value="false" force="true"/>
         <server name="NIGHTWATCH_ENABLED" value="false" force="true"/>
+        <!-- No real key or bot token reaches the suite; a test that needs an answer fakes it. -->
+        <env name="GEMINI_API_KEY" value="" force="true"/>
+        <env name="OPENAI_API_KEY" value="" force="true"/>
+        <env name="ANTHROPIC_API_KEY" value="" force="true"/>
+        <env name="DEEPSEEK_API_KEY" value="" force="true"/>
+        <env name="OPENROUTER_API_KEY" value="" force="true"/>
+        <env name="GROQ_API_KEY" value="" force="true"/>
+        <env name="MISTRAL_API_KEY" value="" force="true"/>
+        <env name="XAI_API_KEY" value="" force="true"/>
+        <env name="TYPESAFE_API_KEY" value="" force="true"/>
+        <env name="LAYA_API_KEY" value="" force="true"/>
+        <env name="TELEGRAM_BOT_TOKEN" value="" force="true"/>
+        <env name="AI_FALLBACKS" value="" force="true"/>
+        <server name="GEMINI_API_KEY" value="" force="true"/>
+        <server name="OPENAI_API_KEY" value="" force="true"/>
+        <server name="ANTHROPIC_API_KEY" value="" force="true"/>
+        <server name="DEEPSEEK_API_KEY" value="" force="true"/>
+        <server name="OPENROUTER_API_KEY" value="" force="true"/>
+        <server name="GROQ_API_KEY" value="" force="true"/>
+        <server name="MISTRAL_API_KEY" value="" force="true"/>
+        <server name="XAI_API_KEY" value="" force="true"/>
+        <server name="TYPESAFE_API_KEY" value="" force="true"/>
+        <server name="LAYA_API_KEY" value="" force="true"/>
+        <server name="TELEGRAM_BOT_TOKEN" value="" force="true"/>
+        <server name="AI_FALLBACKS" value="" force="true"/>
     </php>
 </phpunit>

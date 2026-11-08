@@ -3,9 +3,12 @@
 declare(strict_types=1);
 
 use App\Ai\Agents\TrainerAgent;
+use App\Contracts\Ai\TrainerChat;
 use App\Enums\TrainerPersona;
 use App\Models\User;
 use Laravel\Ai\Ai;
+
+beforeEach(fn () => useRealAdapter(TrainerChat::class));
 
 it('returns an AI trainer response via faked SDK', function (): void {
     Ai::fakeAgent(TrainerAgent::class, ['Great job this week! You hit 3 out of 4 sessions.']);

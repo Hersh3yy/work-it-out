@@ -5,17 +5,16 @@ declare(strict_types=1);
 namespace Tests\Fakes;
 
 use App\Contracts\Ai\LimitationParser;
-use RuntimeException;
 
 /**
  * Limitation parser for tests: a fixed answer, "not a limitation" by default.
  */
 final class FakeLimitationParser implements LimitationParser
 {
+    use FailsOnRequest;
+
     /** @var list<string> */
     public array $calls = [];
-
-    private bool $shouldFail = false;
 
     /**
      * @param  array<string, mixed>  $facts
@@ -48,20 +47,11 @@ final class FakeLimitationParser implements LimitationParser
         ]);
     }
 
-    public function failing(): self
-    {
-        $this->shouldFail = true;
-
-        return $this;
-    }
-
     public function parse(string $text): array
     {
         $this->calls[] = $text;
 
-        if ($this->shouldFail) {
-            throw new RuntimeException('Fake limitation parser outage');
-        }
+        $this->failIfAsked();
 
         return $this->facts + [
             'is_limitation' => false,

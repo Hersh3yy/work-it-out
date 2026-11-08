@@ -178,3 +178,13 @@ function classifierSays(MessageKind $kind): FakeMessageClassifier
 
     return $fake;
 }
+
+/*
+| Every AI port is bound to its fake in TestCase. A test that exercises a
+| real adapter (with Ai::fakeAgent or Http::fake underneath) asks for it here.
+*/
+
+function useRealAdapter(string $port): void
+{
+    app()->forgetInstance($port);
+}

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Ai\Agents\PlanAgent;
 use App\Ai\Agents\SmartLogAgent;
+use App\Contracts\Ai\PlanGenerator;
+use App\Contracts\Ai\SmartLogParser;
 use App\Models\User;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Ai\Ai;
@@ -13,6 +15,11 @@ use Tests\Fakes\FakeSmartLogParser;
  * These tests exercise the REAL SDK adapters (not the port fakes) with the
  * SDK's own agent fake, so a wrong call on the agent object fails here.
  */
+
+beforeEach(function (): void {
+    useRealAdapter(SmartLogParser::class);
+    useRealAdapter(PlanGenerator::class);
+});
 
 function smartLogPayload(array $overrides = []): array
 {

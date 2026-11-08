@@ -6,7 +6,6 @@ namespace Tests\Fakes;
 
 use App\Contracts\Ai\ProfileBuilder;
 use App\Profile\ProfileFacts;
-use RuntimeException;
 
 /**
  * Profile writer for tests: records every call and returns fixed notes, by
@@ -14,13 +13,13 @@ use RuntimeException;
  */
 final class FakeProfileBuilder implements ProfileBuilder
 {
+    use FailsOnRequest;
+
     /** @var list<array{facts: array<string, mixed>, previous: array<int, mixed>, logs: array<int, mixed>}> */
     public array $calls = [];
 
     /** @var list<array{text: string, cites: list<string>}>|null */
     private ?array $notes = null;
-
-    private bool $shouldFail = false;
 
     /**
      * @param  list<array{text: string, cites: list<string>}>  $notes
@@ -32,20 +31,11 @@ final class FakeProfileBuilder implements ProfileBuilder
         return $this;
     }
 
-    public function failing(): self
-    {
-        $this->shouldFail = true;
-
-        return $this;
-    }
-
     public function build(ProfileFacts $facts, array $previousNotes, array $recentEntries): array
     {
         $this->calls[] = ['facts' => $facts->toArray(), 'previous' => $previousNotes, 'logs' => $recentEntries];
 
-        if ($this->shouldFail) {
-            throw new RuntimeException('Fake profile outage');
-        }
+        $this->failIfAsked();
 
         if ($this->notes !== null) {
             return $this->notes;
