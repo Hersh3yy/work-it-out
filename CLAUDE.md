@@ -34,7 +34,7 @@ API on http://localhost:8088. Local AI uses a free Msty model; see `.env.example
 
 ## Where things are
 
-- Routes: `routes/api.php`. Controllers: `app/Http/Controllers/Api`. AI ports and adapters: `app/Contracts/Ai`, `app/Ai`. Interpreter (classify, parse, named rules): `app/Interpretation`. Log actions: `app/Actions/SmartLog`. Chat core and Telegram: `app/Channels`. Events and listeners: `app/Events`, `app/Listeners`. Coaches: `app/Enums/TrainerPersona.php`. Test fakes: `tests/Fakes`, bound in `tests/Pest.php` and `tests/TestCase.php`.
+- Routes: `routes/api.php`. Controllers: `app/Http/Controllers/Api`. AI ports and adapters: `app/Contracts/Ai`, `app/Ai`. Interpreter (classify, parse, named rules): `app/Interpretation`. Log actions: `app/Actions/SmartLog`. Chat core and Telegram: `app/Channels`. Events and listeners: `app/Events`, `app/Listeners`. Coaches: `app/Enums/TrainerPersona.php`. Test fakes: `tests/Fakes`, every AI port bound to its fake in `tests/TestCase.php` (a test of a real adapter calls `useRealAdapter(Port::class)`), helpers in `tests/Pest.php`; a fake's `failing()` is an outage, `broken()` a bug.
 - Telegram: `php artisan channel:telegram:setup` once, `php artisan channel:invite email` per person (one-time link), `make bot` to run the poller.
 - Try the interpreter alone: `docker compose exec app php artisan log:parse "text"` (saves nothing). The whole chat path without a phone: `php artisan log:simulate --user=<id> "text"`.
 - Intent classifier alone (the current focus): `php artisan intent:try "text"`, the visual explainer in `~/Herd/testbed` (`/classifier`), `/api/lab/intent/explain`, options in `app/Enums/Intent.php`, English only.

@@ -19,6 +19,8 @@
     <li><a href="#overview">Overview</a></li>
     <li><a href="#architecture">Architecture</a></li>
     <li><a href="#journey">A message's journey</a></li>
+    <li><a href="#classifier">The classifier</a></li>
+    <li><a href="#prompts">Prompts</a></li>
     <li><a href="#patterns">Patterns and where to extend</a></li>
     <li><a href="#conversation">Conversation</a></li>
     <li><a href="#limitations">Injuries and limitations</a></li>
@@ -38,7 +40,7 @@
 </nav>
 
 <main id="top">
-<p class="eyebrow">work-it-out &middot; state of 8 November 2026</p>
+<p class="eyebrow">work-it-out &middot; state of 9 November 2026</p>
 <h1>Feetness technical documentation</h1>
 <p class="lede">You text Feetness what you trained, like texting a friend. It saves every set as a fact, keeps a written profile that cites your own messages, tracks injuries, and answers training questions as a coach that may only speak from what you logged.</p>
 
@@ -48,7 +50,7 @@
   <div class="card"><div class="stat">Laravel 13.35</div><div class="stat-label">PHP 8.5, Pest 5, laravel/ai 1.2</div></div>
   <div class="card"><div class="stat">Postgres 18</div><div class="stat-label">production; SQLite in memory for the fast test run</div></div>
   <div class="card"><div class="stat">Gemini 3.5</div><div class="stat-label">Flash-Lite for logs and the coach, Flash for the profile</div></div>
-  <div class="card"><div class="stat">310 tests</div><div class="stat-label">zero real AI calls; 8.5 s SQLite, 13 s Postgres</div></div>
+  <div class="card"><div class="stat">329 tests</div><div class="stat-label">no real AI call possible; 5.3 s SQLite, 9.8 s Postgres</div></div>
 </div>
 <div class="table-wrap"><table>
   <tr><th>Part</th><th>Where</th><th>What it is</th></tr>
@@ -123,6 +125,263 @@
   <tr><td><code>app/Events</code>, <code>app/Listeners</code>, <code>app/Jobs</code></td><td><code>LogRecorded</code>/<code>LogReverted</code>, stats and profile listeners, AI call recording, queued jobs</td></tr>
   <tr><td><code>tests/Fakes</code></td><td>One fake per AI port and for the chat channel; bound by default in <code>tests/TestCase.php</code></td></tr>
 </table></div>
+
+<!-- 3 -->
+<h2 id="journey">A message's journey</h2>
+<p class="prose">One workout message, from your phone to the receipt, and the profile rewrite it sets off two minutes later. Each numbered dot is a row in the table below; dashed arrows are the usage ledger (<code>ai_calls</code>), which records every model call with its tokens.</p>
+<figure>
+<div class="card">
+<svg viewBox="0 0 980 890" width="100%" style="min-width:760px" role="img" aria-label="Sequence: a workout message goes from the phone to the chat core, the interpreter checks danger words, asks the classifier and the log reader (each AI call is recorded in ai_calls), the chat core saves the log in one transaction and replies; after commit the queue updates stats and, two minutes later, rewrites the profile with one more AI call.">
+<defs><marker id="seq" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-arrow" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+<path class="d-line dash" style="opacity:.45" d="M70,70 V874"/>
+<path class="d-line dash" style="opacity:.45" d="M235,70 V874"/>
+<path class="d-line dash" style="opacity:.45" d="M405,70 V874"/>
+<path class="d-line dash" style="opacity:.45" d="M575,70 V874"/>
+<path class="d-line dash" style="opacity:.45" d="M745,70 V874"/>
+<path class="d-line dash" style="opacity:.45" d="M905,70 V874"/>
+<rect class="d-box door" x="-2" y="14" width="144" height="54" rx="10"/><text class="d-title" x="70" y="38" text-anchor="middle">Your phone</text><text class="d-sub" x="70" y="56" text-anchor="middle">Telegram</text>
+<rect class="d-box store" x="163" y="14" width="144" height="54" rx="10"/><text class="d-title" x="235" y="38" text-anchor="middle">Chat core</text><text class="d-sub" x="235" y="56" text-anchor="middle">HandleInboundMessage</text>
+<rect class="d-box store" x="333" y="14" width="144" height="54" rx="10"/><text class="d-title" x="405" y="38" text-anchor="middle">Interpreter</text><text class="d-sub" x="405" y="56" text-anchor="middle">plain code first</text>
+<rect class="d-box ai" x="503" y="14" width="144" height="54" rx="10"/><text class="d-title" x="575" y="38" text-anchor="middle">AI models</text><text class="d-sub" x="575" y="56" text-anchor="middle">ModelChain → Gemini</text>
+<rect class="d-box store" x="673" y="14" width="144" height="54" rx="10"/><text class="d-title" x="745" y="38" text-anchor="middle">Postgres</text><text class="d-sub" x="745" y="56" text-anchor="middle">rows and events</text>
+<rect class="d-box retry" x="833" y="14" width="144" height="54" rx="10"/><text class="d-title" x="905" y="38" text-anchor="middle">Queue worker</text><text class="d-sub" x="905" y="56" text-anchor="middle">jobs, later</text>
+<path class="d-line" marker-end="url(#seq)" d="M74,104 H229"/>
+<text class="d-label d-halo" x="152.5" y="97" text-anchor="middle">&quot;Squats 5x5 / 90 80 80 80 80&quot;</text>
+<circle cx="52.94999999999999" cy="93" r="9" fill="var(--accent)"/><text x="52.94999999999999" y="97" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">1</text>
+<path class="d-line" marker-end="url(#seq)" d="M239,144 H739"/>
+<text class="d-label d-halo" x="490.0" y="137" text-anchor="middle">who is this? channel_identities</text>
+<circle cx="384.55" cy="133" r="9" fill="var(--accent)"/><text x="384.55" y="137" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">2</text>
+<rect class="d-box store" x="128.0" y="169" width="214" height="26" rx="7"/><text class="d-label" x="235" y="186" text-anchor="middle">a /command? an open question? no AI</text>
+<circle cx="114.0" cy="182" r="9" fill="var(--accent)"/><text x="114.0" y="186" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">3</text>
+<path class="d-line" marker-end="url(#seq)" d="M239,222 H399"/>
+<text class="d-label d-halo" x="320.0" y="215" text-anchor="middle">RespondToText → interpret()</text>
+<circle cx="226.35" cy="211" r="9" fill="var(--accent)"/><text x="226.35" y="215" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">4</text>
+<rect class="d-box store" x="302.0" y="247" width="206" height="26" rx="7"/><text class="d-label" x="405" y="264" text-anchor="middle">RedFlags: danger words, plain code</text>
+<circle cx="288.0" cy="260" r="9" fill="var(--accent)"/><text x="288.0" y="264" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">5</text>
+<path class="d-line" marker-end="url(#seq)" d="M409,302 H569"/>
+<text class="d-label d-halo" x="490.0" y="295" text-anchor="middle">classify: rules, else the classifier</text>
+<circle cx="369.8" cy="291" r="9" fill="var(--accent)"/><text x="369.8" y="295" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">6</text>
+<path class="d-line dash" marker-end="url(#seq)" d="M579,334 H739"/>
+<text class="d-label d-halo" x="660.0" y="327" text-anchor="middle">ai_calls: ≈400 in / 20 out</text>
+<path class="d-line" marker-end="url(#seq)" d="M571,364 H411"/>
+<text class="d-label d-halo" x="490.0" y="357" text-anchor="middle">workout, confidence 0.9</text>
+<path class="d-line" marker-end="url(#seq)" d="M409,406 H569"/>
+<text class="d-label d-halo" x="490.0" y="399" text-anchor="middle">read it: SmartLogAgent</text>
+<circle cx="411.1" cy="395" r="9" fill="var(--accent)"/><text x="411.1" y="399" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">7</text>
+<path class="d-line dash" marker-end="url(#seq)" d="M579,438 H739"/>
+<text class="d-label d-halo" x="660.0" y="431" text-anchor="middle">ai_calls: ≈730 in / 230 out</text>
+<path class="d-line" marker-end="url(#seq)" d="M571,468 H411"/>
+<text class="d-label d-halo" x="490.0" y="461" text-anchor="middle">exercises with set_list</text>
+<rect class="d-box store" x="294.0" y="493" width="222" height="26" rx="7"/><text class="d-label" x="405" y="510" text-anchor="middle">named rules: ask when it is ambiguous</text>
+<circle cx="280.0" cy="506" r="9" fill="var(--accent)"/><text x="280.0" y="510" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">8</text>
+<path class="d-line" marker-end="url(#seq)" d="M401,548 H241"/>
+<text class="d-label d-halo" x="320.0" y="541" text-anchor="middle">Interpretation (parsed facts)</text>
+<circle cx="220.45" cy="537" r="9" fill="var(--accent)"/><text x="220.45" y="541" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">9</text>
+<path class="d-line" marker-end="url(#seq)" d="M239,588 H739"/>
+<text class="d-label d-halo" x="490.0" y="581" text-anchor="middle">RecordSmartLog: one transaction</text>
+<circle cx="384.55" cy="577" r="9" fill="var(--accent)"/><text x="384.55" y="581" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">10</text>
+<text class="d-sub" x="745" y="606" text-anchor="middle">activity_logs, session, entries, sets</text>
+<path class="d-line" marker-end="url(#seq)" d="M749,634 H899"/>
+<text class="d-label d-halo" x="825.0" y="627" text-anchor="middle">LogRecorded, after commit</text>
+<circle cx="737.25" cy="623" r="9" fill="var(--accent)"/><text x="737.25" y="627" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">11</text>
+<text class="d-sub" x="905" y="652" text-anchor="middle">UpdateUserStats now</text><text class="d-sub" x="905" y="666" text-anchor="middle">BuildProfile in 120 s</text>
+<path class="d-line" marker-end="url(#seq)" d="M231,674 H76"/>
+<text class="d-label d-halo" x="152.5" y="667" text-anchor="middle">receipt + load check + one question</text>
+<circle cx="35.25" cy="663" r="9" fill="var(--accent)"/><text x="35.25" y="667" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">12</text>
+<path class="d-line dash" d="M20,718 H960" style="stroke:var(--amber)"/><text class="d-label d-halo" x="490" y="722" text-anchor="middle" style="fill:var(--amber);font-weight:700">about two minutes later, once per burst of messages</text>
+<path class="d-line" marker-end="url(#seq)" d="M901,758 H751"/>
+<text class="d-label d-halo" x="825.0" y="751" text-anchor="middle">UpdateProfile reads facts, notes, last 10 entries</text>
+<circle cx="666.45" cy="747" r="9" fill="var(--accent)"/><text x="666.45" y="751" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">13</text>
+<path class="d-line" marker-end="url(#seq)" d="M901,798 H581"/>
+<text class="d-label d-halo" x="740.0" y="791" text-anchor="middle">ProfileAgent on Flash</text>
+<circle cx="664.05" cy="787" r="9" fill="var(--accent)"/><text x="664.05" y="791" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">14</text>
+<path class="d-line dash" marker-end="url(#seq)" d="M579,830 H739"/>
+<text class="d-label d-halo" x="660.0" y="823" text-anchor="middle">ai_calls: ≈4.1k in / 4.9k out</text>
+<path class="d-line" marker-end="url(#seq)" d="M901,864 H751"/>
+<text class="d-label d-halo" x="825.0" y="857" text-anchor="middle">profile_versions: notes that cite log ids</text>
+<circle cx="690.05" cy="853" r="9" fill="var(--accent)"/><text x="690.05" y="857" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">15</text>
+</svg>
+</div>
+<figcaption>Time runs down. Steps 1 to 12 happen while you wait (about 2 seconds, almost all of it the two AI calls). Steps 13 to 15 run on the queue worker. On a phone, scroll the diagram sideways.</figcaption>
+</figure>
+<div class="table-wrap"><table>
+  <tr><th>#</th><th>What happens</th><th>Where in the code</th></tr>
+  <tr><td>1</td><td>The poller long-polls Telegram and turns the update into an <code>InboundMessage</code>. One poller per bot token, under supervisord.</td><td><code>channel:telegram:poll</code>, <code>TelegramChannel::inbound</code>, <code>HandleInboundMessage::handle</code></td></tr>
+  <tr><td>2</td><td>The sender is looked up. A stranger gets one polite private-beta reply a day and costs nothing; <code>/start CODE</code> from an invite link connects them.</td><td><code>channel_identities</code>, <code>RedeemLinkCode</code></td></tr>
+  <tr><td>3</td><td>A slash command runs its <code>ChatCommand</code>. Otherwise the answer chain tries each open question without AI: a missing exercise value, the injury area, the red-flag screen, a profile question.</td><td><code>ChatCommands</code>, <code>AnswerChain</code>, <code>config/conversation.php</code></td></tr>
+  <tr><td>4</td><td>Free text goes to the AI path, the same one the retry job uses.</td><td><code>RespondToText::reply</code></td></tr>
+  <tr><td>5</td><td>Danger words (chest pain, numbness, fainting) get "contact a doctor" in plain code. Nothing is saved and no model is asked.</td><td><code>RedFlags::matches</code></td></tr>
+  <tr><td>6</td><td>The classifier gives the message one of five kinds. Plain rules first, then the model. See <a href="#classifier">the classifier</a>.</td><td><code>MessageClassifier</code>, <code>SdkMessageClassifier</code>, <code>ClassifierAgent</code></td></tr>
+  <tr><td>7</td><td>The parser for that kind reads the facts: exercises, sets, reps, loads, per-set lists, the date, at most one question for a missing value.</td><td><code>SmartLogParser</code>, <code>SmartLogAgent</code> (or <code>LimitationAgent</code> for injuries)</td></tr>
+  <tr><td>8</td><td>Named rules turn known traps into a question instead of a guess ("90 x3 x5": three sets or five?).</td><td><code>Interpreter::RULES</code>, <code>app/Interpretation/Rules</code></td></tr>
+  <tr><td>9</td><td>The interpreter hands back what it made of the message.</td><td><code>Interpretation</code></td></tr>
+  <tr><td>10</td><td>One transaction writes your words (<code>activity_logs</code>), the session, the entries and one row per set.</td><td><code>RecordSmartLog</code></td></tr>
+  <tr><td>11</td><td>After commit, <code>LogRecorded</code> fires. One listener queues the stats update; the other queues <code>BuildProfile</code> 120 seconds out, unique per user, so five messages in a row make one rewrite.</td><td><code>RefreshTrainingStats</code>, <code>RefreshProfile</code>, <code>UpdateUserStats</code></td></tr>
+  <tr><td>12</td><td>The reply: the receipt ("Logged: Squat 5x5 @ 90, 80, 80, 80, 80 kg"), a load check for an active injury, and at most one profile question.</td><td><code>ReplyComposer::receipt</code>, <code>LimitationCheck</code>, <code>ProfileCheckIn</code></td></tr>
+  <tr><td>13</td><td>The profile job collects the facts computed in PHP, the current notes and the last 10 entries (logs and coach questions).</td><td><code>BuildProfile</code>, <code>UpdateProfile</code>, <code>ProfileFacts</code></td></tr>
+  <tr><td>14</td><td>The profile writer rewrites the notes on the profile model (Flash).</td><td><code>SdkProfileBuilder</code>, <code>ProfileAgent</code></td></tr>
+  <tr><td>15</td><td>Notes whose citations do not exist are dropped; the rest are stored as a new version. <code>/me</code> and the coach read the latest.</td><td><code>profile_versions</code></td></tr>
+</table></div>
+<p class="prose"><code>/undo</code> reverts exactly what one message saved and fires <code>LogReverted</code>, which refreshes stats and the profile the same way. A coach question takes the same road to step 6 and then goes to the coach (<a href="#coach">the coach</a>). If every model fails at step 6 or 7, the message is kept and retried (<a href="#outages">when the AI is down</a>).</p>
+
+<!-- 3b -->
+<h2 id="classifier">The classifier</h2>
+<p class="prose">Every free-text message gets one label before anything else happens, and the label picks the road. The classifier is a port, <code>MessageClassifier</code>, with three drivers chosen by <code>AI_CLASSIFIER</code>; production runs <code>llm</code>. Plain rules always go first, so a command or "104.5kg" never reaches a model.</p>
+<figure>
+<div class="card">
+<svg viewBox="0 0 980 600" width="100%" style="min-width:760px" role="img" aria-label="Inside the interpreter: danger words first, then the classifier (plain rules, then the configured driver, with the LLM as fallback when Laya or Jev is unsure), then one of five roads: workout, body weight, goal or info, coach question, unknown. Any AI step that fails on every model keeps the message for a retry.">
+<defs><marker id="flw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-arrow" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+<path class="d-line" marker-end="url(#flw)" d="M490,64 V86"/>
+<path class="d-line" marker-end="url(#flw)" d="M620,113 H706"/>
+<text class="d-label d-halo" x="663" y="106" text-anchor="middle">danger words</text>
+<path class="d-line" marker-end="url(#flw)" d="M490,140 V166"/>
+<text class="d-label d-halo" x="504" y="158" text-anchor="middle">no</text>
+<path class="d-line" marker-end="url(#flw)" d="M490,318 C490,345 118.0,340 118.0,368"/>
+<path class="d-line" marker-end="url(#flw)" d="M490,318 C490,345 304.0,340 304.0,368"/>
+<path class="d-line" marker-end="url(#flw)" d="M490,318 C490,345 490.0,340 490.0,368"/>
+<path class="d-line" marker-end="url(#flw)" d="M490,318 C490,345 676.0,340 676.0,368"/>
+<path class="d-line" marker-end="url(#flw)" d="M490,318 C490,345 862.0,340 862.0,368"/>
+<rect class="d-box door" x="32" y="372" width="172" height="98" rx="10"/>
+<text class="d-title" x="118.0" y="394" text-anchor="middle">workout</text>
+<text class="d-sub" x="118.0" y="414" text-anchor="middle">SmartLogAgent reads it</text>
+<text class="d-sub" x="118.0" y="430" text-anchor="middle">named rules may ask</text>
+<text class="d-sub" x="118.0" y="446" text-anchor="middle">RecordSmartLog saves it</text>
+<rect class="d-box door" x="218" y="372" width="172" height="98" rx="10"/>
+<text class="d-title" x="304.0" y="394" text-anchor="middle">body_weight</text>
+<text class="d-sub" x="304.0" y="414" text-anchor="middle">&quot;104.5kg&quot;: rules, no AI</text>
+<text class="d-sub" x="304.0" y="430" text-anchor="middle">otherwise SmartLogAgent</text>
+<text class="d-sub" x="304.0" y="446" text-anchor="middle">saved as a weight</text>
+<rect class="d-box door" x="404" y="372" width="172" height="98" rx="10"/>
+<text class="d-title" x="490.0" y="394" text-anchor="middle">goal_or_info</text>
+<text class="d-sub" x="490.0" y="414" text-anchor="middle">LimitationAgent: injury?</text>
+<text class="d-sub" x="490.0" y="430" text-anchor="middle">yes: injury conversation</text>
+<text class="d-sub" x="490.0" y="446" text-anchor="middle">no: saved as a note</text>
+<rect class="d-box ai" x="590" y="372" width="172" height="98" rx="10"/>
+<text class="d-title" x="676.0" y="394" text-anchor="middle">coach_question</text>
+<text class="d-sub" x="676.0" y="414" text-anchor="middle">CoachContext from the DB</text>
+<text class="d-sub" x="676.0" y="430" text-anchor="middle">CoachAgent answers</text>
+<text class="d-sub" x="676.0" y="446" text-anchor="middle">kept in coach_turns</text>
+<rect class="d-box store" x="776" y="372" width="172" height="98" rx="10"/>
+<text class="d-title" x="862.0" y="394" text-anchor="middle">unknown</text>
+<text class="d-sub" x="862.0" y="414" text-anchor="middle">the help text, or the</text>
+<text class="d-sub" x="862.0" y="430" text-anchor="middle">coach if it answered in</text>
+<text class="d-sub" x="862.0" y="446" text-anchor="middle">the last 30 minutes</text>
+<rect class="d-box door" x="360" y="14" width="260" height="50" rx="10"/>
+<text class="d-title" x="490.0" y="44" text-anchor="middle">Free text that needs the AI</text>
+<rect class="d-box store" x="360" y="88" width="260" height="52" rx="10"/>
+<text class="d-title" x="490.0" y="110" text-anchor="middle">RedFlags (plain code)</text>
+<text class="d-sub" x="490.0" y="130" text-anchor="middle">chest pain, numbness, fainting</text>
+<rect class="d-box retry" x="712" y="88" width="236" height="52" rx="10"/>
+<text class="d-title" x="830.0" y="110" text-anchor="middle">&quot;Contact a doctor&quot;</text>
+<text class="d-sub" x="830.0" y="130" text-anchor="middle">nothing saved, no AI</text>
+<rect class="d-box ai" x="132" y="170" width="716" height="148" rx="12"/>
+<text class="d-title" x="490" y="192" text-anchor="middle">Classify: the MessageClassifier port</text>
+<rect class="d-box store" x="148" y="204" width="216" height="100" rx="10"/>
+<text class="d-title" x="256.0" y="226" text-anchor="middle">1. Plain rules</text>
+<text class="d-sub" x="256.0" y="246" text-anchor="middle">&quot;/help&quot; is a command</text>
+<text class="d-sub" x="256.0" y="262" text-anchor="middle">&quot;104.5kg&quot; is a body weight</text>
+<rect class="d-box store" x="382" y="204" width="216" height="100" rx="10"/>
+<text class="d-title" x="490.0" y="226" text-anchor="middle">2. The driver: AI_CLASSIFIER</text>
+<text class="d-sub" x="490.0" y="246" text-anchor="middle">llm: ClassifierAgent (live)</text>
+<text class="d-sub" x="490.0" y="262" text-anchor="middle">laya or jev: one typed choice</text>
+<rect class="d-box store" x="616" y="204" width="216" height="100" rx="10"/>
+<text class="d-title" x="724.0" y="226" text-anchor="middle">3. Not sure enough?</text>
+<text class="d-sub" x="724.0" y="246" text-anchor="middle">laya or jev under 0.6:</text>
+<text class="d-sub" x="724.0" y="262" text-anchor="middle">the LLM decides instead</text>
+<path class="d-line" marker-end="url(#flw)" d="M366,254 H380"/>
+<path class="d-line" marker-end="url(#flw)" d="M600,254 H614"/>
+<rect class="d-box retry" x="32" y="500" width="916" height="78" rx="12"/>
+<text class="d-title" x="490" y="526" text-anchor="middle">Any AI step above fails on every model in its ModelChain</text>
+<text class="d-sub" x="490" y="548" text-anchor="middle">KeepMessage stores it in waiting_messages and says so; ProcessWaitingMessage runs this same path</text>
+<text class="d-sub" x="490" y="565" text-anchor="middle">after 1, 3, 10 and 30 minutes and answers in the chat by itself</text>
+</svg>
+</div>
+<figcaption>Inside the interpreter (<code>Interpreter::interpret</code>). Orange roads save something, teal is the coach, grey only replies.</figcaption>
+</figure>
+
+<h3>The five kinds</h3>
+<p class="prose">The wording below is what the model is given (<code>MessageKind::criteria()</code> for Laya and Jev; the <code>ClassifierAgent</code> prompt adds examples). <code>command</code> is a sixth kind that only the rules hand out.</p>
+<div class="table-wrap"><table>
+  <tr><th>Kind</th><th>Means</th><th>Example</th><th>Then</th></tr>
+  <tr><td><code>workout</code></td><td>training that happened or is being reported, with or without numbers</td><td>"bench 3x8 80", "padel for an hour"</td><td>SmartLogAgent, named rules, saved</td></tr>
+  <tr><td><code>body_weight</code></td><td>the user's own body weight</td><td>"104.5kg", "weighed 103 this morning"</td><td>rules read the number when they caught it; otherwise SmartLogAgent</td></tr>
+  <tr><td><code>goal_or_info</code></td><td>a goal, a plan, or something about the user that is not a session, including how an injury is going</td><td>"my left knee hurts", "I want to squat 100 by December"</td><td>LimitationAgent decides injury or not; an injury starts the injury conversation, anything else is saved as a general note</td></tr>
+  <tr><td><code>coach_question</code></td><td>asking for advice, a plan or an explanation</td><td>"30 min, 3 things, go", "foam roller for my back?"</td><td>the coach answers (chat); the app door still replies "coaches coming soon"</td></tr>
+  <tr><td><code>unknown</code></td><td>not about training, the body, goals or advice</td><td>"rainbow butterfly", "lol"</td><td>the help text, unless the coach answered in the last 30 minutes: then it is a follow-up and goes to the coach</td></tr>
+</table></div>
+
+<h3>Three drivers</h3>
+<div class="table-wrap"><table>
+  <tr><th>Driver</th><th>How it decides</th><th>Runs on</th><th>Speed and cost</th><th>Status</th></tr>
+  <tr><td><code>llm</code></td><td><code>SdkMessageClassifier</code> asks <code>ClassifierAgent</code> (temperature 0) for <code>{kind, confidence}</code> as structured output, through the log job's <code>ModelChain</code></td><td>Gemini 3.5 Flash-Lite, then the fallbacks</td><td>about 0.95 s; about 403 tokens in and 21 out, roughly $0.00017 a message</td><td><span class="tag ok">live</span></td></tr>
+  <tr><td><code>laya</code></td><td><code>SystemOneMessageClassifier</code> asks one typed choice question ("What kind of message did the user send to their training log?") with the five kinds as options; the answer carries a probability per option</td><td><code>laya-serve</code> on Hiren's laptop, <code>make laya</code> (127.0.0.1:8765)</td><td>60 to 110 ms measured; free</td><td><span class="tag info">lab</span></td></tr>
+  <tr><td><code>jev</code></td><td>the same client and question</td><td>TypeSafe's hosted <code>/v1/systemone</code> (<code>TYPESAFE_API_KEY</code>)</td><td>hosted; $0.042 per million input tokens</td><td><span class="tag info">lab</span></td></tr>
+</table></div>
+<ul class="prose">
+  <li><strong>The safety net.</strong> When Laya or Jev is less sure than <code>AI_CLASSIFIER_MIN_CONFIDENCE</code> (0.6) and <code>AI_CLASSIFIER_FALLBACK</code> is on, the LLM decides instead. The LLM's own confidence is self-reported and steers nothing today.</li>
+  <li><strong>Where the wiring is.</strong> The driver is picked in <code>AppServiceProvider</code>; the HTTP client is <code>App\Ai\SystemOne\SystemOneClient</code> (10 second timeout, reads <code>answers.kind</code> or <code>choices.kind</code>).</li>
+  <li><strong>The intent experiment.</strong> <code>IntentClassifier</code> with <code>App\Enums\Intent</code> (workout_log, profile_update, feeling, question, nonsense) is a separate lab question for Laya and Jev, used only by <code>intent:try</code> and <code>/api/lab/intent/explain</code>. It is not in the message path.</li>
+</ul>
+
+<h3>Trying it</h3>
+<pre><code>php artisan classify:try "back is 70% today"            # one message, every driver side by side
+make classify-eval                                       # tests/Evals/classify.txt (34 messages): rules and Laya
+php artisan intent:try "text"                            # the intent experiment
+php artisan log:parse "benched 100 3x5"                  # classify + parse, saves nothing
+open http://localhost:8088/lab/classify                  # the same in a browser, local only</code></pre>
+
+<h3>Where it could go</h3>
+<p class="prose">Not built. A cheaper classifier saves almost nothing (about 2 cents per person per month). What it can buy is speed (0.95 s to about 0.1 s) and availability: a classifier on our own server keeps sorting messages when Google is overloaded. The plan from the 7 November exploration: run Laya or Jev in shadow mode next to the LLM on about 200 real messages, fit the cut-off on that, and switch first where a wrong pick is harmless (the coach's answer size, <code>AnswerDepth</code>, today plain regex). The AI library now ships <code>Classification::of()</code> with a TypeSafe gateway that can replace our own <code>SystemOneClient</code>.</p>
+
+<!-- 3c -->
+<h2 id="prompts">Prompts</h2>
+<p class="prose">Every prompt is an agent class in <code>app/Ai/Agents</code>. <code>instructions()</code> is the system prompt, <code>schema()</code> the form the answer must fill (structured output), <code>#[Temperature]</code> sits on the class, and <code>maxTokens()</code> where an answer needs a ceiling. The adapter (<code>Sdk*</code>) builds the user message, runs it through <code>ModelChain</code>, and <code>AiCall</code> tags the call so <code>RecordAiCall</code> can store it in <code>ai_calls</code>.</p>
+<div class="table-wrap"><table>
+  <tr><th>Agent</th><th>Job and model</th><th>Temp.</th><th>Gets</th><th>Returns</th><th>Measured tokens in / out</th></tr>
+  <tr><td><code>ClassifierAgent</code></td><td>log, Flash-Lite</td><td>0</td><td>the message</td><td><code>kind</code>, <code>confidence</code></td><td>≈403 / 21</td></tr>
+  <tr><td><code>SmartLogAgent</code></td><td>log, Flash-Lite</td><td>0.1</td><td>the message; today's date is in the instructions</td><td><code>log_type</code>, <code>summary</code>, <code>logged_on</code>, <code>exercises</code> (with <code>set_list</code>), at most one <code>question</code></td><td>≈730 / 232</td></tr>
+  <tr><td><code>LimitationAgent</code></td><td>log, Flash-Lite</td><td>0</td><td>the message; the body areas are listed in the instructions</td><td><code>is_limitation</code>, <code>body_area</code> or 2 to 4 <code>candidates</code>, <code>severity</code>, <code>duration_days</code>, <code>started_days_ago</code>, a 12-word <code>note</code></td><td>≈465 / 60</td></tr>
+  <tr><td><code>CoachAgent</code></td><td>chat, Flash-Lite</td><td>0.4</td><td>the question; the coach's voice, the answer-size line and the whole <code>CoachContext</code> as JSON are in the instructions</td><td>plain text, at most 800, 1,500 or 2,000 tokens by <code>AnswerDepth</code></td><td>≈4,600 / 66</td></tr>
+  <tr><td><code>ProfileAgent</code></td><td>profile, Flash</td><td>0.2</td><td>JSON of FACTS, PREVIOUS NOTES and RECENT ENTRIES (each with an id)</td><td><code>notes</code>: label, text, cites</td><td>≈4,134 / 4,898</td></tr>
+</table></div>
+<p class="muted">Measured on production 6 and 7 November, small samples (<code>php artisan ai:usage --by=job</code>). <code>TrainerAgent</code>, <code>PlanAgent</code> and <code>NutritionParserAgent</code> serve the legacy HTTP routes that are due for deletion.</p>
+
+<h3>What every prompt does</h3>
+<div class="grid">
+  <div class="card"><h3>Data, not orders</h3><p>Each prompt says the message (or CONTEXT) is data, never instructions. A user typing "ignore your rules" is logged as a message, not obeyed.</p></div>
+  <div class="card"><h3>Nothing invented</h3><p>Numbers come from the message, from FACTS, or from the person's own entries. A value the message does not give is null, and the app asks for it.</p></div>
+  <div class="card"><h3>Examples over rules</h3><p>The classifier, log reader and limitation reader each carry worked examples from real messages ("yesterday squats 5x5, 90 80 80 80 80").</p></div>
+  <div class="card"><h3>PHP does the maths</h3><p>Stats (<code>ProfileFacts</code>), which exercises load an injury (<code>ExerciseLoads</code>), answer size (<code>AnswerDepth</code>) and danger words (<code>RedFlags</code>) are plain code. The model words things; it does not calculate.</p></div>
+</div>
+
+<h3>The coach prompt, piece by piece</h3>
+<ol class="prose">
+  <li><strong>Who you are.</strong> "You are {name}, a personal trainer texting with one person on Telegram", then <code>TrainerPersona::voice()</code>: style only, with how the coach talks when you are hurt, in a hurry, or say it was wrong.</li>
+  <li><strong>What CONTEXT is.</strong> Facts to trust, the profile notes, the logs newest first with what was saved, injuries with how each is going and which exercises load it, the last exchanges.</li>
+  <li><strong>What a good answer is made of.</strong> It answers the question in your language; it is built from your data (last 7 days, goal, injury, what it said before); loads are numbers (continue from the last top set, a variation starts at about two thirds, no record means a starting rule and "log it"); the goal shapes it; an active injury rules out the exercises that load it unless a variation takes the load away; at most one thing to send back.</li>
+  <li><strong>The answer size</strong> from <code>AnswerDepth::instruction()</code>: quick (5 short lines), plan (a session you can walk in with), explain (12 lines with one picture).</li>
+  <li><strong>Rules that never change.</strong> Never invent; read <code>recent_exchanges</code> first and say so when the plan changed; no homework; no insults or guilt; voice lines are tone, never copied; the name at most once; conservative self-care only, no diagnosis or doses; a doctor only when it matters now; never refuse a question as off-topic; plain text.</li>
+  <li><strong>Today's date and the CONTEXT JSON</strong>: <code>today</code>, <code>facts</code>, <code>profile_notes</code>, <code>limitations</code>, <code>recent_logs</code> (12), <code>recent_exchanges</code> (6 from the last 72 hours), <code>messages_not_handled_yet</code>.</li>
+</ol>
+
+<h3>The profile prompt</h3>
+<p class="prose">One note per section that the data says anything about (the nine <code>NoteLabel</code> sections: rhythm, strength, balance, conditioning, body, limitation, goal, responds, gaps), always a gaps note, each at most 240 characters and citing entry ids, a previous note's cites, or "facts". Keep what is still true, update what changed, drop what the new entries contradict. What the coach said is not a fact about the person.</p>
+
+<h3>Tokens and thinking</h3>
+<ul class="prose">
+  <li>The coach's token ceiling never binds: the two recorded answers used 59 and 74 tokens against ceilings of 800 and 1,500. Length comes from the answer-size line, so a longer, better answer is a prompt change, not a budget change. The budgets stay generous because thinking models count hidden reasoning against them.</li>
+  <li>The profile rewrite is the expensive call: about 4,900 output tokens for about 500 tokens of notes. The rest is almost certainly hidden thinking, billed as output. No agent sets a thinking level yet; the AI library allows it per agent (<code>HasProviderOptions</code>).</li>
+  <li>A logged message (classify and read) costs about a tenth of a cent; a coach question about a sixth.</li>
+</ul>
+
+<h3>Changing a prompt</h3>
+<ol class="steps">
+  <li><strong>Edit the agent class.</strong> One file per prompt; the schema and the temperature live next to the words.</li>
+  <li><strong>Try it without saving.</strong> <code>php artisan log:parse "text"</code> for the classifier and log reader, <code>classify:try</code> per driver, <code>make classify-eval</code> over <code>tests/Evals/classify.txt</code>.</li>
+  <li><strong>Try the whole path.</strong> <code>php artisan log:simulate --user=1 "text"</code> runs a message as if it came from Telegram, coach included, on your local key.</li>
+  <li><strong>Keep the suite green.</strong> Tests never call a model (see <a href="#testing">testing</a>), so they check the wiring and the schema handling, not the wording. Write what came back in the <code>PROJECT.md</code> diary.</li>
+</ol>
+<div class="callout"><p>Open proposals for the coach, from the 7 November exploration, section 10: a <code>today</code> block with what was logged today, an <code>already_suggested</code> list so "do not repeat" can be checked, voice examples that name no exercises, asking about an injury at most once a day, and every load naming its source.</p></div>
 
 <!-- 3 -->
 <h2 id="journey">A message's journey</h2>
@@ -299,12 +558,15 @@ php artisan log:parse "squat 5x5 100"</code></pre>
 
 <!-- 16 -->
 <h2 id="testing">Testing</h2>
-<pre><code>make test      # SQLite in memory, about 8.5 s
-make test-pg   # Postgres, about 13 s (CI runs both)
+<pre><code>make test      # SQLite in memory, about 5.3 s
+make test-pg   # Postgres, about 9.8 s (CI runs both)
 vendor/bin/pint --test</code></pre>
 <ul class="prose">
-  <li>Every AI port has a fake in <code>tests/Fakes</code>; helpers in <code>tests/Pest.php</code> (<code>linkedUser()</code>, <code>telegramText()</code>, <code>classifierSays()</code>, <code>fakeCoach()</code>, ...).</li>
-  <li>The test environment is forced twice in <code>phpunit.xml</code> (<code>env</code> and <code>server</code>) so a local <code>.env</code> cannot leak in.</li>
+  <li><strong>No test can reach a model.</strong> <code>phpunit.xml</code> blanks every AI key, the bot token and <code>AI_FALLBACKS</code>; <code>tests/TestCase.php</code> binds all eight AI ports to their fakes and calls <code>Http::preventStrayRequests()</code>. <code>tests/Unit/TestGuardsTest.php</code> fails if any of that goes missing.</li>
+  <li><strong>Testing a real adapter</strong> is explicit: <code>useRealAdapter(SmartLogParser::class)</code>, with <code>Ai::fakeAgent()</code> or <code>Http::fake()</code> underneath.</li>
+  <li><strong>Two ways to fail.</strong> Every fake has <code>failing()</code>, which throws what a real outage throws (<code>ProviderOverloadedException</code>), and <code>broken()</code>, which throws a plain bug. Only the first may be treated as "the AI is busy".</li>
+  <li>Helpers in <code>tests/Pest.php</code>: <code>linkedUser()</code>, <code>telegramText()</code>, <code>classifierSays()</code>, <code>fakeCoach()</code>, <code>fakeSmartLogParser()</code> and the rest.</li>
+  <li>The test environment is forced twice in <code>phpunit.xml</code> (<code>env</code> and <code>server</code>) so a local <code>.env</code> cannot leak in. Failed logins skip Laravel's 200 ms padding in tests (<code>auth.timebox_duration</code> 0).</li>
   <li>Real-model checks are manual: <code>log:simulate</code> with your Gemini key, and the eval files in <code>tests/Evals</code>.</li>
 </ul>
 
@@ -312,7 +574,7 @@ vendor/bin/pint --test</code></pre>
 <h2 id="known">Known issues</h2>
 <div class="callout bad"><p>The adversarial audit of 8 November lists what to fix before testers: answer handlers that swallow logs while a question is open, a new injury merged into an old one, the retry not safe to repeat, every error read as an outage, no pcntl in production, tokens that never expire. <a href="audit.html">Read the audit report</a>.</p></div>
 
-<footer>Generated from the code on 8 November 2026. Sources of truth: <code>CLAUDE.md</code>, <code>PLAN.md</code>, <code>PROJECT.md</code>, <code>docs/code-tour.md</code>. When this page and the code disagree, the code wins.</footer>
+<footer>Generated from the code on 8 November 2026, updated 9 November. Sources of truth: <code>CLAUDE.md</code>, <code>PLAN.md</code>, <code>PROJECT.md</code>, <code>docs/code-tour.md</code>. When this page and the code disagree, the code wins.</footer>
 </main>
 </div>
 </body>

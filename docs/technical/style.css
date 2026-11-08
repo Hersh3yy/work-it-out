@@ -205,3 +205,4 @@ footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--line);
 .d-line.dash { stroke-dasharray: 5 4; }
 .d-arrow { fill: var(--ink-faint); }
 .d-label { fill: var(--ink-soft); font-size: 11px; }
+.d-halo { paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }

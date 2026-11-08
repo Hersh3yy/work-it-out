@@ -35,6 +35,8 @@
 <h1>Feetness audit report</h1>
 <p class="lede">Five independent reviewers tried to prove the code and the tests wrong. The architecture holds; the bugs cluster in a few places, and the tests miss them because they only ever send the input each piece expects.</p>
 
+<div class="callout"><p>Update, 9 November: step 0 of the order of work (test guards) is done. The findings below are as found on 8 November.</p></div>
+
 <!-- 1 -->
 <h2 id="verdict">Verdict</h2>
 <div class="grid">
@@ -205,7 +207,7 @@
 <!-- 10 -->
 <h2 id="order">Order of work</h2>
 <ol class="steps">
-  <li><strong>Test guards first (an hour).</strong> Blank the AI keys, bind every fake, block stray HTTP, set the login timebox to 0 in tests. Switch the fakes' <code>failing()</code> to real availability errors and add a separate <code>broken()</code>.</li>
+  <li><strong>Test guards first (an hour).</strong> <span class="tag ok">done 9 Nov</span> Blank the AI keys, bind every fake, block stray HTTP, set the login timebox to 0 in tests. Switch the fakes' <code>failing()</code> to real availability errors and add a separate <code>broken()</code>. Built as <code>tests/Fakes/FailsOnRequest.php</code> and guarded by <code>tests/Unit/TestGuardsTest.php</code>: 329 tests, 5.3 s SQLite, 9.8 s Postgres. It also showed two adapter tests that had been passing without touching the adapter.</li>
   <li><strong>Handlers take only whole answers (half a day).</strong> Write missing tests 1 to 4 from the reproductions, watch them fail, fix the profile, area and red-flag handlers and the "other" injury.</li>
   <li><strong>A safe retry (a day).</strong> Tests 5 to 7 and 10, then claim the row, send separately, a <code>failed()</code> handler, the channel by provider, <code>AiCall</code> wrapping only availability errors, and rewrite <code>AiUsageTest:65</code>.</li>
   <li><strong>Production hardening (half a day).</strong> <code>pcntl</code>, <code>schedule:work</code>, worker timeouts, token expiry and revoke on unlink (test 9), the nutrition route gone, local ports on 127.0.0.1, answers in transactions with the event (test 8).</li>
