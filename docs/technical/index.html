@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feetness Technical Documentation</title>
+<meta name="description" content="How the Feetness backend works: architecture, message flow, AI layer, data model, configuration, operations and tests.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+
+<nav class="toc" aria-label="Contents">
+  <a class="brand" href="#top">
+    <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#15191C"/><rect x="12" y="29" width="40" height="6" rx="3" fill="#F5F2EA"/><rect x="10" y="22" width="7" height="20" rx="2.5" fill="#E8622C"/><rect x="47" y="22" width="7" height="20" rx="2.5" fill="#1F7A74"/></svg>
+    <div><strong>Feetness</strong><span>Technical documentation</span></div>
+  </a>
+  <ol>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#journey">A message's journey</a></li>
+    <li><a href="#patterns">Patterns and where to extend</a></li>
+    <li><a href="#conversation">Conversation</a></li>
+    <li><a href="#limitations">Injuries and limitations</a></li>
+    <li><a href="#coach">The coach</a></li>
+    <li><a href="#profile">The written profile</a></li>
+    <li><a href="#ai">The AI layer</a></li>
+    <li><a href="#outages">When the AI is down</a></li>
+    <li><a href="#data">Data model</a></li>
+    <li><a href="#api">HTTP API</a></li>
+    <li><a href="#background">Background work</a></li>
+    <li><a href="#config">Configuration</a></li>
+    <li><a href="#operations">Operations</a></li>
+    <li><a href="#testing">Testing</a></li>
+    <li><a href="#known">Known issues</a></li>
+  </ol>
+  <div class="other"><a href="audit.html">Audit report, 8 Nov 2026 &rarr;</a></div>
+</nav>
+
+<main id="top">
+<p class="eyebrow">work-it-out &middot; state of 8 November 2026</p>
+<h1>Feetness technical documentation</h1>
+<p class="lede">You text Feetness what you trained, like texting a friend. It saves every set as a fact, keeps a written profile that cites your own messages, tracks injuries, and answers training questions as a coach that may only speak from what you logged.</p>
+
+<!-- 1 -->
+<h2 id="overview">Overview</h2>
+<div class="grid">
+  <div class="card"><div class="stat">Laravel 13.35</div><div class="stat-label">PHP 8.5, Pest 5, laravel/ai 1.2</div></div>
+  <div class="card"><div class="stat">Postgres 18</div><div class="stat-label">production; SQLite in memory for the fast test run</div></div>
+  <div class="card"><div class="stat">Gemini 3.5</div><div class="stat-label">Flash-Lite for logs and the coach, Flash for the profile</div></div>
+  <div class="card"><div class="stat">310 tests</div><div class="stat-label">zero real AI calls; 8.5 s SQLite, 13 s Postgres</div></div>
+</div>
+<div class="table-wrap"><table>
+  <tr><th>Part</th><th>Where</th><th>What it is</th></tr>
+  <tr><td>Backend (this document)</td><td><code>~/Code/feetness/work-it-out</code>, GitHub <code>Hersh3yy/work-it-out</code>, branch <code>master</code></td><td>The Laravel API, the Telegram poller, the queue worker and the scheduler, in one Docker image</td></tr>
+  <tr><td>App</td><td><code>~/Code/feetness/feetness-app</code></td><td>Nuxt 4 PWA (Tailwind 4, atomic design); reads the API; deploys on Netlify</td></tr>
+  <tr><td>Hosting</td><td>Coolify on 84.247.178.198</td><td>Every push to <code>master</code> builds and deploys; a failed health check keeps the old version</td></tr>
+  <tr><td>Chat door</td><td>Telegram bot, long polling</td><td>Invite-only: one-time links from <code>channel:invite</code></td></tr>
+</table></div>
+<p class="prose">Ground rules that shape the code (from <code>CLAUDE.md</code> and <code>PLAN.md</code> section 4): the AI never writes assumptions or invents numbers; numbers are computed in plain PHP; every saved fact cites the message it came from and disappears with it on <code>/undo</code>; while something is unclear the bot asks instead of guessing; every behaviour has a test that runs without AI; code reads without comments.</p>
+
+<!-- 2 -->
+<h2 id="architecture">Architecture</h2>
+<figure>
+<div class="card">
+<svg viewBox="0 0 910 540" width="100%" role="img" aria-label="Architecture: Telegram and the app enter through the poller and the HTTP API, the front desk routes to commands, the answer chain or the AI path, the interpreter leads to logging, limitations or the coach, writes land in Postgres and fire events, AI calls go through ports and the model chain to Gemini, and failed messages are kept and retried.">
+  <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-arrow" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+  <!-- lines first so boxes paint over them -->
+  <path class="d-line" marker-end="url(#arr)" d="M115,72 V98"/>
+  <path class="d-line" marker-end="url(#arr)" d="M115,152 V178"/>
+  <path class="d-line" marker-end="url(#arr)" d="M210,196 C235,196 235,126 258,126"/>
+  <path class="d-line" marker-end="url(#arr)" d="M210,206 H258"/>
+  <path class="d-line" marker-end="url(#arr)" d="M210,216 C235,216 235,286 258,286"/>
+  <path class="d-line" marker-end="url(#arr)" d="M115,352 V378"/>
+  <path class="d-line" marker-end="url(#arr)" d="M210,406 C235,406 235,366 258,366"/>
+  <path class="d-line" marker-end="url(#arr)" d="M355,312 V338"/>
+  <path class="d-line" marker-end="url(#arr)" d="M450,356 C475,356 475,206 498,206"/>
+  <path class="d-line" marker-end="url(#arr)" d="M450,362 C475,362 475,286 498,286"/>
+  <path class="d-line" marker-end="url(#arr)" d="M450,368 H498"/>
+  <path class="d-line dash" marker-end="url(#arr)" d="M450,292 C470,292 470,466 498,466"/>
+  <text class="d-label" x="476" y="412">AI down</text>
+  <path class="d-line" marker-end="url(#arr)" d="M690,206 H738"/>
+  <path class="d-line" marker-end="url(#arr)" d="M690,286 C712,286 712,214 738,214"/>
+  <path class="d-line" marker-end="url(#arr)" d="M815,232 V258"/>
+  <path class="d-line dash" marker-end="url(#arr)" d="M690,372 C712,372 712,402 738,402"/>
+  <path class="d-line dash" marker-end="url(#arr)" d="M355,392 V518 H716 V420 H736"/>
+  <text class="d-label" x="560" y="512">AI calls</text>
+  <path class="d-line" marker-end="url(#arr)" d="M815,432 V458"/>
+
+  <rect class="d-box door" x="20" y="20" width="190" height="52" rx="10"/><text class="d-title" x="34" y="42">Telegram</text><text class="d-sub" x="34" y="60">bot, invite-only</text>
+  <rect class="d-box" x="20" y="100" width="190" height="52" rx="10"/><text class="d-title" x="34" y="122">Poller</text><text class="d-sub" x="34" y="140">channel:telegram:poll</text>
+  <rect class="d-box" x="20" y="180" width="190" height="52" rx="10"/><text class="d-title" x="34" y="202">HandleInboundMessage</text><text class="d-sub" x="34" y="220">routes, does no work</text>
+  <rect class="d-box door" x="20" y="300" width="190" height="52" rx="10"/><text class="d-title" x="34" y="322">Nuxt app</text><text class="d-sub" x="34" y="340">feetness-app, Netlify</text>
+  <rect class="d-box" x="20" y="380" width="190" height="52" rx="10"/><text class="d-title" x="34" y="402">HTTP API</text><text class="d-sub" x="34" y="420">routes/api.php, Sanctum</text>
+
+  <rect class="d-box" x="260" y="100" width="190" height="52" rx="10"/><text class="d-title" x="274" y="122">Slash commands</text><text class="d-sub" x="274" y="140">/undo /me /login /better</text>
+  <rect class="d-box" x="260" y="180" width="190" height="52" rx="10"/><text class="d-title" x="274" y="202">Answer chain</text><text class="d-sub" x="274" y="220">"5 reps", "1", "no"; no AI</text>
+  <rect class="d-box" x="260" y="260" width="190" height="52" rx="10"/><text class="d-title" x="274" y="282">RespondToText</text><text class="d-sub" x="274" y="300">the AI path</text>
+  <rect class="d-box" x="260" y="340" width="190" height="52" rx="10"/><text class="d-title" x="274" y="362">Interpreter</text><text class="d-sub" x="274" y="380">red flags, classify, parse, rules</text>
+
+  <rect class="d-box" x="500" y="180" width="190" height="52" rx="10"/><text class="d-title" x="514" y="202">RecordSmartLog</text><text class="d-sub" x="514" y="220">workout, weight</text>
+  <rect class="d-box" x="500" y="260" width="190" height="52" rx="10"/><text class="d-title" x="514" y="282">LimitationConversation</text><text class="d-sub" x="514" y="300">new injury or an update</text>
+  <rect class="d-box" x="500" y="340" width="190" height="52" rx="10"/><text class="d-title" x="514" y="362">AnswerCoachQuestion</text><text class="d-sub" x="514" y="380">CoachContext, AnswerDepth</text>
+  <rect class="d-box retry" x="500" y="440" width="190" height="52" rx="10"/><text class="d-title" x="514" y="462">KeepMessage</text><text class="d-sub" x="514" y="480">waiting_messages, retry job</text>
+
+  <rect class="d-box store" x="740" y="180" width="150" height="52" rx="10"/><text class="d-title" x="754" y="202">Postgres</text><text class="d-sub" x="754" y="220">facts with citations</text>
+  <rect class="d-box store" x="740" y="260" width="150" height="52" rx="10"/><text class="d-title" x="754" y="282">LogRecorded</text><text class="d-sub" x="754" y="300">stats, profile job</text>
+  <rect class="d-box ai" x="740" y="380" width="150" height="52" rx="10"/><text class="d-title" x="754" y="402">Ports + ModelChain</text><text class="d-sub" x="754" y="420">Contracts/Ai, app/Ai</text>
+  <rect class="d-box ai" x="740" y="460" width="150" height="52" rx="10"/><text class="d-title" x="754" y="482">Gemini</text><text class="d-sub" x="754" y="500">then AI_FALLBACKS</text>
+</svg>
+</div>
+<figcaption>Orange boxes are doors, green is the AI layer, yellow is the outage path. Dashed lines are AI calls or the path taken when the AI is down.</figcaption>
+</figure>
+
+<div class="table-wrap"><table>
+  <tr><th>Folder</th><th>Holds</th></tr>
+  <tr><td><code>app/Channels</code></td><td>The chat front desk (<code>HandleInboundMessage</code>), <code>InboundMessage</code>, reply wording (<code>ReplyComposer</code>), the Telegram adapter</td></tr>
+  <tr><td><code>app/Conversation</code></td><td>Slash commands, answer handlers, <code>RespondToText</code> (the AI path), <code>LimitationConversation</code></td></tr>
+  <tr><td><code>app/Interpretation</code></td><td><code>Interpreter</code>, rule classifier, named rules, <code>NumberReply</code>, the classifier and intent labs</td></tr>
+  <tr><td><code>app/Actions</code></td><td>Everything that writes: SmartLog, Limitations, Coach, Conversation (keep a message), Auth, Linking</td></tr>
+  <tr><td><code>app/Coach</code>, <code>app/Profile</code>, <code>app/Limitations</code></td><td>Domain logic for the coach context and answer size, the written profile and profile questions, injuries and exercise loads</td></tr>
+  <tr><td><code>app/Contracts</code>, <code>app/Ai</code></td><td>Ports (interfaces) and their adapters: agents (prompts), Sdk* adapters, <code>ModelChain</code>, usage reporting</td></tr>
+  <tr><td><code>app/Events</code>, <code>app/Listeners</code>, <code>app/Jobs</code></td><td><code>LogRecorded</code>/<code>LogReverted</code>, stats and profile listeners, AI call recording, queued jobs</td></tr>
+  <tr><td><code>tests/Fakes</code></td><td>One fake per AI port and for the chat channel; bound by default in <code>tests/TestCase.php</code></td></tr>
+</table></div>
+
+<!-- 3 -->
+<h2 id="journey">A message's journey</h2>
+<p class="prose">"Squats 5x5 / 90 80 80 80 80 / And ran 1k in 6:30", from your phone to the receipt.</p>
+<ol class="steps">
+  <li><strong>The poller receives it.</strong> <code>channel:telegram:poll</code> long-polls Telegram, turns the update into an <code>InboundMessage</code> (<code>TelegramChannel::inbound</code>) and hands it to <code>HandleInboundMessage::handle</code>. One poller per bot token runs under supervisord.</li>
+  <li><strong>Who is this?</strong> The sender is looked up in <code>channel_identities</code>. A stranger gets one polite private-beta reply a day and costs nothing; <code>/start CODE</code> from an invite link connects them.</li>
+  <li><strong>A command?</strong> Text starting with <code>/</code> is looked up in <code>ChatCommands</code> (the list in <code>config/conversation.php</code>).</li>
+  <li><strong>An answer to an open question?</strong> The answer chain tries each handler in order without AI: a missing exercise value ("5 reps each set"), the injury area ("1"), the red-flag screen ("no"), a profile question ("3"). Words after an answer ("70kg, now what next?") go on as their own message.</li>
+  <li><strong>The AI path.</strong> <code>RespondToText</code> asks the <code>Interpreter</code>: danger words first (<code>RedFlags</code>, plain code: "contact a doctor", nothing saved), then classify (plain rules such as "104.5kg", then the model), then parse with the parser for that kind, then the named rules that turn known traps into questions ("90 x3 x5": three sets or five?).</li>
+  <li><strong>Act on it.</strong> A workout or weight goes to <code>RecordSmartLog</code>: one transaction writes the <code>activity_logs</code> row (your words), the session, entries and one row per set, then <code>LogRecorded</code> fires after commit. An injury goes to <code>LimitationConversation</code>; a question to <code>AnswerCoachQuestion</code>.</li>
+  <li><strong>Reply.</strong> The receipt ("Logged: Squat 5x5 @ 90, 80, 80, 80, 80 kg, Run 1 km 6:30"), plus at most a load check for an active injury and one profile question.</li>
+  <li><strong>Afterwards.</strong> Listeners recompute stats and queue <code>BuildProfile</code> 120 seconds later (one AI call per burst of logs). <code>/undo</code> reverts exactly what this message saved.</li>
+</ol>
+
+<!-- 4 -->
+<h2 id="patterns">Patterns and where to extend</h2>
+<p class="prose">Every kind of code has one place. The checklist lives in <code>.claude/skills/clean-code-check/SKILL.md</code>; this is the short version with what a new feature touches.</p>
+<div class="table-wrap"><table>
+  <tr><th>Pattern</th><th>Where</th><th>To add one</th></tr>
+  <tr><td>Ports and adapters</td><td><code>app/Contracts/Ai/*</code>, <code>app/Ai/Sdk*</code>, <code>tests/Fakes</code></td><td>Interface, adapter, fake, bind in <code>AppServiceProvider</code> and <code>TestCase</code></td></tr>
+  <tr><td>Command (write actions)</td><td><code>app/Actions/*</code></td><td>One class with <code>handle()</code>: one transaction, the event after commit</td></tr>
+  <tr><td>Observer</td><td><code>LogRecorded</code>, <code>LogReverted</code>; <code>app/Listeners</code></td><td>A listener; never call it from the action</td></tr>
+  <tr><td>Chain of responsibility</td><td>Answer handlers, <code>ModelChain</code></td><td>A handler class plus one line in <code>config/conversation.php</code>; a model via <code>AI_FALLBACKS</code></td></tr>
+  <tr><td>Command (chat)</td><td><code>app/Conversation/Commands</code></td><td>A <code>ChatCommand</code> class plus one config line; the Telegram menu follows</td></tr>
+  <tr><td>Strategy</td><td><code>TrainerPersona</code>, <code>AnswerDepth</code>, <code>NoteLabel</code>, profile questions</td><td>A case or class; callers never switch on the type</td></tr>
+  <tr><td>Named rules</td><td><code>app/Interpretation/Rules</code></td><td>An <code>InterpretationRule</code> in the interpreter's ordered list</td></tr>
+</table></div>
+
+<!-- 5 -->
+<h2 id="conversation">Conversation</h2>
+<h3>Slash commands</h3>
+<div class="table-wrap"><table>
+  <tr><th>Command</th><th>Also</th><th>Does</th></tr>
+  <tr><td><code>/help</code></td><td><code>/start</code></td><td>How to log, ask and report an injury</td></tr>
+  <tr><td><code>/undo</code></td><td></td><td>Removes the newest log from the last 24 hours, exactly what it saved</td></tr>
+  <tr><td><code>/me</code></td><td><code>/profile</code></td><td>Numbers, active limitations and the written notes</td></tr>
+  <tr><td><code>/login</code></td><td><code>/app</code></td><td>A one-time link into the app (15 minutes, hashed, single use)</td></tr>
+  <tr><td><code>/better</code></td><td><code>/healed</code></td><td>Marks the newest active limitation healed; only the person decides that</td></tr>
+</table></div>
+<h3>Open questions</h3>
+<p class="prose">A log or a limitation can carry one open question (<code>activity_logs.questions</code>), answered without AI for 6 hours on the newest log. <code>NumberReply</code> reads a reply that starts with a number; the unit must fit the field ("12 kg" is not reps); a second number means a new log. A per-set field (<code>exercises.0.set_list.5.weight_kg</code>) fills one set. Profile questions (<code>config/profile.php</code>: training days, main goal) are asked at most once every 20 hours, answerable for 24, correctable with "No, ..." for 10 minutes.</p>
+
+<!-- 6 -->
+<h2 id="limitations">Injuries and limitations</h2>
+<ol class="steps">
+  <li><strong>Danger words come first.</strong> <code>RedFlags</code> (numbness, chest pain, can't feel, bladder...) answers "contact a doctor" before any AI and saves nothing.</li>
+  <li><strong>Read the facts.</strong> <code>LimitationAgent</code> returns area, severity, duration and a short note, never advice.</li>
+  <li><strong>New or update?</strong> <code>ExistingLimitation</code>: same area as an active one, or no clear area with exactly one active, is an update (<code>limitation_updates</code>, your words, a new duration moves the end date). Otherwise <code>RecordLimitation</code> creates it.</li>
+  <li><strong>Ask once.</strong> Unclear area: numbered choice. Then the red-flag screen: "any numbness, tingling, weakness or pain down an arm or leg?" stored as clear or flagged.</li>
+  <li><strong>Use it.</strong> A logged exercise that loads the area (<code>ExerciseLoads</code>) gets "Lower back OK with the Deadlift?" on its receipt; the coach sees the day count, updates and the exercises that load it.</li>
+</ol>
+
+<!-- 7 -->
+<h2 id="coach">The coach</h2>
+<p class="prose"><code>AnswerCoachQuestion</code> checks the daily cap (30) and the monthly token cap, builds <code>CoachContext</code>, sizes the answer with <code>AnswerDepth</code>, makes one call through the <code>CoachAdvisor</code> port and stores the exchange in <code>coach_turns</code> (conversation, never facts). Within 30 minutes of an answer, a message the sorter cannot place ("you got that wrong") goes to the coach as a follow-up.</p>
+<div class="grid">
+  <div class="card"><h3>What the coach sees</h3><ul><li>Facts computed in PHP (<code>ProfileFacts</code>)</li><li>The written profile notes</li><li>Active limitations: day, updates, red-flag screen, exercises that load it</li><li>The last 12 logs in your words, with saved exercises</li><li>The last 6 exchanges from 72 hours</li><li>Messages kept during an outage</li></ul></div>
+  <div class="card"><h3>Answer size</h3><ul><li><strong>quick</strong>: "foam roller?" (800 tokens)</li><li><strong>plan</strong>: "30 min, 3 things", "suggest", "what weight" (1,500)</li><li><strong>explain</strong>: why, how, what does (2,000)</li></ul><p class="muted">Plain-code rules in <code>AnswerDepth</code>; tokens are a ceiling, the prompt sets the length.</p></div>
+  <div class="card"><h3>Three voices</h3><ul><li><strong>Lt. Surge</strong>: strength, clipped, never cruel</li><li><strong>Shen</strong>: performance, thinks in phases</li><li><strong>Latika</strong>: recovery and mobility, warm</li></ul><p class="muted"><code>TrainerPersona::voice()</code> is style only; the rules in <code>CoachAgent</code> are the same for all.</p></div>
+</div>
+
+<!-- 8 -->
+<h2 id="profile">The written profile</h2>
+<p class="prose">After a burst of logs, <code>BuildProfile</code> runs <code>UpdateProfile</code>: the current notes plus the last 10 entries (logs and coach questions) go to <code>ProfileAgent</code>, which writes up to 10 notes, each in one of nine sections (<code>NoteLabel</code>: rhythm, strength, balance, conditioning, body, limitation, goal, responds, gaps) and each citing log ids, <code>coach:N</code> or <code>facts</code>. A note whose citations do not exist is dropped, so an undone log's notes vanish at the next update. Every Monday at 04:00 a full rebuild from the last 30 entries resets drift. Read it with <code>profile:show</code>; rewrite now with <code>profile:rebuild email --full</code>.</p>
+
+<!-- 9 -->
+<h2 id="ai">The AI layer</h2>
+<div class="table-wrap"><table>
+  <tr><th>Port</th><th>Adapter</th><th>Agent (prompt)</th><th>Job</th><th>Called from</th></tr>
+  <tr><td><code>MessageClassifier</code></td><td><code>SdkMessageClassifier</code> (or System One for Laya/Jev)</td><td><code>ClassifierAgent</code></td><td>log</td><td>Interpreter</td></tr>
+  <tr><td><code>SmartLogParser</code></td><td><code>SdkSmartLogParser</code></td><td><code>SmartLogAgent</code></td><td>log</td><td>Interpreter</td></tr>
+  <tr><td><code>LimitationParser</code></td><td><code>SdkLimitationParser</code></td><td><code>LimitationAgent</code></td><td>log</td><td>Interpreter</td></tr>
+  <tr><td><code>CoachAdvisor</code></td><td><code>SdkCoachAdvisor</code></td><td><code>CoachAgent</code></td><td>chat</td><td>AnswerCoachQuestion</td></tr>
+  <tr><td><code>ProfileBuilder</code></td><td><code>SdkProfileBuilder</code></td><td><code>ProfileAgent</code></td><td>profile</td><td>UpdateProfile</td></tr>
+</table></div>
+<ul class="prose">
+  <li><strong>Jobs and models.</strong> Each job has a provider and model in <code>config/ai.php</code> (<code>AI_LOG_*</code>, <code>AI_CHAT_*</code>, <code>AI_PROFILE_*</code>); empty means the log job's.</li>
+  <li><strong>Failover.</strong> <code>ModelChain::ask(job, ...)</code> tries the job's model, the log job's, then <code>AI_FALLBACKS</code>, moving on when a model is overloaded, rate limited or unreachable.</li>
+  <li><strong>One seam.</strong> Every call runs through <code>AiCall</code>, which tags user and job and turns failures into <code>AiUnavailable</code>.</li>
+  <li><strong>Usage and cost.</strong> <code>RecordAiCall</code> stores every call in <code>ai_calls</code> (tokens, model, duration, failure). <code>php artisan ai:usage --since=30d --by=user|job|model|day</code>; prices per model in <code>config/ai.php</code>.</li>
+</ul>
+
+<!-- 10 -->
+<h2 id="outages">When the AI is down</h2>
+<ol class="steps">
+  <li><strong>Next model.</strong> <code>ModelChain</code> tries the rest of the chain.</li>
+  <li><strong>Keep it.</strong> If every model fails, <code>KeepMessage</code> stores the message in <code>waiting_messages</code> and replies "The AI is busy right now. I kept your message and will answer here in a few minutes, no need to send it again."</li>
+  <li><strong>Retry.</strong> <code>ProcessWaitingMessage</code> runs the same path after 1, 3, 10 and 30 minutes (<code>conversation.retry_delays</code>) and answers in the chat by itself ("About "...": Logged ..."), or says it did not go through.</li>
+  <li><strong>No doubles.</strong> The same text sent again while its copy waits is handled once; the kept copy is marked resent. The coach sees messages still waiting.</li>
+</ol>
+<div class="callout warn"><p>The audit of 8 November found the retry not yet safe to repeat and replying on Telegram regardless of channel. See <a href="audit.html">the audit report</a>, tier 1.</p></div>
+
+<!-- 11 -->
+<h2 id="data">Data model</h2>
+<div class="table-wrap"><table>
+  <tr><th>Area</th><th>Tables</th><th>Notes</th></tr>
+  <tr><td>People and access</td><td><code>users</code>, <code>channel_identities</code>, <code>channel_link_codes</code>, <code>login_codes</code>, <code>personal_access_tokens</code></td><td>Invite and login codes are hashed, single use, expiring</td></tr>
+  <tr><td>Every message</td><td><code>activity_logs</code></td><td>Your words, what was saved, an open question; everything else cites it and cascades with it</td></tr>
+  <tr><td>Training</td><td><code>workout_sessions</code>, <code>exercise_entries</code>, <code>exercise_sets</code>, <code>body_weight_logs</code></td><td>One row per set; entry columns summarise the sets</td></tr>
+  <tr><td>Injuries</td><td><code>limitations</code>, <code>limitation_updates</code></td><td>Area, severity, dates, red-flag screen; dated updates in your words</td></tr>
+  <tr><td>Coach and profile</td><td><code>coach_turns</code>, <code>profile_versions</code>, <code>profile_prompts</code></td><td>Exchanges with answer size and model; note versions with citations; profile questions asked</td></tr>
+  <tr><td>AI and reliability</td><td><code>ai_calls</code>, <code>waiting_messages</code>, <code>jobs</code>, <code>failed_jobs</code>, <code>cache</code></td><td>The Telegram offset lives in the database cache</td></tr>
+  <tr><td>Legacy, to be removed</td><td><code>nutrition_logs</code>, <code>custom_rpg_stats</code>, <code>diary_entries</code>, <code>activity_feedbacks</code>, the SDK's conversation tables</td><td>From before the current design; see the audit</td></tr>
+</table></div>
+
+<!-- 12 -->
+<h2 id="api">HTTP API</h2>
+<p class="prose">Bearer tokens (Sanctum). The app uses five routes today; the rest are older and listed in the audit for removal.</p>
+<div class="table-wrap"><table>
+  <tr><th>Route</th><th>Used by the app</th><th>Purpose</th></tr>
+  <tr><td><code>POST /api/auth/magic</code></td><td><span class="tag ok">yes</span></td><td>Trade a <code>/login</code> code for a token</td></tr>
+  <tr><td><code>POST /api/auth/logout</code></td><td><span class="tag ok">yes</span></td><td>Revoke the current token</td></tr>
+  <tr><td><code>GET /api/me/overview</code></td><td><span class="tag ok">yes</span></td><td>Facts, notes, active limitations with updates, recent logs with sets</td></tr>
+  <tr><td><code>GET /api/logs</code></td><td><span class="tag ok">yes</span></td><td>Every message, paged</td></tr>
+  <tr><td><code>POST /api/limitations/{id}/resolve</code></td><td><span class="tag ok">yes</span></td><td>Healed, from the app</td></tr>
+  <tr><td><code>POST /api/log</code>, <code>/log/{id}/answer</code>, <code>/skip</code>, <code>DELETE /log/{id}</code></td><td><span class="tag warn">not yet</span></td><td>The app's write door; behind the chat door today</td></tr>
+  <tr><td><code>/workouts</code>, <code>/nutrition</code>, <code>/trainer</code>, <code>/plans</code>, <code>/dashboard</code>, <code>/stats</code>, <code>/diary</code>, <code>/profile*</code>, <code>/body-weight</code>, <code>/lab/intent*</code></td><td><span class="tag bad">no</span></td><td>Older routes; candidates for deletion</td></tr>
+</table></div>
+
+<!-- 13 -->
+<h2 id="background">Background work</h2>
+<div class="table-wrap"><table>
+  <tr><th>What</th><th>When</th><th>Does</th></tr>
+  <tr><td><code>RefreshTrainingStats</code> &rarr; <code>UpdateUserStats</code></td><td>After every log or undo</td><td>Weekly score, streak, volume</td></tr>
+  <tr><td><code>RefreshProfile</code> &rarr; <code>BuildProfile</code></td><td>120 s after a burst of logs, unique per user</td><td>Rolling profile update; 3 tries, 5 minutes apart</td></tr>
+  <tr><td><code>ProcessWaitingMessage</code></td><td>When the AI was down</td><td>Retries the kept message and replies in the chat</td></tr>
+  <tr><td><code>RecordAiCall</code></td><td>On every agent prompt or failure</td><td>Writes <code>ai_calls</code></td></tr>
+  <tr><td><code>profile:rebuild --all --full</code></td><td>Mondays 04:00</td><td>Full profile rebuild</td></tr>
+  <tr><td><code>ai:usage --since=7d --by=job</code></td><td>Mondays 05:00</td><td>Appends to <code>storage/logs/ai-usage.log</code></td></tr>
+</table></div>
+<p class="prose">In the container supervisord runs php-fpm, nginx, one queue worker (database driver), one Telegram poller and a scheduler loop.</p>
+
+<!-- 14 -->
+<h2 id="config">Configuration</h2>
+<div class="table-wrap"><table>
+  <tr><th>Variable</th><th>What</th></tr>
+  <tr><td><code>GEMINI_API_KEY</code></td><td>The AI key (paid tier recommended before testers)</td></tr>
+  <tr><td><code>AI_LOG_PROVIDER</code>, <code>AI_LOG_MODEL</code></td><td>Classify, read logs and injuries (gemini, gemini-3.5-flash-lite)</td></tr>
+  <tr><td><code>AI_CHAT_*</code>, <code>AI_PROFILE_*</code></td><td>Coach and profile models; empty means the log job's (profile on gemini-3.5-flash)</td></tr>
+  <tr><td><code>AI_FALLBACKS</code></td><td>Tried in order when a model fails: <code>gemini:gemini-3.5-flash,deepseek:deepseek-flash</code></td></tr>
+  <tr><td><code>AI_MONTHLY_TOKENS_PER_USER</code></td><td>Coach questions pause after this many tokens in a month (0 = no cap)</td></tr>
+  <tr><td><code>AI_CLASSIFIER</code></td><td><code>llm</code> (Gemini), <code>laya</code> or <code>jev</code></td></tr>
+  <tr><td><code>COACH_DAILY_LIMIT</code>, <code>COACH_TOKENS_*</code>, <code>COACH_FOLLOW_UP_MINUTES</code></td><td>Coach caps and answer budgets</td></tr>
+  <tr><td><code>TELEGRAM_BOT_TOKEN</code></td><td>One bot per place: never run the production token locally</td></tr>
+  <tr><td><code>APP_WEB_URL</code>, <code>CORS_ALLOWED_ORIGINS</code></td><td>Where <code>/login</code> links point; which site may call the API</td></tr>
+  <tr><td><code>REGISTRATION_OPEN</code></td><td>Closed in production; people join by invite</td></tr>
+</table></div>
+
+<!-- 15 -->
+<h2 id="operations">Operations</h2>
+<h3>Every day</h3>
+<pre><code># Invite someone (prints a one-time link)
+php artisan channel:invite their@email --name="Name"
+
+# What the bot knows about someone
+php artisan profile:show their@email
+
+# AI calls and cost
+php artisan ai:usage --since=30d --by=user
+
+# Try a message without a phone (saves, like Telegram would)
+php artisan log:simulate --user=1 "squat 5x5 100"
+
+# Only the interpreter, saving nothing
+php artisan log:parse "squat 5x5 100"</code></pre>
+<h3>Deploys and the server</h3>
+<ul class="prose">
+  <li>Push to <code>master</code>: CI runs both test suites while Coolify builds; the start script migrates; the health check guards the switch.</li>
+  <li>Server: <code>ssh hiren@84.247.178.198</code>; the app container's name contains <code>gbvqkbpmen41pdhf1eqgkzca</code>; deploy history is in Coolify's own database.</li>
+  <li>Never expose service ports: a previous server was cryptojacked through php-fpm on 9000. Secrets only in environment variables.</li>
+  <li>Step-by-step: <code>docs/deploy-coolify.md</code>; getting testers in: <code>docs/alpha-launch.md</code>.</li>
+</ul>
+
+<!-- 16 -->
+<h2 id="testing">Testing</h2>
+<pre><code>make test      # SQLite in memory, about 8.5 s
+make test-pg   # Postgres, about 13 s (CI runs both)
+vendor/bin/pint --test</code></pre>
+<ul class="prose">
+  <li>Every AI port has a fake in <code>tests/Fakes</code>; helpers in <code>tests/Pest.php</code> (<code>linkedUser()</code>, <code>telegramText()</code>, <code>classifierSays()</code>, <code>fakeCoach()</code>, ...).</li>
+  <li>The test environment is forced twice in <code>phpunit.xml</code> (<code>env</code> and <code>server</code>) so a local <code>.env</code> cannot leak in.</li>
+  <li>Real-model checks are manual: <code>log:simulate</code> with your Gemini key, and the eval files in <code>tests/Evals</code>.</li>
+</ul>
+
+<!-- 17 -->
+<h2 id="known">Known issues</h2>
+<div class="callout bad"><p>The adversarial audit of 8 November lists what to fix before testers: answer handlers that swallow logs while a question is open, a new injury merged into an old one, the retry not safe to repeat, every error read as an outage, no pcntl in production, tokens that never expire. <a href="audit.html">Read the audit report</a>.</p></div>
+
+<footer>Generated from the code on 8 November 2026. Sources of truth: <code>CLAUDE.md</code>, <code>PLAN.md</code>, <code>PROJECT.md</code>, <code>docs/code-tour.md</code>. When this page and the code disagree, the code wins.</footer>
+</main>
+</div>
+</body>
+</html>

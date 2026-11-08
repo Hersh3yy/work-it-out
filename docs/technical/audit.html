@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feetness Audit Report</title>
+<meta name="description" content="Adversarial audit of the Feetness backend's code and tests, 8 November 2026: what to fix before testers, before the next features, and later.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+
+<nav class="toc" aria-label="Contents">
+  <a class="brand" href="#top">
+    <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#15191C"/><rect x="12" y="29" width="40" height="6" rx="3" fill="#F5F2EA"/><rect x="10" y="22" width="7" height="20" rx="2.5" fill="#E8622C"/><rect x="47" y="22" width="7" height="20" rx="2.5" fill="#1F7A74"/></svg>
+    <div><strong>Feetness</strong><span>Audit report, 8 Nov 2026</span></div>
+  </a>
+  <ol>
+    <li><a href="#verdict">Verdict</a></li>
+    <li><a href="#method">How it was done</a></li>
+    <li><a href="#tier1">Fix before testers</a></li>
+    <li><a href="#tier2">Fix before new features</a></li>
+    <li><a href="#tier3">Smaller things</a></li>
+    <li><a href="#good">What is good</a></li>
+    <li><a href="#tests">The tests</a></li>
+    <li><a href="#missed">Why the tests missed the bugs</a></li>
+    <li><a href="#testfix">Fixing the tests</a></li>
+    <li><a href="#order">Order of work</a></li>
+  </ol>
+  <div class="other"><a href="index.html">&larr; Technical documentation</a></div>
+</nav>
+
+<main id="top">
+<p class="eyebrow">Adversarial audit &middot; code and tests &middot; 8 November 2026</p>
+<h1>Feetness audit report</h1>
+<p class="lede">Five independent reviewers tried to prove the code and the tests wrong. The architecture holds; the bugs cluster in a few places, and the tests miss them because they only ever send the input each piece expects.</p>
+
+<!-- 1 -->
+<h2 id="verdict">Verdict</h2>
+<div class="grid">
+  <div class="card"><p class="eyebrow">Code</p><div class="stat">Not yet</div><p class="stat-label">for testers. Twelve tier-1 findings, about two focused days. The design itself is sound.</p></div>
+  <div class="card"><p class="eyebrow">Tests</p><div class="stat">310 pass</div><p class="stat-label">but none sends the message a greedy handler would steal; two tests treat a bug as the specification.</p></div>
+  <div class="card"><p class="eyebrow">Speed</p><div class="stat">8.5 s</div><p class="stat-label">SQLite (13 s Postgres). 39% of it is four failed-login tests waiting on purpose; fixable to about 5 s.</p></div>
+  <div class="card"><p class="eyebrow">Isolation</p><div class="stat">0 requests</div><p class="stat-label">to any AI provider during a full run, measured with a spy server. Safe by care, not by a guard.</p></div>
+</div>
+<div class="callout"><p><strong>The one-line summary.</strong> The way the code is organised is right; the places where a message is claimed by the wrong handler, and the retry path built on 8 November, are wrong. Write the missing tests from the reproductions first, then fix, and the suite becomes the guard it should be.</p></div>
+
+<!-- 2 -->
+<h2 id="method">How it was done</h2>
+<div class="table-wrap"><table>
+  <tr><th>Reviewer</th><th>Asked to prove wrong</th><th>Findings</th></tr>
+  <tr><td>Architecture</td><td>Design patterns, SOLID, layering</td><td>19</td></tr>
+  <tr><td>Laravel and security</td><td>Framework practice, auth, queues, Docker, logging</td><td>17</td></tr>
+  <tr><td>Correctness</td><td>Real inputs and failure sequences, run as scratch tests</td><td>15 (9 reproduced)</td></tr>
+  <tr><td>Readiness</td><td>Dead code, duplication, fitness for the next features</td><td>17</td></tr>
+  <tr><td>Tests</td><td>Purpose, strength, redundancy, speed, isolation</td><td>4 axes, 10 missing tests</td></tr>
+</table></div>
+<p class="prose">Findings were merged and the serious ones re-checked by hand on this laptop or the server. <span class="tag ok">verified</span> means reproduced; <span class="tag info">traced</span> means followed through the code by a reviewer. Nothing was changed during the audit.</p>
+
+<!-- 3 -->
+<h2 id="tier1">Fix before testers</h2>
+<p class="prose">These lose or corrupt data, or expose it.</p>
+
+<h3>Messages claimed by the wrong handler</h3>
+<div class="table-wrap"><table>
+  <tr><th>What happens</th><th>Where</th><th></th></tr>
+  <tr><td>With the goal question open, "run 5k in 25 min" set the goal to endurance and the run was never logged. "3 sets of squats at 100" sets training days to 3. Lasts 24 hours; "No, ..." does it for 10 more minutes.</td><td><code>TrainingDaysPerWeek.php:38</code>, <code>MainGoal.php:55</code></td><td><span class="tag ok">verified</span></td></tr>
+  <tr><td>With "Where exactly?" open, "shoulder press 3x10 30kg" set the injury area to shoulder and the press was lost. Any message starting 1 to 9 picks an option. Lasts 6 hours.</td><td><code>LimitationChoiceAnswer.php:44-46</code></td><td><span class="tag ok">verified</span></td></tr>
+  <tr><td>The red-flag screen takes the "yes" meant for the coach's closing question and flags the injury with the see-a-doctor reply.</td><td><code>RedFlagScreenAnswer.php</code>, <code>openFor</code></td><td><span class="tag info">traced</span></td></tr>
+  <tr><td>A pulled hamstring (area "other") was filed as an update to the back and moved the back's end date by three weeks.</td><td><code>ExistingLimitation.php:26-35</code></td><td><span class="tag ok">verified</span></td></tr>
+</table></div>
+
+<h3>The retry path from 8 November</h3>
+<div class="table-wrap"><table>
+  <tr><th>What happens</th><th>Where</th><th></th></tr>
+  <tr><td>Not safe to repeat: a resend during the retry's AI call is logged twice; the message is marked done before the reply is sent, so a failed send loses the reply; anything that throws after the log is written retries the whole thing; when tries run out the row stays "waiting" forever.</td><td><code>ProcessWaitingMessage.php</code></td><td><span class="tag info">traced</span></td></tr>
+  <tr><td>Always replies on Telegram: a kept message from <code>log:simulate</code> would be sent to Telegram chat "1".</td><td><code>AppServiceProvider.php:67</code>, <code>LogSimulate.php:56</code></td><td><span class="tag ok">verified</span></td></tr>
+  <tr><td>Every error is read as "AI busy": a plain bug becomes four retries over 45 minutes and hides in the logs as an outage.</td><td><code>AiCall.php:47-61</code></td><td><span class="tag info">traced</span></td></tr>
+  <tr><td>Answers that fill an open question write without a transaction and fire no event, so the profile never sees a late weight.</td><td><code>AnswerOpenQuestion.php:98</code>, <code>LimitationChoiceAnswer.php:53</code></td><td><span class="tag info">traced</span></td></tr>
+</table></div>
+
+<h3>Production and security</h3>
+<div class="table-wrap"><table>
+  <tr><th>What happens</th><th>Where</th><th></th></tr>
+  <tr><td>No <code>pcntl</code> in production: every redeploy kills the queue worker and the poller mid-message, and worker timeouts are not enforced.</td><td><code>Dockerfile:30-39</code></td><td><span class="tag ok">verified on server</span></td></tr>
+  <tr><td>API tokens never expire; <code>channel:unlink</code> does not revoke them; changing the email needs no password.</td><td><code>config/sanctum.php</code>, <code>ChannelUnlink.php</code></td><td><span class="tag ok">verified</span></td></tr>
+  <tr><td><code>POST /api/nutrition</code> calls the AI unrecorded, outside the model chain, with no AI throttle.</td><td><code>NutritionParserService.php:28</code></td><td><span class="tag ok">verified</span></td></tr>
+  <tr><td>Locally the app (debug on), Redis without a password and Mailpit listen on every network interface, including the lab routes that spend AI calls without login.</td><td><code>compose.yaml:7,44</code></td><td><span class="tag ok">verified</span></td></tr>
+</table></div>
+
+<!-- 4 -->
+<h2 id="tier2">Fix before new features</h2>
+<p class="prose">None of these loses data today; each next feature would be built on top of them.</p>
+<div class="grid">
+  <div class="card"><h3>Two doors that disagree</h3><p>The app's <code>POST /api/log</code> answers "coaches coming soon" and drops injuries; each door reads <code>Interpretation</code>'s nullable fields in its own order. One outcome type, both doors through <code>RespondToText</code>.</p><p class="muted">Before the app writes.</p></div>
+  <div class="card"><h3>About 2,000 lines to delete</h3><p>Nutrition inside every log call; the old trainer and plan stack, whose rules contradict the coach; the RPG sheet; the intent lab; a second workout write path; the diary copy; about 15 routes no client calls.</p><p class="muted">One clean-up round (M3 and more).</p></div>
+  <div class="card"><h3>One exercise vocabulary</h3><p>Names live in three lists. The load map reads crunch as loading the knee, leg curl the elbow, push-up nothing; "Bench Press Barbell" is a second lift. A catalogue plus one strength calculator (best set, estimated one-rep max).</p><p class="muted">Before the body map and plans.</p></div>
+  <div class="card"><h3>Loads in PHP, not in the prompt</h3><p>The coach prompt says "never calculate" and then "two thirds of the top set". Compute suggested loads and put them in the context.</p><p class="muted">Before injury-aware plans.</p></div>
+  <div class="card"><h3>The classifier seam</h3><p>Plain rules copied into each adapter and the fake; branching on the string <code>'rules'</code>; nowhere to store a shadow run; laravel/ai's own <code>Classification</code> unused.</p><p class="muted">Before the shadow classifier.</p></div>
+  <div class="card"><h3>Dependencies pointing the wrong way</h3><p>Domain code tags AI calls with adapter class names; Channels and Conversation use each other; no channel registry by provider; an adapter's model is a side channel.</p><p class="muted">Before WhatsApp.</p></div>
+  <div class="card"><h3>Open questions as a type</h3><p>Every handler re-derives "is this mine" from field strings; a newer log orphans an older question.</p></div>
+  <div class="card"><h3>Indexes and queries</h3><p>Postgres has no index on most foreign keys; sets are re-queried when loaded; records load every session ever, several times per request.</p></div>
+</div>
+
+<!-- 5 -->
+<h2 id="tier3">Smaller things</h2>
+<details><summary>Fourteen items, schedule when convenient</summary>
+<ul>
+  <li>Dates and daily caps are UTC: a log at 00:30 Amsterdam lands on the previous day.</li>
+  <li><code>/better knee</code> heals the newest injury, not the knee.</li>
+  <li>Undoing a limitation update leaves its new end date.</li>
+  <li>"3x5" or "3 sets of 5" is not taken as the answer to "3 sets of 5 or 5 sets of 3?".</li>
+  <li>A kept message is handled after newer ones; <code>/undo</code> can remove the wrong log.</li>
+  <li>The scheduler loop drifts and can skip the weekly profile rebuild; use <code>schedule:work</code>.</li>
+  <li>A missing <code>APP_KEY</code> in production is silently replaced; fail instead.</li>
+  <li>The sign-in token is in the URL query; a fragment keeps it out of server logs.</li>
+  <li>Query errors and the poller's reply excerpts can put injury text in logs.</li>
+  <li>One hung model call blocks the poller for everyone (60 s default timeout).</li>
+  <li>Duplications: number formatting four times, "skip" four times, sanity limits three times with different values.</li>
+  <li>Stale docblocks (<code>User::waitingMessages</code>, <code>RecordSmartLog</code>, <code>UpdateUserStats</code>).</li>
+  <li>Email case is not normalised on login and profile update; Postgres uniqueness is case-sensitive.</li>
+  <li>Unpinned build inputs; <code>expose_php</code> on.</li>
+</ul>
+</details>
+
+<!-- 6 -->
+<h2 id="good">What is good</h2>
+<div class="grid">
+  <div class="card"><h3>AI behind ports</h3><p>Every live AI call has a port and a fake; a full run made zero provider requests.</p></div>
+  <div class="card"><h3>Write actions</h3><p>One transaction, <code>setRelation</code> instead of re-querying, the event after commit.</p></div>
+  <div class="card"><h3>Easy to extend</h3><p>A command or an answer handler is one class and one config line; the Telegram menu follows.</p></div>
+  <div class="card"><h3>Facts stay facts</h3><p>The profile's citation check, named rules, numbers in PHP, model output clamped before saving.</p></div>
+  <div class="card"><h3>Security basics</h3><p>php-fpm on loopback with a build check, hashed single-use codes with locks, owner-scoped queries, closed registration.</p></div>
+  <div class="card"><h3>Product tests read as a spec</h3><p>About 215 tests named as sentences, with incident comments that explain why.</p></div>
+</div>
+
+<!-- 7 -->
+<h2 id="tests">The tests</h2>
+<div class="table-wrap"><table>
+  <tr><th>Category</th><th>Tests</th><th>Verdict</th></tr>
+  <tr><td>Product behaviour: logging, sets, open questions, limitations, coach, profile, retries, linking, auth</td><td>~215</td><td><span class="tag ok">keep</span> rewrite about 12 weak ones</td></tr>
+  <tr><td>Adapter contracts: SDK fakes, System One, model chain, usage, Telegram poll</td><td>~29</td><td><span class="tag ok">keep</span> add coach, limitation and profile adapters</td></tr>
+  <tr><td>Legacy scheduled for deletion: trainer, plans, nutrition, intake, RPG stats, intent lab, workouts controller</td><td>~34</td><td><span class="tag bad">delete</span> with the code</td></tr>
+  <tr><td>Framework, wiring and prompt-text pinning</td><td>~17</td><td><span class="tag warn">trim</span> drop wiring and auth duplicates, merge schedule checks</td></tr>
+  <tr><td>Developer tools: labs, simulate, parse, profile commands</td><td>~16</td><td><span class="tag ok">keep</span> lowest priority</td></tr>
+</table></div>
+
+<h3>Strength</h3>
+<div class="callout bad"><p><strong>Two tests enshrine bugs.</strong> <code>AiUsageTest:65-72</code> expects a plain <code>RuntimeException</code> to come out as <code>AiUnavailable</code>, which is exactly the "every error is an outage" bug. <code>InterpreterTest:39-49</code> pins "coaches coming soon" for the app door. And every fake's <code>failing()</code> throws <code>RuntimeException</code>, so the ten outage tests depend on that bug: fixing <code>AiCall</code> turns them red although nothing is wrong.</p></div>
+<ul class="prose">
+  <li><strong>The main fake does not look like the real adapter.</strong> <code>FakeSmartLogParser</code> returns the raw payload: no <code>set_list</code>, old meal fields, unclipped questions. The real adapter normalises all of that, so a bug between the adapter and <code>RecordSmartLog</code> is invisible to every chat test.</li>
+  <li><strong>Assertions that pass when the behaviour breaks.</strong> "Caps adherence at 100" never reaches the cap (five sessions on one day is 33%). "Waits longer" never checks the delay. "12 kg is not reps" only checks what did not happen. "Without touching the database" only checks the status code.</li>
+  <li><strong>Retry tests bypass the real wiring.</strong> The chat channel is injected by hand, so the Telegram-only binding never runs, and the fake channel cannot fail.</li>
+</ul>
+
+<h3>Redundancy</h3>
+<ul class="prose">
+  <li>The same fact through several doors: the trainer outage message three times (all legacy), the log outage twice, the weekly score from four doors, "a stranger is never parsed" twice.</li>
+  <li>Candidates for one dataset test: the owner-scoped 404s (five files) and three copies of the Laya response helper.</li>
+  <li><code>app(HandleInboundMessage::class)->handle(telegramText(...))</code> appears 47 times; a <code>say()</code> helper would make every chat test read like the conversation.</li>
+  <li>Nineteen global helper functions live inside test files; one name clash stops the whole run. Unused: <code>fakeNutritionParser()</code>, <code>toBeOne</code>, and the <code>failing()</code> of the limitation parser and classifier fakes (so those two outage paths are untested).</li>
+</ul>
+
+<h3>Speed and isolation</h3>
+<div class="table-wrap"><table>
+  <tr><th>Measured</th><th>Value</th><th>What to do</th></tr>
+  <tr><td>Full run, SQLite / Postgres</td><td>8.5 s / 13 s</td><td>Keep Postgres in CI; it is the only guard on column types</td></tr>
+  <tr><td>Four failed-login tests</td><td>3.3 s (39%)</td><td>Laravel pads each failed login to 200 ms on purpose. Set <code>auth.timebox_duration</code> to 0 in tests: about 5 s total</td></tr>
+  <tr><td>AI requests during a full run</td><td>0 (spy server)</td><td>Safe by care: the container has a real Gemini key and the log parser has no default fake. Blank the keys in <code>phpunit.xml</code>, bind every fake, add <code>Http::preventStrayRequests()</code></td></tr>
+  <tr><td>Order dependence</td><td>none found</td><td>One test re-runs the service provider mid-test; one leaves a temp file behind</td></tr>
+</table></div>
+
+<!-- 8 -->
+<h2 id="missed">Why the tests missed the bugs</h2>
+<div class="table-wrap"><table>
+  <tr><th>Bug</th><th>Closest test</th><th>Why it passed</th></tr>
+  <tr><td>Profile question takes over logs</td><td><code>ProfileCheckInTest:82</code></td><td>Used "benched 100 3x5", which starts with a word; the regex needs a leading digit</td></tr>
+  <tr><td>Area question takes over workouts</td><td><code>LimitationProgressTest:53</code></td><td>Used a clear area (knee), so the area question was never open</td></tr>
+  <tr><td>Red-flag takes the coach's "yes"</td><td><code>LimitationProgressTest:41</code></td><td>Answers right after the screen; no coach turn in between</td></tr>
+  <tr><td>"Other" injury merged</td><td><code>LimitationProgressTest:91</code></td><td>Used knee, a listed area; "other" with no candidates never appears</td></tr>
+  <tr><td>Retry not safe to repeat</td><td><code>KeptMessagesTest:78</code></td><td>Resends before the retry, never during; the fake channel cannot fail</td></tr>
+  <tr><td>Retry replies on Telegram</td><td><code>KeptMessagesTest</code></td><td>The channel is injected; every message comes from Telegram</td></tr>
+  <tr><td>Every error is an outage</td><td><code>AiUsageTest:65</code></td><td>The test asserts the bug</td></tr>
+  <tr><td>Tokens not revoked</td><td><code>LinkingTest:159</code></td><td>Checks identities and logs after unlink, not tokens</td></tr>
+</table></div>
+
+<!-- 9 -->
+<h2 id="testfix">Fixing the tests</h2>
+<h3>The ten most valuable missing tests</h3>
+<ol class="prose">
+  <li>With a profile question open (and within 10 minutes of a correction), real workout and injury texts are logged and the profile stays unchanged.</li>
+  <li>With "Where exactly?" open, "shoulder press 3x10 30kg" is logged and the area stays empty; only a bare number or area name is taken.</li>
+  <li>A pulled hamstring with an active back injury creates a second injury; the back's end date is unchanged.</li>
+  <li>With a red-flag screen open, a "yes" after a coach question does not flag the injury.</li>
+  <li>A resend during the retry's AI call is logged once; a failed send keeps the reply retryable without a second log; exhausted tries end as failed.</li>
+  <li>A kept message from the simulator never calls Telegram; a Telegram one replies to the right chat.</li>
+  <li>A plain bug in an adapter is reported and not kept; overload and connection errors keep the message.</li>
+  <li>Answering an open weight, area or red-flag question fires the profile refresh and writes nothing if a step throws.</li>
+  <li><code>channel:unlink</code> deletes the person's tokens; an expired token gets 401.</li>
+  <li>A classifier or limitation-parser outage on the chat path keeps the message.</li>
+</ol>
+<h3>Structure</h3>
+<p class="prose">Feature and Unit are split by "needs the database", not by what is tested. Grouping by journey would make the suite read as a specification: Chat/Logging, Chat/OpenQuestions, Chat/Limitations, Chat/Coach, Chat/Retries, AppApi, Adapters, Tools.</p>
+
+<!-- 10 -->
+<h2 id="order">Order of work</h2>
+<ol class="steps">
+  <li><strong>Test guards first (an hour).</strong> Blank the AI keys, bind every fake, block stray HTTP, set the login timebox to 0 in tests. Switch the fakes' <code>failing()</code> to real availability errors and add a separate <code>broken()</code>.</li>
+  <li><strong>Handlers take only whole answers (half a day).</strong> Write missing tests 1 to 4 from the reproductions, watch them fail, fix the profile, area and red-flag handlers and the "other" injury.</li>
+  <li><strong>A safe retry (a day).</strong> Tests 5 to 7 and 10, then claim the row, send separately, a <code>failed()</code> handler, the channel by provider, <code>AiCall</code> wrapping only availability errors, and rewrite <code>AiUsageTest:65</code>.</li>
+  <li><strong>Production hardening (half a day).</strong> <code>pcntl</code>, <code>schedule:work</code>, worker timeouts, token expiry and revoke on unlink (test 9), the nutrition route gone, local ports on 127.0.0.1, answers in transactions with the event (test 8).</li>
+  <li><strong>Clean-up round.</strong> Delete the legacy code with its ~34 tests, fix the weak assertions, add the three adapter contract tests, indexes.</li>
+  <li><strong>Then the features.</strong> Exercise catalogue and strength calculator before the body map and plans; the classifier seam before the shadow run; the channel registry before WhatsApp; one outcome type before the app writes.</li>
+</ol>
+
+<footer>The same findings in Markdown: <code>docs/audit-2026-11-08.md</code>. How the system works: <a href="index.html">technical documentation</a>. Nothing in the code was changed by this audit.</footer>
+</main>
+</div>
+</body>
+</html>

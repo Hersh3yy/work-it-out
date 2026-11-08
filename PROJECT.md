@@ -270,6 +270,9 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-11-08 (evening) — test audit; technical docs and audit report as HTML
+- Hiren asked for an adversarial audit of the tests (amount, purpose, redundancy, speed), a readable report, and technical documentation as HTML and CSS. A fifth reviewer audited the suite; findings in `docs/audit-2026-11-08.md` ("The tests") and verified by hand: four failed-login tests take 39% of the run because of Laravel's 200 ms login timebox; `AiUsageTest:65` asserts the every-error-is-an-outage bug. Two pages in `docs/technical/` with one stylesheet (`style.css`, light and dark): `index.html` (architecture diagram, a message's journey, patterns, conversation, injuries, coach, profile, AI layer, outages, data model, API, background work, configuration, operations, testing) and `audit.html` (code and test audit, verdict, why tests missed the bugs, order of work). Preview: the `feetness-docs` entry in the Code folder's `.claude/launch.json` serves them on 127.0.0.1:8765. No app code changed.
+
 ### 2026-11-08 (later) — adversarial code audit
 - Hiren asked for an adversarial audit (patterns, clean code, SOLID, Laravel practice) before the next round of features. Four independent reviewers, one angle each; findings merged and the important ones reproduced by hand: an open profile question swallows logs ("run 5k" set the goal), the area question swallows workouts ("shoulder press" set the injury area), a new hamstring injury became an update to the back, no pcntl in production, tokens never expire, local Redis/app/Mailpit on all interfaces, the load map misreads names (crunch loads the knee). Written up in `docs/audit-2026-11-08.md` in three tiers with an order of work. Verdict: not ready for testers yet; tier 1 is about two days. No code changed.
 
