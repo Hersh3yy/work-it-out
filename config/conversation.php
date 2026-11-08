@@ -15,6 +15,13 @@ use App\Conversation\Commands\UndoCommand;
 return [
 
     /*
+    | A message the AI could not handle is kept and retried after these many
+    | seconds, one try each (App\Jobs\ProcessWaitingMessage); after the last
+    | one the person is told it did not go through.
+    */
+    'retry_delays' => [60, 180, 600, 1800],
+
+    /*
     | Slash commands, in the order Telegram's menu shows them
     | (php artisan channel:telegram:setup reads this list).
     */

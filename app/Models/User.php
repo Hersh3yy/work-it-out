@@ -100,6 +100,16 @@ class User extends Authenticatable
      *
      * @return HasMany<CoachTurn, $this>
      */
+    public function waitingMessages(): HasMany
+    {
+        return $this->hasMany(WaitingMessage::class);
+    }
+
+    /**
+     * Newest first.
+     *
+     * @return HasMany<CoachTurn, $this>
+     */
     public function coachTurns(): HasMany
     {
         return $this->hasMany(CoachTurn::class)->latest('created_at')->latest('id');

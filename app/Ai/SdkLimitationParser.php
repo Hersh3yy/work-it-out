@@ -17,11 +17,11 @@ final readonly class SdkLimitationParser implements LimitationParser
 {
     public function parse(string $text): array
     {
-        $raw = (new LimitationAgent)->prompt(
+        $raw = ModelChain::ask('log', fn (?string $provider, ?string $model): array => (new LimitationAgent)->prompt(
             $text,
-            provider: config('ai.jobs.log.provider'),
-            model: config('ai.jobs.log.model'),
-        )->toArray();
+            provider: $provider,
+            model: $model,
+        )->toArray());
 
         $area = BodyArea::tryFrom((string) ($raw['body_area'] ?? ''));
         $candidates = array_values(array_unique(array_filter(array_map(

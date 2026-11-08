@@ -31,11 +31,11 @@ final readonly class SdkMessageClassifier implements MessageClassifier
             return $byRules;
         }
 
-        $raw = (new ClassifierAgent)->prompt(
+        $raw = ModelChain::ask('log', fn (?string $provider, ?string $model): array => (new ClassifierAgent)->prompt(
             $text,
-            provider: config('ai.jobs.log.provider'),
-            model: config('ai.jobs.log.model'),
-        )->toArray();
+            provider: $provider,
+            model: $model,
+        )->toArray());
 
         $kind = MessageKind::tryFrom((string) ($raw['kind'] ?? ''));
 

@@ -14,4 +14,4 @@ Or one message:
 docker compose exec app php artisan log:simulate --user=1 "bench 3x8 80, then incline db 3x10"
 ```
 
-With no AI key configured every log replies "Couldn't reach the AI"; the parser needs a provider (see `.env.example`, `AI_LOG_PROVIDER`). In M4 these lines get expected facts next to them and become the live eval set that grades the parser prompt.
+With no AI key configured every log is kept for a retry ("The AI is busy right now"); the parser needs a provider (see `.env.example`, `AI_LOG_PROVIDER`). In M4 these lines get expected facts next to them and become the live eval set that grades the parser prompt.

@@ -111,8 +111,8 @@ The advice is "vanilla" partly because the model has nothing of ours to lean on.
 
 ## 8. Proposed order
 
-1. Answer handlers accept real replies ("5 reps each set", "70kg....now what next", "No, general fitness") and a reply can both answer and ask. Plain code, about half a day. Fixes most of what went wrong this week.
-2. Fallback provider plus the inbox with retries (sections 2.1 and 2.2). About a day.
+1. Answer handlers accept real replies ("5 reps each set", "70kg....now what next", "No, general fitness") and a reply can both answer and ask. Done 7 Nov.
+2. Fallback provider plus the inbox with retries (sections 2.1 and 2.2). Done 8 Nov: `ModelChain`, `waiting_messages`, `ProcessWaitingMessage`; the coach sees waiting messages (2.3).
 3. Thinking level per agent and one measured profile comparison (section 5). An hour plus Hiren's run.
 4. Prices in `config/ai.php` so `ai:usage` shows money.
 5. DeepSeek Flash on our eval sets.

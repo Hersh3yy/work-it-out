@@ -10,6 +10,7 @@ use App\Models\CoachTurn;
 use App\Models\Limitation;
 use App\Models\LimitationUpdate;
 use App\Models\User;
+use App\Models\WaitingMessage;
 use App\Profile\ProfileFacts;
 use App\Services\Exercises\ExerciseLine;
 
@@ -43,6 +44,7 @@ final readonly class CoachContext
             'limitations' => self::limitations($user),
             'recent_logs' => self::recentLogs($user),
             'recent_exchanges' => self::recentTurns($user),
+            'messages_not_handled_yet' => self::waitingMessages($user),
         ]);
     }
 
@@ -121,6 +123,19 @@ final readonly class CoachContext
             'saved_as' => mb_strimwidth($log->summary, 0, $chars, '…'),
             'exercises' => $log->exerciseEntries->sortBy('sort_order')->map($lines->for(...))->values()->all(),
         ];
+    }
+
+    /**
+     * Messages kept because the AI was down, so the coach can say they are
+     * not saved yet instead of answering as if they never arrived.
+     *
+     * @return list<array{sent_at: string, message: string}>
+     */
+    private static function waitingMessages(User $user): array
+    {
+        return $user->waitingMessages()->waiting()->oldest()->get()
+            ->map(static fn (WaitingMessage $w): array => ['sent_at' => $w->created_at->format('Y-m-d H:i'), 'message' => $w->excerpt()])
+            ->values()->all();
     }
 
     /**

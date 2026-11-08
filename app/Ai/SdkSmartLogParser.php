@@ -26,11 +26,11 @@ final readonly class SdkSmartLogParser implements SmartLogParser
     public function parse(User $user, string $message): array
     {
         $agent = new SmartLogAgent(now()->toDateString());
-        $ask = fn (): array => $agent->prompt(
+        $ask = fn (): array => ModelChain::ask('log', fn (?string $provider, ?string $model): array => $agent->prompt(
             $message,
-            provider: config('ai.jobs.log.provider'),
-            model: config('ai.jobs.log.model'),
-        )->toArray();
+            provider: $provider,
+            model: $model,
+        )->toArray());
 
         try {
             return $this->normalize($ask());

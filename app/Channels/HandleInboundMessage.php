@@ -4,21 +4,16 @@ declare(strict_types=1);
 
 namespace App\Channels;
 
-use App\Actions\Coach\AnswerCoachQuestion;
+use App\Actions\Conversation\KeepMessage;
 use App\Actions\Linking\RedeemLinkCode;
-use App\Actions\SmartLog\RecordSmartLog;
 use App\Conversation\Answers\AnswerChain;
 use App\Conversation\Commands\ChatCommands;
 use App\Conversation\Commands\HelpCommand;
-use App\Conversation\LimitationConversation;
-use App\Enums\LogSource;
+use App\Conversation\RespondToText;
 use App\Exceptions\AiUnavailable;
-use App\Interpretation\Interpreter;
-use App\Limitations\LimitationCheck;
 use App\Models\ChannelIdentity;
 use App\Models\ChannelLinkCode;
 use App\Models\User;
-use App\Profile\ProfileCheckIn;
 use Illuminate\Support\Facades\RateLimiter;
 
 /**
@@ -27,10 +22,9 @@ use Illuminate\Support\Facades\RateLimiter;
  * In this order: an unlinked sender (an invite code links them, anyone else
  * gets one polite reply a day), a slash command, an answer to an open
  * question (no AI; words after the answer go on as their own message), then
- * the interpreter decides between a log, a limitation and a coach question.
- * Right after a coach answer, a message the interpreter cannot place ("you got
- * that wrong") is a follow-up for the coach. It knows nothing about Telegram;
- * a WhatsApp adapter would call the same method.
+ * the AI path (RespondToText: a log, a limitation or a coach question). When
+ * the AI is down the message is kept and answered later instead of lost. It
+ * knows nothing about Telegram; a WhatsApp adapter would call the same method.
  */
 final readonly class HandleInboundMessage
 {
@@ -48,13 +42,8 @@ final readonly class HandleInboundMessage
     public function __construct(
         private ChatCommands $commands,
         private AnswerChain $answers,
-        private Interpreter $interpreter,
-        private RecordSmartLog $record,
-        private ReplyComposer $replies,
-        private LimitationCheck $limitationCheck,
-        private ProfileCheckIn $checkIn,
-        private LimitationConversation $limitations,
-        private AnswerCoachQuestion $coach,
+        private RespondToText $respond,
+        private KeepMessage $keep,
         private RedeemLinkCode $links,
     ) {}
 
@@ -87,57 +76,31 @@ final readonly class HandleInboundMessage
             }
         }
 
-        return $this->freeText($user, $text, $message->provider->logSource());
+        return $this->freeText($user, $message, $text);
     }
 
-    private function freeText(User $user, string $text, LogSource $source): string
+    private function freeText(User $user, InboundMessage $message, string $text): string
     {
         $answer = $this->answers->handle($user, $text);
 
         return match (true) {
-            $answer === null => $this->interpret($user, $text, $source),
+            $answer === null => $this->respondWithAi($user, $message, $text),
             $answer->followUp === null => $answer->reply,
-            default => $answer->reply."\n\n".$this->interpret($user, $answer->followUp, $source),
+            default => $answer->reply."\n\n".$this->respondWithAi($user, $message, $answer->followUp),
         };
     }
 
-    private function interpret(User $user, string $text, LogSource $source): string
+    /** Needs the AI; when it is down the message is kept and answered later. */
+    private function respondWithAi(User $user, InboundMessage $message, string $text): string
     {
+        $this->keep->markResent($user, $text);
+
         try {
-            $interpretation = $this->interpreter->interpret($user, $text);
+            return $this->respond->reply($user, $text, $message->provider->logSource());
         } catch (AiUnavailable) {
-            return "Couldn't reach the AI just now, so nothing was saved. Try again in a minute.";
-        }
+            $this->keep->handle($user, $message, $text);
 
-        if ($interpretation->isCoachQuestion() || ($interpretation->isNotUnderstood() && $this->coach->isTalkingWith($user))) {
-            return $this->askCoach($user, $text);
-        }
-
-        if ($interpretation->isLimitation()) {
-            return $this->limitations->reply($user, $text, $interpretation->limitation, $source);
-        }
-
-        if (! $interpretation->shouldRecord()) {
-            return (string) $interpretation->reply;
-        }
-
-        $result = $this->record->handle($user, $text, $interpretation->parsed, $source);
-        $lines = [$this->replies->receipt($result)];
-
-        if ($result->log->questions === null || $result->log->questions === []) {
-            $lines[] = $this->limitationCheck->for($user, $result->entries);
-            $lines[] = $this->checkIn->next($user);
-        }
-
-        return implode("\n\n", array_filter($lines));
-    }
-
-    private function askCoach(User $user, string $question): string
-    {
-        try {
-            return $this->coach->handle($user, $question);
-        } catch (AiUnavailable) {
-            return "Couldn't reach the coach just now. Try again in a minute.";
+            return KeepMessage::REPLY;
         }
     }
 

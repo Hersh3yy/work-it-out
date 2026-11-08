@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Actions\Conversation\KeepMessage;
 use App\Channels\HandleInboundMessage;
 use App\Conversation\Commands\HelpCommand;
+use Illuminate\Support\Facades\Queue;
 use Tests\Fakes\FakeSmartLogParser;
 
 it('never parses a message from a sender that is not linked', function (): void {
@@ -61,13 +63,14 @@ it('undoes the last log', function (): void {
         ->and($chat->handle(telegramText('/undo')))->toBe('Nothing to undo from the last 24 hours.');
 });
 
-it('replies and saves nothing when the AI is down', function (): void {
+it('keeps the message and saves nothing yet when the AI is down', function (): void {
+    Queue::fake();
     linkedUser();
     fakeSmartLogParser(FakeSmartLogParser::workout()->failing());
 
-    expect(app(HandleInboundMessage::class)->handle(telegramText('benched 100 3x5')))
-        ->toStartWith("Couldn't reach the AI");
+    expect(app(HandleInboundMessage::class)->handle(telegramText('benched 100 3x5')))->toBe(KeepMessage::REPLY);
     $this->assertDatabaseCount('activity_logs', 0);
+    $this->assertDatabaseHas('waiting_messages', ['text' => 'benched 100 3x5', 'status' => 'waiting']);
 });
 
 it('answers /start and /help', function (string $command): void {

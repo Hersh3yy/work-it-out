@@ -13,20 +13,24 @@ use App\Exceptions\AiUnavailable;
 
 /**
  * Laravel AI SDK adapter for the CoachAdvisor port. Runs on the chat job's
- * model (config ai.jobs.chat), falling back to the log job's.
+ * model chain (config ai.jobs.chat, then the log job's, then ai.fallbacks)
+ * and remembers which model answered.
  */
-final readonly class SdkCoachAdvisor implements CoachAdvisor
+final class SdkCoachAdvisor implements CoachAdvisor
 {
+    private ?string $usedModel = null;
+
     /** Telegram's limit is 4096 characters; leave room. */
     private const int MAX_CHARS = 3500;
 
     public function answer(CoachContext $context, TrainerPersona $persona, string $question, AnswerDepth $depth): string
     {
-        $answer = trim((string) (new CoachAgent($persona, $context->toJson(), $depth))->prompt(
-            $question,
-            provider: config('ai.jobs.chat.provider') ?: config('ai.jobs.log.provider'),
-            model: $this->modelName(),
-        ));
+        $agent = new CoachAgent($persona, $context->toJson(), $depth);
+        $answer = trim(ModelChain::ask('chat', function (?string $provider, ?string $model) use ($agent, $question): string {
+            $this->usedModel = $model;
+
+            return (string) $agent->prompt($question, provider: $provider, model: $model);
+        }));
 
         if ($answer === '') {
             throw AiUnavailable::because(CoachAgent::class, 'empty answer');
@@ -37,6 +41,6 @@ final readonly class SdkCoachAdvisor implements CoachAdvisor
 
     public function modelName(): ?string
     {
-        return config('ai.jobs.chat.model') ?: config('ai.jobs.log.model');
+        return $this->usedModel ?? ModelChain::for('chat')[0]['model'];
     }
 }

@@ -50,6 +50,14 @@ return [
     ],
 
     /*
+    | Models tried after a job's own (and the log job's) when those are
+    | overloaded, rate limited or unreachable, in order, as provider:model,
+    | comma separated: AI_FALLBACKS=gemini:gemini-3.5-flash,deepseek:deepseek-flash
+    | (App\Ai\ModelChain).
+    */
+    'fallbacks' => array_values(array_filter(array_map('trim', explode(',', (string) env('AI_FALLBACKS', ''))))),
+
+    /*
     | Prices per million tokens in USD, keyed by model, from the provider's
     | pricing page (https://ai.google.dev/pricing for Gemini). Read by
     | php artisan ai:usage. A model without a price is reported as unpriced;

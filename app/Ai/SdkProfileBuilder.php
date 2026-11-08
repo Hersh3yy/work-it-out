@@ -9,14 +9,12 @@ use App\Contracts\Ai\ProfileBuilder;
 use App\Exceptions\AiUnavailable;
 use App\Profile\NoteLabel;
 use App\Profile\ProfileFacts;
-use Laravel\Ai\Exceptions\ProviderOverloadedException;
 
 /**
  * Laravel AI SDK adapter for the ProfileBuilder port. Runs on the profile
- * job's model (config ai.jobs.profile) and, when that model answers 503
- * "high demand", once more on the log job's model: a profile written by the
- * smaller model beats no profile. The answer is rebuilt from known keys
- * only; citation checks are UpdateProfile's.
+ * job's model chain (its model, then the log job's, then ai.fallbacks): a
+ * profile written by the smaller model beats no profile. The answer is
+ * rebuilt from known keys only; citation checks are UpdateProfile's.
  */
 final class SdkProfileBuilder implements ProfileBuilder
 {
@@ -30,7 +28,11 @@ final class SdkProfileBuilder implements ProfileBuilder
             'RECENT ENTRIES' => $recentEntries,
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
-        $raw = $this->askInOrder($prompt, self::modelsToTry());
+        $raw = ModelChain::ask('profile', function (?string $provider, ?string $model) use ($prompt): array {
+            $this->usedModel = $model;
+
+            return (new ProfileAgent)->prompt($prompt, provider: $provider, model: $model)->toArray();
+        });
 
         if (! is_array($raw['notes'] ?? null)) {
             throw AiUnavailable::because(ProfileAgent::class, 'payload missing notes');
@@ -41,43 +43,7 @@ final class SdkProfileBuilder implements ProfileBuilder
 
     public function modelName(): ?string
     {
-        return $this->usedModel ?? self::modelsToTry()[0];
-    }
-
-    /**
-     * The profile model first, then the log model when it is a different one.
-     *
-     * @return list<string|null>
-     */
-    public static function modelsToTry(): array
-    {
-        $profile = config('ai.jobs.profile.model') ?: null;
-        $log = config('ai.jobs.log.model') ?: null;
-
-        return $profile === null || $profile === $log ? [$log] : [$profile, $log];
-    }
-
-    /**
-     * @param  list<string|null>  $models
-     * @return array<string, mixed>
-     */
-    private function askInOrder(string $prompt, array $models): array
-    {
-        $provider = config('ai.jobs.profile.provider') ?: config('ai.jobs.log.provider');
-
-        foreach ($models as $i => $model) {
-            try {
-                $this->usedModel = $model;
-
-                return (new ProfileAgent)->prompt($prompt, provider: $provider, model: $model)->toArray();
-            } catch (ProviderOverloadedException $e) {
-                if ($i === array_key_last($models)) {
-                    throw $e;
-                }
-            }
-        }
-
-        return [];
+        return $this->usedModel ?? ModelChain::for('profile')[0]['model'];
     }
 
     /**

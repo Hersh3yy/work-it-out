@@ -38,6 +38,7 @@ AI_TEXT_MODEL=gemini-3.5-flash-lite
 AI_LOG_PROVIDER=gemini
 AI_LOG_MODEL=gemini-3.5-flash-lite
 AI_CLASSIFIER=llm
+AI_FALLBACKS=gemini:gemini-3.5-flash  # tried when the main model is overloaded or down
 GEMINI_API_KEY=...                 # paid tier before more than one user
 
 TELEGRAM_BOT_TOKEN=...             # the production bot (see "One bot per place")

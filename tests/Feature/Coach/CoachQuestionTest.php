@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Conversation\KeepMessage;
 use App\Channels\HandleInboundMessage;
 use App\Coach\AnswerDepth;
 use App\Coach\CoachContext;
@@ -10,6 +11,7 @@ use App\Enums\MessageKind;
 use App\Enums\TrainerPersona;
 use App\Interpretation\Interpreter;
 use App\Models\User;
+use Illuminate\Support\Facades\Queue;
 use Tests\Fakes\FakeCoachAdvisor;
 use Tests\Fakes\FakeSmartLogParser;
 
@@ -75,14 +77,15 @@ it('caps coach questions per day without touching logging', function (): void {
         ->and($coach->calls)->toHaveCount(2);
 });
 
-it('says the coach is unreachable and saves nothing when the AI is down', function (): void {
+it('keeps a coach question for later when the AI is down', function (): void {
+    Queue::fake();
     linkedUser();
     classifierSays(MessageKind::CoachQuestion);
     fakeCoach((new FakeCoachAdvisor)->failing());
 
-    expect(app(HandleInboundMessage::class)->handle(telegramText('foam roller?')))
-        ->toBe("Couldn't reach the coach just now. Try again in a minute.");
+    expect(app(HandleInboundMessage::class)->handle(telegramText('foam roller?')))->toBe(KeepMessage::REPLY);
     $this->assertDatabaseCount('coach_turns', 0);
+    $this->assertDatabaseHas('waiting_messages', ['text' => 'foam roller?']);
 });
 
 it('keeps the context the same size however long someone has logged', function (): void {
