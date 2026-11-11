@@ -20,9 +20,15 @@ use Illuminate\Support\Carbon;
  * @property string|null $model
  * @property Carbon $created_at
  */
-#[Fillable(['user_id', 'question', 'answer', 'depth', 'model'])]
+#[Fillable(['user_id', 'question', 'answer', 'depth', 'kind', 'model'])]
 final class CoachTurn extends Model
 {
+    /** They asked. */
+    public const string ASKED = 'asked';
+
+    /** The coach wrote first, the morning message. */
+    public const string DAILY = 'daily';
+
     /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {

@@ -36,6 +36,9 @@ final readonly class HandleInboundMessage
 
     private const int MAX_LINK_ATTEMPTS = 5;
 
+    /** "/daily 7", "/help@FeetnessBot": the word, then whatever follows. */
+    private const string COMMAND_WORD = '/^(\\/\\w+)(?:@\\w+)?\\s*(.*)$/su';
+
     /** "/start CODE" from an invite link, or "/link CODE" typed by hand. */
     private const string START_WITH_CODE = '/^\/(?:start|link)(?:@\w+)?\s+([A-Za-z0-9_-]{6,64})\s*$/';
 
@@ -68,11 +71,11 @@ final readonly class HandleInboundMessage
             return $this->linkWhileConnected($user, $m[1]);
         }
 
-        if (str_starts_with($text, '/')) {
-            $command = $this->commands->find((string) strtok($text, ' @'));
+        if (preg_match(self::COMMAND_WORD, $text, $m)) {
+            $command = $this->commands->find($m[1]);
 
             if ($command !== null) {
-                return $command->reply($user);
+                return $command->reply($user, trim($m[2]));
             }
         }
 

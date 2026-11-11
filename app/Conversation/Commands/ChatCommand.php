@@ -24,5 +24,6 @@ interface ChatCommand
     /** One line for the bot's menu. */
     public function menuDescription(): string;
 
-    public function reply(User $user): string;
+    /** @param  string  $argument  whatever followed the command word, trimmed; often empty */
+    public function reply(User $user, string $argument = ''): string;
 }

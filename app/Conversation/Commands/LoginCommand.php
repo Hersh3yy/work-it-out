@@ -23,7 +23,7 @@ final readonly class LoginCommand implements ChatCommand
         return 'Open the Feetness app';
     }
 
-    public function reply(User $user): string
+    public function reply(User $user, string $argument = ''): string
     {
         return 'Your sign-in link for the Feetness app (works once, '.IssueLoginLink::VALID_MINUTES." minutes):\n".$this->loginLinks->handle($user);
     }

@@ -7,7 +7,8 @@ namespace Tests\Fakes;
 use App\Contracts\Channels\ChatChannel;
 
 /**
- * Records what the app sends on its own (a retried message's reply).
+ * Chat channel for tests: remembers every message the app sends on its own
+ * (a retried message's reply, the morning message).
  */
 final class FakeChatChannel implements ChatChannel
 {

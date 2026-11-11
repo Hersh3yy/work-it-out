@@ -10,6 +10,7 @@ use App\Enums\TrainerPersona;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -23,6 +24,7 @@ use Laravel\Sanctum\HasApiTokens;
     'email',
     'password',
     'trainer_persona',
+    'daily_coaching_hour',
     'experience_level',
     'training_days_per_week',
     'primary_goal',
@@ -49,6 +51,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'trainer_persona' => TrainerPersona::class,
+            'daily_coaching_hour' => 'integer',
             'experience_level' => ExperienceLevel::class,
             'primary_goal' => PrimaryGoal::class,
             'goal_deadline' => 'date',
@@ -135,6 +138,27 @@ class User extends Authenticatable
     public function diaryEntries(): HasMany
     {
         return $this->hasMany(DiaryEntry::class)->latest();
+    }
+
+    /**
+     * Who gets the morning message now: linked to a chat, heard from within
+     * coach.daily.quiet_after_days, their hour in coach.daily.timezone, and
+     * not sent today.
+     *
+     * @param  Builder<User>  $query
+     */
+    public function scopeDueForMorningMessage(Builder $query): void
+    {
+        $hour = (int) now()->timezone((string) config('coach.daily.timezone'))->format('G');
+        $heardSince = now()->subDays((int) config('coach.daily.quiet_after_days'));
+
+        $query
+            ->where('daily_coaching_hour', $hour)
+            ->whereHas('channelIdentities')
+            ->where(static fn (Builder $q) => $q
+                ->whereHas('activityLogs', static fn (Builder $l) => $l->where('created_at', '>=', $heardSince))
+                ->orWhereHas('coachTurns', static fn (Builder $t) => $t->where('kind', CoachTurn::ASKED)->where('created_at', '>=', $heardSince)))
+            ->whereDoesntHave('coachTurns', static fn (Builder $t) => $t->where('kind', CoachTurn::DAILY)->where('created_at', '>=', today()));
     }
 
     /**

@@ -26,7 +26,7 @@ final readonly class BetterCommand implements ChatCommand
         return 'An injury has healed';
     }
 
-    public function reply(User $user): string
+    public function reply(User $user, string $argument = ''): string
     {
         $limitation = $user->limitations()->active()->latest('started_on')->first();
 

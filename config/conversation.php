@@ -7,6 +7,7 @@ use App\Conversation\Answers\LimitationChoiceAnswer;
 use App\Conversation\Answers\ProfileQuestionAnswer;
 use App\Conversation\Answers\RedFlagScreenAnswer;
 use App\Conversation\Commands\BetterCommand;
+use App\Conversation\Commands\DailyCommand;
 use App\Conversation\Commands\HelpCommand;
 use App\Conversation\Commands\LoginCommand;
 use App\Conversation\Commands\ProfileCommand;
@@ -31,6 +32,7 @@ return [
         ProfileCommand::class,
         LoginCommand::class,
         BetterCommand::class,
+        DailyCommand::class,
     ],
 
     /*

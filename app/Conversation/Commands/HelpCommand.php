@@ -16,7 +16,8 @@ final readonly class HelpCommand implements ChatCommand
         ."/undo removes your last log.\n"
         ."/me shows your profile, /login opens the app.\n\n"
         ."Ask me anything about your training: \"30 min, 3 things, go\", \"foam roller for my back?\"\n\n"
-        .'Tell me about an injury ("hurt my back, going slow for 2 weeks") and how it is going ("back is better today"); /better when it has healed.';
+        ."Tell me about an injury (\"hurt my back, going slow for 2 weeks\") and how it is going (\"back is better today\"); /better when it has healed.\n\n"
+        .'Every morning at 8 the coach texts you what today is for; /daily 7 moves it, /daily off stops it.';
 
     public function names(): array
     {
@@ -28,7 +29,7 @@ final readonly class HelpCommand implements ChatCommand
         return 'How to log a workout';
     }
 
-    public function reply(User $user): string
+    public function reply(User $user, string $argument = ''): string
     {
         return self::TEXT;
     }

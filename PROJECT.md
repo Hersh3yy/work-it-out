@@ -260,7 +260,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [ ] M12 Client v1: Nuxt 4 chosen on 2026-10-29 (`client/`, read-only today); writing from the app (log a workout, edit, answer a question) and the Telegram Login Widget come after the API contract <!-- id:f2 cu:123kjkdmppz -->
 - [ ] Multi-user linking (link codes, `/link`, `/unlink`), only when a named second person wants in <!-- id:f3 cu:123kjkdmpq0 -->
 - [ ] WhatsApp adapter (Meta Cloud API direct), not before Telegram has run two weeks <!-- id:f4 cu:123kjkdmpq1 -->
-- [ ] Proactive nudges from Lt. Surge on a missed day (scheduler + `ChatChannel::send`) <!-- id:f5 cu:123kjkdmpq2 -->
+- [x] The morning message: once a day at the person's hour the coach writes first from the living context (`coach:daily` hourly, `SendDailyCoaching`, `/daily 7`, `/daily off`). Done 2026-11-11. A missed-day nudge can reuse the same path <!-- id:f5 cu:123kjkdmpq2 -->
 - [ ] Perf: cache/aggregate PersonalRecords; watch integration; RAG over training material; per-user timezone; README + CLAUDE.md; package-currency pass <!-- id:f6 cu:123kjkdmpq3 -->
 
 ---
@@ -269,6 +269,10 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-11-11 — the morning message
+- Hiren, unhappy after the weekend (logs not yet seen; he runs the audit), asked for proactive coaching once a day at 8, configurable, next to asking. Built on `daily-coaching`: `users.daily_coaching_hour` (default 8, null off) and `coach_turns.kind` (asked, daily); `User::dueForMorningMessage()` scope; `coach:daily` hourly from the scheduler (`--user=email` sends now and prints); `SendDailyCoachingTo` job (unique per person per day, 3 tries 10 min apart); `SendDailyCoaching` action with a fixed morning brief over `CoachContext`, stored as a daily turn, sent on every linked chat through `ChatChannel`; `CoachBudget` (the monthly cap, now shared with asked questions); `/daily` command; `ChatCommand::reply` takes the argument after the word (`HandleInboundMessage::COMMAND_WORD`); `FakeChatChannel`. 7 tests; 290 on SQLite.
+- Hiren's steps: redeploy happens on push; run `channel:telegram:setup` on the server so `/daily` is in the menu; the first message comes at 08:00 Amsterdam tomorrow, or now with `php artisan coach:daily --user=hiren.budhrani@mogelijk.nl`.
 
 ### 2026-11-09 — step 0 of the audit: test guards; docs on the journey, classifier and prompts
 - Hiren: "go for next step then push", and expand the technical documentation on Laya and the classifier, the prompts, and an illustrated journey of a message (logging, profile update, AI usage).

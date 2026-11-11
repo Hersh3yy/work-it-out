@@ -32,4 +32,16 @@ return [
     // Coach questions per person per day. Logging is never capped.
     'daily_limit' => (int) env('COACH_DAILY_LIMIT', 30),
 
+    /*
+    | The morning message: once a day, at the person's hour (users.daily_coaching_hour,
+    | /daily in chat, null is off) in this timezone, the coach writes first. Nobody
+    | who has been silent for quiet_after_days gets one.
+    */
+    'daily' => [
+        'enabled' => (bool) env('COACH_DAILY_ENABLED', true),
+        'timezone' => env('COACH_DAILY_TIMEZONE', 'Europe/Amsterdam'),
+        'default_hour' => 8,
+        'quiet_after_days' => 14,
+    ],
+
 ];

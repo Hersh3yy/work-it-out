@@ -118,7 +118,7 @@ it('sets the bot command menu', function (): void {
     $this->artisan('channel:telegram:setup')->expectsOutputToContain('@FeetnessBot is ready')->assertSuccessful();
 
     Http::assertSent(fn (Request $r): bool => str_ends_with($r->url(), '/setMyCommands')
-        && array_column($r['commands'], 'command') === ['help', 'undo', 'me', 'login', 'better']);
+        && array_column($r['commands'], 'command') === ['help', 'undo', 'me', 'login', 'better', 'daily']);
 });
 
 it('tells a connected person they are connected and uses up their own link', function (): void {

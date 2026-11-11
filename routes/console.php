@@ -17,3 +17,7 @@ Schedule::command('profile:rebuild --all --full')->weeklyOn(1, '04:00')->without
 // Monday morning: last week's AI calls, tokens and cost per job, kept in
 // storage/logs/ai-usage.log (php artisan ai:usage prints it any time).
 Schedule::command('ai:usage --since=7d --by=job')->weeklyOn(1, '05:00')->appendOutputTo(storage_path('logs/ai-usage.log'));
+
+// Every hour on the hour: the morning message for everyone whose hour it is
+// (users.daily_coaching_hour in config coach.daily.timezone).
+Schedule::command('coach:daily')->hourly()->withoutOverlapping();

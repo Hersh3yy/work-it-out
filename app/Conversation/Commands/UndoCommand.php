@@ -28,7 +28,7 @@ final readonly class UndoCommand implements ChatCommand
         return 'Remove your last log';
     }
 
-    public function reply(User $user): string
+    public function reply(User $user, string $argument = ''): string
     {
         $log = $user->activityLogs()->where('created_at', '>=', now()->subDay())->first();
 

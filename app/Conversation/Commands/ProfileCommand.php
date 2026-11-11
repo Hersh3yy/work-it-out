@@ -23,7 +23,7 @@ final readonly class ProfileCommand implements ChatCommand
         return 'Your profile and notes';
     }
 
-    public function reply(User $user): string
+    public function reply(User $user, string $argument = ''): string
     {
         return $this->summary->for($user);
     }
