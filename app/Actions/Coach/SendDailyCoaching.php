@@ -25,7 +25,7 @@ use App\Services\Ai\AiCall;
  */
 final readonly class SendDailyCoaching
 {
-    private const string BRIEF = 'Morning message for %s, %s. Nobody asked; you write first. Say what today is for, given their plan (training days a week), what they trained in the last 7 days, their goal and their limitation: either one session with loads they can walk in with, or a rest or walk instruction with its reason. Up to 8 short lines. Start with the day, not with a greeting or their name. End with one question back: how the limitation feels today when one is active with no update in the last 2 days; otherwise their body weight when none was logged this week; otherwise no question.';
+    private const string BRIEF = 'Morning message for %s, %s. Nobody asked; you write first. Say what today is for, given their plan (training days a week), what they trained in the last 7 days, their goal and their limitation: either one session they can walk in with, or a rest or walk instruction with its reason. A session has a warm-up line, then numbered exercises with sets x reps and a load in kg: a lift they did before moves one small step up (2.5 kg, or two reps) when its last sets were all completed, a new lift gets a starting load from a lift on record, and a lift they said they want back gets its next step and the sign that unlocks the step after. Up to 10 short lines. Start with the day, not with a greeting or their name. End with exactly one question back, the first that applies: how the limitation feels today when one is active and how_it_is_going has nothing from the last 2 days; their body weight when none was logged in the last 7 days; otherwise none.';
 
     public function __construct(
         private CoachAdvisor $advisor,
