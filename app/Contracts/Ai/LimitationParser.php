@@ -10,6 +10,9 @@ use App\Exceptions\AiUnavailable;
  * Port for reading an injury or limitation out of a message about the user
  * ("hurt my back, need to go slow for 2 weeks").
  *
+ * Told which limitations are already on file and what the coach last asked,
+ * so "98%" after "How does the back feel?" reads as an update to the back.
+ *
  * Returns facts only: whether the message states a limitation at all, the
  * body area from the fixed list (or a few candidates when unclear), the
  * severity when stated, how long it is expected to last, when it started.
@@ -20,6 +23,7 @@ use App\Exceptions\AiUnavailable;
 interface LimitationParser
 {
     /**
+     * @param  array{active: list<array{area: string, since: string, note: string}>, coach_asked: string|null}|array{}  $context  App\Limitations\LimitationContext::toArray()
      * @return array{
      *     is_limitation: bool,
      *     body_area: string|null,
@@ -32,5 +36,5 @@ interface LimitationParser
      *
      * @throws AiUnavailable
      */
-    public function parse(string $text): array;
+    public function parse(string $text, array $context = []): array;
 }

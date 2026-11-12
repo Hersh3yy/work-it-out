@@ -16,6 +16,9 @@ final class FakeLimitationParser implements LimitationParser
     /** @var list<string> */
     public array $calls = [];
 
+    /** @var list<array<string, mixed>> what the reader was told, one per call */
+    public array $contexts = [];
+
     /**
      * @param  array<string, mixed>  $facts
      */
@@ -47,9 +50,10 @@ final class FakeLimitationParser implements LimitationParser
         ]);
     }
 
-    public function parse(string $text): array
+    public function parse(string $text, array $context = []): array
     {
         $this->calls[] = $text;
+        $this->contexts[] = $context;
 
         $this->failIfAsked();
 

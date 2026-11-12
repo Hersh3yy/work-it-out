@@ -17,6 +17,7 @@ use App\Interpretation\Rules\InterpretationRule;
 use App\Interpretation\Rules\RepsTimesSetsHasTwoReadings;
 use App\Interpretation\Rules\WeightedLiftNeedsSetsAndReps;
 use App\Interpretation\Rules\WorkoutNeedsAnExercise;
+use App\Limitations\LimitationContext;
 use App\Limitations\RedFlags;
 use App\Models\User;
 use App\Services\Ai\AiCall;
@@ -61,9 +62,14 @@ final readonly class Interpreter
         }
 
         $classification = $this->ai->run($user, ClassifierAgent::class, fn (): Classification => $this->classifier->classify($text));
+        $limitations = LimitationContext::for($user);
 
         if ($classification->kind === MessageKind::Unknown) {
-            return new Interpretation($classification, reply: self::NOT_UNDERSTOOD);
+            $facts = $limitations->hasActive() ? $this->limitationFacts($user, $text, $limitations) : null;
+
+            return $facts !== null && $facts['is_limitation']
+                ? new Interpretation($classification, limitation: $facts)
+                : new Interpretation($classification, reply: self::NOT_UNDERSTOOD);
         }
 
         if ($classification->kind === MessageKind::CoachQuestion) {
@@ -75,7 +81,7 @@ final readonly class Interpreter
         }
 
         if ($classification->kind === MessageKind::GoalOrInfo) {
-            $facts = $this->ai->run($user, LimitationAgent::class, fn (): array => $this->limitations->parse($text));
+            $facts = $this->limitationFacts($user, $text, $limitations);
 
             if ($facts['is_limitation']) {
                 return new Interpretation($classification, limitation: $facts);
@@ -95,7 +101,19 @@ final readonly class Interpreter
             }
         }
 
-        return new Interpretation($classification, $parsed);
+        $alsoAbout = $classification->kind === MessageKind::Workout && $limitations->isMentionedIn($text)
+            ? $this->limitationFacts($user, $text, $limitations)
+            : null;
+
+        return new Interpretation($classification, $parsed, limitation: $alsoAbout !== null && $alsoAbout['is_limitation'] ? $alsoAbout : null);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function limitationFacts(User $user, string $text, LimitationContext $context): array
+    {
+        return $this->ai->run($user, LimitationAgent::class, fn (): array => $this->limitations->parse($text, $context->toArray()));
     }
 
     /**

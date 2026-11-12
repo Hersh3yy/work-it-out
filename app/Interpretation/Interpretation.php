@@ -41,9 +41,16 @@ final readonly class Interpretation
         return $this->classification->kind === MessageKind::Unknown;
     }
 
+    /** The message is about a limitation and nothing else. */
     public function isLimitation(): bool
     {
-        return $this->reply === null && $this->limitation !== null;
+        return $this->reply === null && $this->limitation !== null && $this->parsed === null;
+    }
+
+    /** A log that also says how a limitation is going. */
+    public function alsoAboutLimitation(): bool
+    {
+        return $this->shouldRecord() && $this->limitation !== null;
     }
 
     /**

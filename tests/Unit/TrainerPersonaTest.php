@@ -8,7 +8,7 @@ it('gives every coach a voice for injuries, speed requests and corrections', fun
     expect($coach->voice())
         ->toContain('When they are hurt:')
         ->toContain('When they ask for speed')
-        ->toContain('When they change their mind or correct you:')
+        ->toContain('When they correct a fact you got wrong:')
         ->toContain('Tone example, never reuse its words')
         ->and($coach->systemPrompt())->toStartWith('You are '.$coach->label());
 })->with(TrainerPersona::cases());

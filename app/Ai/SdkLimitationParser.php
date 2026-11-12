@@ -15,10 +15,10 @@ use App\Enums\LimitationSeverity;
  */
 final readonly class SdkLimitationParser implements LimitationParser
 {
-    public function parse(string $text): array
+    public function parse(string $text, array $context = []): array
     {
         $raw = ModelChain::ask('log', fn (?string $provider, ?string $model): array => (new LimitationAgent)->prompt(
-            $text,
+            self::prompt($text, $context),
             provider: $provider,
             model: $model,
         )->toArray());
@@ -40,5 +40,22 @@ final readonly class SdkLimitationParser implements LimitationParser
             'started_days_ago' => $clampDays($raw['started_days_ago'] ?? null),
             'note' => mb_substr(trim((string) ($raw['note'] ?? '')), 0, 120),
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     */
+    private static function prompt(string $text, array $context): string
+    {
+        $known = array_map(
+            static fn (array $l): string => sprintf('%s since %s (%s)', $l['area'], $l['since'], $l['note']),
+            $context['active'] ?? [],
+        );
+
+        return implode("\n", [
+            'KNOWN LIMITATIONS: '.($known === [] ? 'none' : implode('; ', $known)),
+            'LAST COACH QUESTION: '.($context['coach_asked'] ?? 'none'),
+            'MESSAGE: '.$text,
+        ]);
     }
 }
