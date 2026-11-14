@@ -26,6 +26,7 @@
 
 - Server access: `ssh hiren@84.247.178.198` (this laptop's key; user in the `docker` group). App container: `A=$(docker ps --format "{{.Names}}" | grep gbvqkbpmen41pdhf1eqgkzca | head -1)`, then `docker exec $A php artisan ...` (e.g. `channel:invite email --name=X`, `channel:unlink email`). Deploy history: `docker exec coolify-db psql -U coolify -d coolify -Atc "select id,status,left(commit,7),created_at from application_deployment_queues order by id desc limit 3"`.
 - Open: everything in `docs/alpha-launch.md` (new bot token, paid Gemini, firewall 8000/6001/6002, 2FA, backups, API domain with HTTPS, the app on Netlify, inviting testers).
+- Latest direction (2026-11-14): read `docs/direction-2026-11-14.md` before anything else. It holds Hiren's verdict on the advice (generic, no coaches in sight), the model switch for the coach that needs no code, the GDPR answer, what the app shows and lacks, and the build order that waits for his go.
 - Laptop bot: use a separate dev bot token in the local `.env`; never run `make bot` with the production token.
 
 **Every session:**
@@ -35,7 +36,7 @@
 3. `make test` (SQLite) and `make test-pg` (Postgres) must both be green (329 tests on 2026-11-09: about 5 s and 10 s). No test can reach a model or Telegram: keys are blanked in `phpunit.xml`, every AI port is faked in `tests/TestCase.php`, stray HTTP is refused.
 4. Local `.env` for real use: `GEMINI_API_KEY`, `AI_LOG_PROVIDER=gemini`, `AI_LOG_MODEL=gemini-3.5-flash-lite`, and the **dev** bot's `TELEGRAM_BOT_TOKEN` (never the production one while the server runs), then `docker compose up -d --force-recreate app`.
 5. Texting the local bot: `channel:telegram:setup` once, `channel:invite you@example.com` per person, `make bot` while you want replies. Interpreter alone, saving nothing: `docker compose exec app php artisan log:parse "text"`.
-6. The app is its own repository, `~/Code/feetness/feetness-app` (Nuxt 4 PWA; `npm install && npm run dev`, http://localhost:3000, API on 8088). Sign in with the link that `/login` prints (`php artisan log:simulate --user=1 "/login"`). It deploys on Netlify from that repository; before it can talk to production the API needs HTTPS on a real domain, then `APP_WEB_URL` and `CORS_ALLOWED_ORIGINS` here.
+6. The app is its own repository, `~/Code/feetness/feetness-app` (on the koala laptop `~/Documents/koala/feetness-app`; Nuxt 4 PWA; `npm install && npm run dev`, http://localhost:3000, API on 8088). Sign in with the link that `/login` prints (`php artisan log:simulate --user=1 "/login"`). It deploys on Netlify from that repository; before it can talk to production the API needs HTTPS on a real domain, then `APP_WEB_URL` and `CORS_ALLOWED_ORIGINS` here.
 7. Next backend item: the audit's order of work, step 1 (answer handlers take only whole answers; tier 1 items 1 to 4), then steps 2 to 5. Read `docs/technical/audit.html` first; the technical documentation is `docs/technical/index.html` (serve it with `python3 -m http.server 8766 --directory docs/technical`; 8765 is Laya's port). The shadow classifier and the feel question come after the clean-up round.
 8. Work to the gate, `pint`, both suites, push, CI green, diary entry here.
 
@@ -107,6 +108,11 @@ What keeps it yellow: the written profile and limitation parsing run on Gemini's
 | warning | Nutrition is still in the code (routes, controller, parser, meal branch in `RecordSmartLog`). Decided: delete in M3, after v0 | `routes/api.php`, `RecordSmartLog::recordMeal` |
 | minor | No login or register rate limiter beyond the global 60/min; no conversation ownership check in chat | `AppServiceProvider.php`, `AiTrainerController.php` |
 | minor | README is stock Laravel; `ruby-app-scaffold-prompt.md` is a stale spec | repo root |
+| major | The coach's advice reads generic (Hiren, 12 Nov): every coach answer runs on the cheapest model because `AI_CHAT_MODEL` is unset, answers average about 70 output tokens, and the same plan went out three times in three days | `config/ai.php` jobs, `CoachAgent`, `CoachContext`; `docs/direction-2026-11-14.md` |
+| major | No coach is visible: answers carry no name, `trainer_persona` stays at its default `lt_surge`, Telegram has no command to switch, the app shows no coach at all | `AnswerCoachQuestion.php`, `app/Conversation/Commands`, `feetness-app` |
+| minor | `gemini-3.5-flash`, the profile model on the server, is no longer on Google's price page (checked 12 Nov); `config/ai.php` `prices` is still empty | `config/ai.php` |
+| minor | The app shows a limitation's first note but none of its updates, and cuts off the date on the body weight tile | `feetness-app` `LimitationBanner.vue`, `WeekStats.vue` |
+| minor | `DatabaseSeeder` fills workout sessions and nutrition, not activity logs, so a fresh local database shows an empty app | `database/seeders/DatabaseSeeder.php` |
 | fixed 2026-11-12 | Replies about the back ("98%", "don't feel it at all") were saved as activity logs, never as updates, so the coach asked "How does the lower back feel today?" five times in a week; a question inside a log ("...does your advice change") got a receipt and no answer | `LimitationContext`, `Interpreter`, `AsksTheCoach`, `RespondToText` |
 | fixed 2026-11-05 | A workout the model summarized but returned no exercise rows for was saved hollow (5 Nov, four exercises lost); the coach then planned around it | `WorkoutNeedsAnExercise` |
 | fixed 2026-11-05 | The profile job swallowed a Gemini 503 and never retried; coach answers were capped at three lines for "what should I do"; the voice example sentence was copied into answers | `BuildProfile`, `AnswerDepth`, `CoachAgent` |
@@ -257,6 +263,13 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [ ] M9 Profile: intake gaps (`asked_field`, skip state, `GET /api/coaches`) and the profile build on explicit request (coach notes citing logs, local model allowed, never overwrites user fields) <!-- id:n10 cu:123kjkdmppv -->
 - [ ] M10 API contract: Resources everywhere, one envelope, idempotency keys, OpenAPI with drift test, exported fixtures. RELEASE 3 <!-- id:n11 cu:123kjkdmppw -->
 - [ ] Coach questions with a daily cap: the coach may ask at most N intake or goal questions per day (config), tracks what was asked, and captures short-term and long-term goals (new fields) so answers over chat persist. Lands with M7 or M9 <!-- id:n12 cu:123kjkdmppx -->
+- [ ] The coach on a better model, no code: `DEEPSEEK_API_KEY`, `AI_CHAT_PROVIDER=deepseek`, `AI_CHAT_MODEL=deepseek-v4-pro`, higher `COACH_TOKENS_*`, `AI_PROFILE_MODEL=gemini-3.8-flash` in Coolify. Hiren's step; values and reasons in `docs/direction-2026-11-14.md` <!-- id:n38 -->
+- [ ] Coaches visible, moved up by Hiren's verdict of 12 Nov (was "after the foundation"): the coach's name on every answer, `/coach` to switch, one command that asks all three for a short take. Waits for his go <!-- id:n39 -->
+- [ ] Answers built on the person's numbers: one observation with a date and a load from their logs, the coach's last plans in its context with whether they were done, never the same plan twice. Waits for his go <!-- id:n40 -->
+- [ ] `coach:try "question" --model=...`: the same question on two models side by side, nothing saved, so a model switch is judged on real answers <!-- id:n41 -->
+- [ ] Sunday review (sessions, top sets against the week before, one verdict per coach); plan memory (the coach's session stored as a plan, the next log compared with it) <!-- id:n42 -->
+- [ ] The app after Netlify: coach turns in the API, a coach card on Home (coach, morning message, last answer), a coach picker on `PUT /api/profile/trainer`, a line per lift and for body weight, limitation updates on the card <!-- id:n43 -->
+- [ ] A demo seeder for the current data model (logs through `RecordSmartLog`, a limitation with updates, a profile version) so the app can be looked at on any laptop; fill `config/ai.php` `prices` <!-- id:n44 -->
 - [ ] Coaches, after the foundation: `/coach` to pick Surge, Shen or Latika in Telegram; then the three-pronged answer (decided then: the person picks the lens, or three short takes in one call). Status in PLAN.md section 4 (2026-11-06) <!-- id:n34 -->
 
 - [ ] Body map: a humanoid figure in the app with a score per area (chest, back, legs, arms, core, stamina), computed in plain PHP from logged lifts and runs (est. one-rep max per movement against body weight standards, run pace and distance), shown with the logs behind each score; needs body weight logged. Hiren's idea 2026-11-07 <!-- id:n35 -->
@@ -276,6 +289,13 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-11-14 — Hiren's verdict on the advice; models, GDPR and the app; handoff to the other laptop
+- Hiren, 12 Nov: the advice is impersonal and generic, he does not see the coaches; he wants a better cheap model, the app up, and reasons to use this over ChatGPT. Measured from the audit: all 16 coach turns on `gemini-3.5-flash-lite` (`AI_CHAT_MODEL` unset), about 4,000 tokens in and 70 out per answer, one unnamed coach, the same plan three times in three days.
+- Prices read from DeepSeek's and Google's own pages on 12 Nov; `laravel/ai` has a DeepSeek driver, so the coach can move to `deepseek-v4-pro` with environment variables only (thinking is on by default there, so the coach's token caps must go up; likely, not tested). `gemini-3.5-flash` is gone from Google's price page. Kimi is dearer than Gemini 3.8 Flash. Nobody has compared answer quality yet.
+- Hiren, 13 Nov: DeepSeek is fine with him; GDPR explained (personal use is outside it; with other users health data, consent, a processor agreement, and no China adequacy decision; the model per job being an env variable is the way out).
+- The app repository is on GitHub since 8 Nov (private, `main`, two commits), Netlify not linked, the API still without valid HTTPS (tested: HTTP answers, the HTTPS certificate fails). Cloned on the koala laptop and run against a local API on SQLite with demo data: home and logs work; no coach anywhere, nothing over time, read-only.
+- No code changed. Everything is in `docs/direction-2026-11-14.md`, with the proposed order (n38 to n44) waiting for Hiren's go. Still waiting for his OK and only on the koala laptop: `storage/app/audit/repair.php`.
 
 ### 2026-11-12 — the weekend's logs read; replies become updates; log and ask
 - Hiren ran the audit (17 logs, 16 coach turns, 12 profile versions, 53 calls in 7 days with 7 failures, all Google-side). Worst: three answers about the back ("98%", "not ready for squats yet", "I don't feel it at all") saved as logs, `limitation_updates` 0, the coach asked "How does the lower back feel today?" five times; a question inside a goal message ("...does your advice change") got "Noted: Discussion about..." and no answer; "Does your advice change?" got "Understood. No, the plan holds."; Saturday's bench double counted (11 sets, 3 without weight); junk rows "Stretching", "Back Rehab", "98%", "5 reps each set". Good: the labelled profile notes are real now (dates, trend, "hurt late Oct, facts say Nov 2", "picks own loads").
