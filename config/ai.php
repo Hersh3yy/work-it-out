@@ -59,20 +59,27 @@ return [
 
     /*
     | Prices per million tokens in USD, keyed by model, from the provider's
-    | pricing page (https://ai.google.dev/pricing for Gemini). Read by
-    | php artisan ai:usage. A model without a price is reported as unpriced;
-    | nothing is guessed.
+    | own pricing page (read 12 November 2026, docs/direction-2026-11-14.md).
+    | Read by php artisan ai:usage. A model without a price is reported as
+    | unpriced; nothing is guessed. DeepSeek bills a lower rate off-peak;
+    | the peak rate is kept here as the upper bound. Gemini 3.8 Flash
+    | doubles on 1 January 2027.
     */
     'prices' => [
-        'gemini-3.5-flash-lite' => ['input' => null, 'output' => null],
+        'gemini-3.5-flash-lite' => ['input' => 0.30, 'output' => 2.50],
         'gemini-3.5-flash' => ['input' => null, 'output' => null],
+        'gemini-3.8-flash' => ['input' => 0.75, 'output' => 3.75],
+        'deepseek-flash' => ['input' => 0.30, 'output' => 1.20],
+        'deepseek-v4-pro' => ['input' => 1.32, 'output' => 3.96],
     ],
 
     /*
     | Tokens one person may use per calendar month before coach questions
-    | pause until the 1st (logging is never capped). 0 means no cap.
+    | and the morning message pause until the 1st (logging is never capped).
+    | 3 million is about 500 coach answers: at most about $1 on
+    | gemini-3.5-flash-lite and $5 on deepseek-v4-pro at peak. 0 means no cap.
     */
-    'monthly_tokens_per_user' => (int) env('AI_MONTHLY_TOKENS_PER_USER', 0),
+    'monthly_tokens_per_user' => (int) env('AI_MONTHLY_TOKENS_PER_USER', 3_000_000),
 
     /*
     | The classify step (what kind of message is this). Plain rules always run

@@ -100,11 +100,11 @@ it('reports calls, tokens and cost per job from the price table', function (): v
 });
 
 it('prints the usage table', function (): void {
-    AiCallRecord::create(['agent' => CoachAgent::class, 'model' => 'gemini-3.5-flash-lite', 'input_tokens' => 10, 'output_tokens' => 5, 'created_at' => now()]);
+    AiCallRecord::create(['agent' => CoachAgent::class, 'model' => 'unpriced-model', 'input_tokens' => 10, 'output_tokens' => 5, 'created_at' => now()]);
     AiCallRecord::create(['agent' => CoachAgent::class, 'failed' => true, 'error' => 'ProviderOverloadedException', 'created_at' => now()]);
 
     expect(Artisan::call('ai:usage', ['--since' => '7d', '--by' => 'model']))->toBe(0)
-        ->and(Artisan::output())->toContain('gemini-3.5-flash-lite')->toContain('No price in config/ai.php')->toContain('Failed calls: ProviderOverloadedException x1.')
+        ->and(Artisan::output())->toContain('unpriced-model')->toContain('No price in config/ai.php')->toContain('Failed calls: ProviderOverloadedException x1.')
         ->and(Artisan::call('ai:usage', ['--by' => 'colour']))->toBe(1);
 });
 

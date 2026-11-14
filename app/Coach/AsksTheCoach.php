@@ -11,10 +11,14 @@ namespace App\Coach;
  */
 final readonly class AsksTheCoach
 {
-    private const string ASKS = '/\?|\b(suggest(ion)?s?|advise|advice|recommend(ation)?s?|what next|what(\'s| is) next|what after|now what|what should|what do i do|what to do|next\s*(step|move|exercise)|wat nu|wat moet ik)\b/iu';
+    /** Words that ask for advice on their own, with or without a question mark. */
+    private const string ASKS = '/\b(suggest(ion)?s?|advise|advice|recommend(ation)?s?|what next|what(\'s| is) next|what after|now what|what should|what do i do|what to do|next\s*(step|move|exercise)|wat nu|wat moet ik)\b/iu';
+
+    /** A question mark counts after a question word; "squat 5x5 100?" doubts a number, it does not ask the coach. */
+    private const string QUESTION = '/\b(what|how|why|when|which|should|shall|can|could|would|will|is|are|am|do|does|did|any|wat|hoe|waarom|moet|kan|mag)\b[^.!?\n]*\?/iu';
 
     public static function in(string $text): bool
     {
-        return (bool) preg_match(self::ASKS, $text);
+        return (bool) preg_match(self::ASKS, $text) || (bool) preg_match(self::QUESTION, $text);
     }
 }
