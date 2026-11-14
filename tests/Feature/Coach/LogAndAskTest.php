@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use App\Channels\HandleInboundMessage;
+use App\Conversation\RespondToText;
 use App\Enums\MessageKind;
 use Tests\Fakes\FakeCoachAdvisor;
+use Tests\Fakes\FakeLimitationParser;
 use Tests\Fakes\FakeSmartLogParser;
 
 /*
@@ -50,4 +52,31 @@ it('leaves a plain log without a coach answer', function (): void {
 
     expect(app(HandleInboundMessage::class)->handle(telegramText('bench 3x8 80')))->not->toContain('Chest-supported')
         ->and($coach->calls)->toBe([]);
+});
+
+it('keeps the log and says the coach is busy when only the coach is down', function (): void {
+    linkedUser();
+    classifierSays(MessageKind::Workout);
+    fakeSmartLogParser();
+    fakeCoach()->failing();
+
+    $reply = app(HandleInboundMessage::class)->handle(telegramText('bench 3x5 70, what next?'));
+
+    expect($reply)->toStartWith('Logged: Bench Press')
+        ->toEndWith(RespondToText::COACH_BUSY);
+    $this->assertDatabaseCount('activity_logs', 1);
+    $this->assertDatabaseCount('waiting_messages', 0);
+});
+
+it('keeps an injury note and says the coach is busy when only the coach is down', function (): void {
+    linkedUser();
+    classifierSays(MessageKind::GoalOrInfo);
+    fakeLimitationParser(FakeLimitationParser::knee());
+    fakeCoach()->failing();
+
+    $reply = app(HandleInboundMessage::class)->handle(telegramText('my knee hurts a bit when I squat, what should I do?'));
+
+    expect($reply)->toEndWith(RespondToText::COACH_BUSY);
+    $this->assertDatabaseCount('limitations', 1);
+    $this->assertDatabaseCount('waiting_messages', 0);
 });

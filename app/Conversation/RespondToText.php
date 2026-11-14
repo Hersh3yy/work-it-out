@@ -26,6 +26,8 @@ use App\Profile\ProfileCheckIn;
  */
 final readonly class RespondToText
 {
+    public const string COACH_BUSY = "The coach is busy right now, so that question didn't get through. Ask it again in a few minutes; the log above is saved.";
+
     public function __construct(
         private Interpreter $interpreter,
         private RecordSmartLog $record,
@@ -70,8 +72,20 @@ final readonly class RespondToText
         return $this->thenTheCoach($user, $text, implode("\n\n", array_filter($lines)));
     }
 
+    /**
+     * Runs after something was saved, so a coach outage here must not throw:
+     * the kept-message retry would replay the whole text and save it twice.
+     */
     private function thenTheCoach(User $user, string $text, string $reply): string
     {
-        return AsksTheCoach::in($text) ? $reply."\n\n".$this->coach->handle($user, $text) : $reply;
+        if (! AsksTheCoach::in($text)) {
+            return $reply;
+        }
+
+        try {
+            return $reply."\n\n".$this->coach->handle($user, $text);
+        } catch (AiUnavailable) {
+            return $reply."\n\n".self::COACH_BUSY;
+        }
     }
 }
