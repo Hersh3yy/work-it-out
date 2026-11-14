@@ -11,6 +11,7 @@ use App\Conversation\Commands\ChatCommands;
 use App\Conversation\Commands\HelpCommand;
 use App\Conversation\RespondToText;
 use App\Exceptions\AiUnavailable;
+use App\Limitations\RedFlags;
 use App\Models\ChannelIdentity;
 use App\Models\ChannelLinkCode;
 use App\Models\User;
@@ -84,6 +85,10 @@ final readonly class HandleInboundMessage
 
     private function freeText(User $user, InboundMessage $message, string $text): string
     {
+        if (RedFlags::matches($text)) {
+            return RedFlags::REPLY;
+        }
+
         $answer = $this->answers->handle($user, $text);
 
         return match (true) {
