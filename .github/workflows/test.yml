@@ -6,6 +6,18 @@ on:
   pull_request:
 
 jobs:
+  # Its own job: a new advisory must not stop Pint and the tests from running.
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+      - name: Audit
+        run: composer audit --locked
+
   pest:
     runs-on: ubuntu-latest
     steps:
@@ -17,8 +29,6 @@ jobs:
           coverage: none
       - name: Install
         run: composer install --no-interaction --prefer-dist --no-progress
-      - name: Audit
-        run: composer audit
       - name: Pint
         run: vendor/bin/pint --test
       - name: Prepare env
