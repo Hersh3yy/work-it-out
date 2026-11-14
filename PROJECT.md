@@ -275,6 +275,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [ ] Method cards (draft in `docs/method-cards-2026-11-14.md`): Hiren confirms the picks per card; then (1) the cards as files in `knowledge/`, the matching one or two added to `CoachContext` under `methods`; (2) the numbers in code (`longest_run_30d`, `next_run_cap`, `weekly_minutes`, e1RM per lift, `next_load`), each with a unit test; (3) five to ten eval questions per card, run by `coach:try`. Gives n28 a fixed shape per note; card 4 needs n36 <!-- id:n45 -->
 - [ ] Handle-only sign-up (Hiren, 14 Nov: "a telegram id is all i need"): a character name instead of a real name, invite by code with no e-mail, the name left out of what goes to the model, a command that deletes everything, a short privacy notice. `users.name` and `users.email` are required today <!-- id:n46 -->
 - [ ] The game layer (Hiren, 14 Nov: "closer to an rpg"): after the creative session, the three sleeping stats move from the method cards' measures, a boss is a goal with a date (n36), a quest is the morning message, a debuff is a limitation. Direction in `docs/rpg-direction-2026-11-14.md` <!-- id:n47 -->
+- [ ] A second chat app, after handle-only sign-up (n46): Signal through `signal-cli` as an adapter beside `app/Channels/Telegram`, the process kept inside the container. WhatsApp only if the cost and Meta's AI rule allow it. `docs/rpg-direction-2026-11-14.md` <!-- id:n48 -->
 - [ ] Coaches, after the foundation: `/coach` to pick Surge, Shen or Latika in Telegram; then the three-pronged answer (decided then: the person picks the lens, or three short takes in one call). Status in PLAN.md section 4 (2026-11-06) <!-- id:n34 -->
 
 - [ ] Body map: a humanoid figure in the app with a score per area (chest, back, legs, arms, core, stamina), computed in plain PHP from logged lifts and runs (est. one-rep max per movement against body weight standards, run pace and distance), shown with the logs behind each score; needs body weight logged. Hiren's idea 2026-11-07 <!-- id:n35 -->
@@ -294,6 +295,11 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-11-14 (night) — presentations remade; fresh start for the game; Signal and WhatsApp
+- Hiren's feedback on the presentation skill: do not force analogies, tell a good story, a modern look, perhaps a Prezi-like format later. Both presentations were remade at the same links: the project map in story order with the real words for the system's parts, both with a new look. The skill itself was rewritten on the koala laptop (it lives in `~/.claude/skills`, not in this repository).
+- Hiren: the game features may be rebuilt from nothing; each coach keeps a stat.
+- Signal and WhatsApp looked at: Signal works unofficially through `signal-cli` with breakage and ban risk; WhatsApp needs Meta's business platform, charges for messages the bot sends first, and bans general-purpose AI assistants. Telegram stays first. Written up in `docs/rpg-direction-2026-11-14.md`.
 
 ### 2026-11-14 (evening) — two presentations; the game direction; handle-only privacy
 - Hiren asked for the whole project and road map as a presentation to read on the other laptop, made with the `explain-like-im-nami` skill, and saw two decks in it. Made both as private pages: the project map for him (15 slides) and the game idea for the session with the creatives (14 slides, no code). Links in Start here. Every slide was measured locally for overflow; none runs past the slide.

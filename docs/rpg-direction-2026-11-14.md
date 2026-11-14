@@ -52,3 +52,19 @@ Not legal advice. A disclaimer that tells people not to enter identifiable data 
 2. Handle-only sign-up: character name, invite by code, no e-mail; the name out of what goes to the model; a delete command.
 3. The stats wake up: each stat moves from a method card's measure, in plain code with tests.
 4. Bosses: goals with dates (n36), then the planning from method card 4.
+
+## Later the same day: a fresh start for the game
+
+Hiren: "if we need to rebuild the rpg features thats okay, see this as a fresh start. i dont mind that each coach has their stat." So the old stat columns, `RpgStatSheet` and `custom_rpg_stats` are not a constraint. They can be replaced. What stays is that each coach owns one stat.
+
+Both presentations were remade that evening: the project map now runs in story order (what he wanted, what works, the trouble, the inside, the road ahead) and uses the real words instead of story names for the system's parts; both have a new look. The links are unchanged.
+
+## Other chat apps: Signal and WhatsApp
+
+Asked by Hiren on 14 November. Checked the same day; the sources are mostly third-party pages, so check the official ones before building.
+
+Signal works, unofficially. Signal has no bot interface. A bot runs through `signal-cli`, an unofficial client, on its own phone number. It costs nothing but the number. The risks: it can stop working when Signal changes its protocol, so it needs regular updates, and an account that behaves like a machine can be banned. There are no bot comforts: no command menu, no buttons, no invite link that carries a code. In this code a chat app is a small adapter: `ChatChannel::send` out, and something that turns an incoming message into `InboundMessage` (Telegram's is in `app/Channels/Telegram`). A Signal adapter is a contained piece of work, plus `signal-cli` running as one more process inside the container, never reachable from outside.
+
+WhatsApp is tougher and not free for what this bot does. It only goes through Meta's WhatsApp Business Platform: a Meta business account, a dedicated number, and approved templates for every message the bot sends first. Since July 2025 Meta bills per template message. Replies within 24 hours of the person's last message have been free (some sources say that changes on 1 October 2026; not confirmed). The 8 o'clock morning message is sent first, so it is a paid template unless the person wrote in the last 24 hours. And since 15 January 2026 Meta's terms ban general-purpose AI assistants from the platform; AI inside a business's own service is still allowed. A coach bot is arguably the second kind, but Meta decides. The EU has charged Meta over that rule and the outcome is open.
+
+So: Telegram stays the first door. Signal is a sensible second door once handle-only sign-up exists, because it suits people who care about privacy. WhatsApp comes last, if ever.
