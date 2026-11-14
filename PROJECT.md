@@ -27,6 +27,7 @@
 - Server access: `ssh hiren@84.247.178.198` (this laptop's key; user in the `docker` group). App container: `A=$(docker ps --format "{{.Names}}" | grep gbvqkbpmen41pdhf1eqgkzca | head -1)`, then `docker exec $A php artisan ...` (e.g. `channel:invite email --name=X`, `channel:unlink email`). Deploy history: `docker exec coolify-db psql -U coolify -d coolify -Atc "select id,status,left(commit,7),created_at from application_deployment_queues order by id desc limit 3"`.
 - Open: everything in `docs/alpha-launch.md` (new bot token, paid Gemini, firewall 8000/6001/6002, 2FA, backups, API domain with HTTPS, the app on Netlify, inviting testers).
 - Latest direction (2026-11-14): read `docs/direction-2026-11-14.md` before anything else. It holds Hiren's verdict on the advice (generic, no coaches in sight), the model switch for the coach that needs no code, the GDPR answer, what the app shows and lacks, and the build order that waits for his go.
+- Method cards (2026-11-14): `docs/method-cards-2026-11-14.md` is the first draft of "one or two proven ways per question" (running further, cardio fitness, the compound day, a goal with a date), with the AI and training terms explained. Hiren confirms or swaps the picks; then the cards go into the coach's context.
 - Laptop bot: use a separate dev bot token in the local `.env`; never run `make bot` with the production token.
 
 **Every session:**
@@ -270,6 +271,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [ ] Sunday review (sessions, top sets against the week before, one verdict per coach); plan memory (the coach's session stored as a plan, the next log compared with it) <!-- id:n42 -->
 - [ ] The app after Netlify: coach turns in the API, a coach card on Home (coach, morning message, last answer), a coach picker on `PUT /api/profile/trainer`, a line per lift and for body weight, limitation updates on the card <!-- id:n43 -->
 - [ ] A demo seeder for the current data model (logs through `RecordSmartLog`, a limitation with updates, a profile version) so the app can be looked at on any laptop; fill `config/ai.php` `prices` <!-- id:n44 -->
+- [ ] Method cards (draft in `docs/method-cards-2026-11-14.md`): Hiren confirms the picks per card; then (1) the cards as files in `knowledge/`, the matching one or two added to `CoachContext` under `methods`; (2) the numbers in code (`longest_run_30d`, `next_run_cap`, `weekly_minutes`, e1RM per lift, `next_load`), each with a unit test; (3) five to ten eval questions per card, run by `coach:try`. Gives n28 a fixed shape per note; card 4 needs n36 <!-- id:n45 -->
 - [ ] Coaches, after the foundation: `/coach` to pick Surge, Shen or Latika in Telegram; then the three-pronged answer (decided then: the person picks the lens, or three short takes in one call). Status in PLAN.md section 4 (2026-11-06) <!-- id:n34 -->
 
 - [ ] Body map: a humanoid figure in the app with a score per area (chest, back, legs, arms, core, stamina), computed in plain PHP from logged lifts and runs (est. one-rep max per movement against body weight standards, run pace and distance), shown with the logs behind each score; needs body weight logged. Hiren's idea 2026-11-07 <!-- id:n35 -->
@@ -289,6 +291,11 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ## Diary
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
+
+### 2026-11-14 (later) — method cards, first draft
+- Hiren: choose one or two proven ways per specific question, so the answer gets more context and guard rails; he wants the industry terms explained. He also said pushing code is fine with him while this is not production software. The rule in `CLAUDE.md` is unchanged; it is his to edit if he wants that to hold for every session.
+- Written, not built: `docs/method-cards-2026-11-14.md`. A card is when it applies, one measure the app computes, the method with its source, the rule for the next step in code, the guard rails. Four drafts: running further (cap at the longest run of 30 days plus 10 percent; run-walk), cardio fitness (12-minute test every four weeks; weekly minutes against the WHO guideline; four by four intervals after a base), the compound day (e1RM trend; session shape; the next load by rule), a goal with a date (needs analysis, plan backwards; needs n36). Sources named, with which were checked today and which are from memory.
+- Found while writing: no e1RM in code yet (the app shows the heaviest weight only), no movement pattern per exercise, `PersonalRecordService` already has the longest run, `RedFlags` already stops chest pain and fainting.
 
 ### 2026-11-14 — Hiren's verdict on the advice; models, GDPR and the app; handoff to the other laptop
 - Hiren, 12 Nov: the advice is impersonal and generic, he does not see the coaches; he wants a better cheap model, the app up, and reasons to use this over ChatGPT. Measured from the audit: all 16 coach turns on `gemini-3.5-flash-lite` (`AI_CHAT_MODEL` unset), about 4,000 tokens in and 70 out per answer, one unnamed coach, the same plan three times in three days.
