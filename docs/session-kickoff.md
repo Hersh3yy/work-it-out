@@ -1,20 +1,12 @@
 # Session kickoff
 
-Last updated 14 November 2026, from the koala laptop. Read this first on any laptop, then `PROJECT.md`.
+Last updated 14 November 2026 (late), from the other laptop. Read this first on any laptop, then `PROJECT.md`.
 
-## First thing: CI is red
+## First thing: what changed on 14 November (late)
 
-Since commit `a707178` the `pest` job fails at its Audit step. The cause is a new advisory on `laravel/framework` (GHSA-63hm-g96r-2m2q, low severity, affects versions below 13.40.0, reported 13 November). The tests themselves pass: the Postgres job is green and the SQLite suite ran green on the koala laptop (352 tests). Every push since then was documentation only.
+CI is green again (laravel/framework 13.42; the audit runs in its own job) and the "fix first" list of `docs/audit-2026-11-14.md` is done, test first: no double log when the coach is down, danger words before any open question, the morning message sent by provider and safe to retry, a 3 million token monthly cap by default, prices for the models in use. Details in the `PROJECT.md` diary.
 
-The fix is one update, then both suites, then a push:
-
-```bash
-docker compose exec app composer update laravel/framework
-make test
-make test-pg
-```
-
-It was not done from the koala laptop on purpose. Hiren had left, and a framework update deploys to production the moment it is pushed.
+Still yours: turn on Coolify's wait for CI checks, so a push only deploys after both test jobs pass. If `AI_MONTHLY_TOKENS_PER_USER=0` is set in Coolify, remove it to get the new default cap.
 
 ## Where things stand
 
@@ -22,7 +14,6 @@ It was not done from the koala laptop on purpose. Hiren had left, and a framewor
 - Method cards, "one or two proven ways per question", are drafted in `docs/method-cards-2026-11-14.md`. Nothing is built.
 - The direction is a game: the body as a character, with stats, bosses and talent points. The game features may be rebuilt from nothing; each coach keeps a stat. `docs/rpg-direction-2026-11-14.md` also holds the privacy answer (a handle and a Telegram id) and what Signal or WhatsApp would take.
 - Two presentations, private pages under Hiren's account: the project map, https://claude.ai/artifact/ExS4DFpfRs6YWpL7618XvZ , and the game idea for the session with the creatives, https://claude.ai/artifact/6xrcqXaAVKkfG19ZiG2vb4 .
-- No application code has changed since `9fe0c57` (12 November).
 
 ## What waits for Hiren's word
 
@@ -44,4 +35,4 @@ It was not done from the koala laptop on purpose. Hiren had left, and a framewor
 
 ## A first message for the next session
 
-"Read docs/session-kickoff.md and PROJECT.md. Fix the red CI first. Then wait for my picks on the method cards."
+"Read docs/session-kickoff.md and PROJECT.md. Then the open security items of the 14 November audit (C3 to C5), and wait for my picks on the method cards."
