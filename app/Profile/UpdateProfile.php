@@ -49,7 +49,7 @@ final readonly class UpdateProfile
     {
         $full = $kind === ProfileVersion::FULL;
         $logs = $user->activityLogs()->with('exerciseEntries')->limit((int) config($full ? 'profile.rolling.full_logs' : 'profile.rolling.recent_logs'))->get();
-        $turns = $user->coachTurns()->limit((int) config('profile.rolling.recent_turns'))->get();
+        $turns = $user->coachTurns()->asked()->limit((int) config('profile.rolling.recent_turns'))->get();
         $previous = $full ? [] : ($user->profileVersions()->first()?->notes ?? []);
 
         if ($logs->isEmpty() && $turns->isEmpty() && $previous === []) {
@@ -167,7 +167,7 @@ final readonly class UpdateProfile
 
         return [
             ...($logs === [] ? [] : $user->activityLogs()->whereIn('id', $logs)->pluck('id')->all()),
-            ...($turnIds === [] ? [] : $user->coachTurns()->whereIn('id', $turnIds)->pluck('id')->map(static fn (int $id): string => self::COACH.$id)->all()),
+            ...($turnIds === [] ? [] : $user->coachTurns()->asked()->whereIn('id', $turnIds)->pluck('id')->map(static fn (int $id): string => self::COACH.$id)->all()),
         ];
     }
 }

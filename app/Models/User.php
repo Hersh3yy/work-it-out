@@ -157,8 +157,8 @@ class User extends Authenticatable
             ->whereHas('channelIdentities')
             ->where(static fn (Builder $q) => $q
                 ->whereHas('activityLogs', static fn (Builder $l) => $l->where('created_at', '>=', $heardSince))
-                ->orWhereHas('coachTurns', static fn (Builder $t) => $t->where('kind', CoachTurn::ASKED)->where('created_at', '>=', $heardSince)))
-            ->whereDoesntHave('coachTurns', static fn (Builder $t) => $t->where('kind', CoachTurn::DAILY)->where('created_at', '>=', today()));
+                ->orWhereHas('coachTurns', static fn (Builder $t) => $t->asked()->where('created_at', '>=', $heardSince)))
+            ->whereDoesntHave('coachTurns', static fn (Builder $t) => $t->dailySince(today()));
     }
 
     /**

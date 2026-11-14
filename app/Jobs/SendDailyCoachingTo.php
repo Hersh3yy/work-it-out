@@ -14,13 +14,17 @@ use Illuminate\Foundation\Queue\Queueable;
 /**
  * One person's morning message, in the background so a slow model call
  * never holds up the others. An AI outage comes back in ten minutes, three
- * tries; after that the day is skipped rather than nagging at noon.
+ * tries; after that the day is skipped rather than nagging at noon. A try
+ * after today's message was made does nothing, so a retry never asks the
+ * coach again or repeats the message.
  */
 final class SendDailyCoachingTo implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 
     public int $tries = 3;
+
+    public int $backoff = 600;
 
     public int $uniqueFor = 3600;
 
@@ -33,6 +37,10 @@ final class SendDailyCoachingTo implements ShouldBeUnique, ShouldQueue
 
     public function handle(SendDailyCoaching $send): void
     {
+        if ($this->user->coachTurns()->dailySince(today())->exists()) {
+            return;
+        }
+
         try {
             $send->handle($this->user);
         } catch (AiUnavailable) {

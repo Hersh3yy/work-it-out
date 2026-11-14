@@ -7,19 +7,30 @@ namespace App\Channels\Telegram;
 use App\Channels\InboundMessage;
 use App\Contracts\Channels\ChatChannel;
 use App\Enums\ChatProvider;
+use App\Exceptions\ChatUnavailable;
+use App\Exceptions\RecipientUnreachable;
 
 /**
  * Telegram adapter: sends replies and turns raw updates into InboundMessages.
  */
 final readonly class TelegramChannel implements ChatChannel
 {
+    /** Telegram answers 403 when the person blocked the bot or deleted the chat. */
+    private const int BLOCKED = 403;
+
     public function __construct(
         private TelegramClient $client,
     ) {}
 
     public function send(string $chatId, string $text): void
     {
-        $this->client->sendMessage($chatId, $text);
+        try {
+            $this->client->sendMessage($chatId, $text);
+        } catch (TelegramUnavailable $e) {
+            throw $e->getCode() === self::BLOCKED
+                ? new RecipientUnreachable($e->getMessage(), previous: $e)
+                : new ChatUnavailable($e->getMessage(), previous: $e);
+        }
     }
 
     /**

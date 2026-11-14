@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Channels\Telegram\TelegramChannel;
 use App\Conversation\Answers\ExerciseQuestionAnswer;
 use App\Conversation\Answers\LimitationChoiceAnswer;
 use App\Conversation\Answers\ProfileQuestionAnswer;
@@ -12,6 +13,7 @@ use App\Conversation\Commands\HelpCommand;
 use App\Conversation\Commands\LoginCommand;
 use App\Conversation\Commands\ProfileCommand;
 use App\Conversation\Commands\UndoCommand;
+use App\Enums\ChatProvider;
 
 return [
 
@@ -21,6 +23,14 @@ return [
     | one the person is told it did not go through.
     */
     'retry_delays' => [60, 180, 600, 1800],
+
+    /*
+    | The adapter that sends on each chat provider when the app writes first
+    | or answers later. Providers left out are never sent to.
+    */
+    'channels' => [
+        ChatProvider::Telegram->value => TelegramChannel::class,
+    ],
 
     /*
     | Slash commands, in the order Telegram's menu shows them

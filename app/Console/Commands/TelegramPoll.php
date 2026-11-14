@@ -9,6 +9,7 @@ use App\Channels\Telegram\TelegramChannel;
 use App\Channels\Telegram\TelegramClient;
 use App\Channels\Telegram\TelegramUnavailable;
 use App\Contracts\Channels\ChatChannel;
+use App\Exceptions\ChatUnavailable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -112,7 +113,7 @@ final class TelegramPoll extends Command
 
         try {
             $channel->send($inbound->chatId, $reply);
-        } catch (TelegramUnavailable $e) {
+        } catch (ChatUnavailable $e) {
             $this->warn($e->getMessage());
         }
     }

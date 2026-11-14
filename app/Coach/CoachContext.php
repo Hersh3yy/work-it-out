@@ -139,24 +139,33 @@ final readonly class CoachContext
     }
 
     /**
-     * The last few questions within the window, oldest first so they read as
-     * a conversation.
+     * The last few exchanges within the window, oldest first so they read as
+     * a conversation. A morning message is the coach's own words, never
+     * something they asked.
      *
      * @return list<array<string, string>>
      */
     private static function recentTurns(User $user): array
     {
-        $chars = (int) config('coach.context.turn_chars');
-
         return $user->coachTurns()
             ->where('created_at', '>=', now()->subHours((int) config('coach.context.turn_hours')))
             ->limit((int) config('coach.context.turns'))
             ->get()
             ->reverse()
-            ->map(static fn (CoachTurn $t): array => [
-                'at' => $t->created_at->format('Y-m-d H:i'),
-                'they_asked' => mb_strimwidth($t->question, 0, $chars, '…'),
-                'you_answered' => mb_strimwidth($t->answer, 0, $chars, '…'),
-            ])->values()->all();
+            ->map(self::exchange(...))
+            ->values()->all();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function exchange(CoachTurn $turn): array
+    {
+        $chars = (int) config('coach.context.turn_chars');
+        $at = $turn->created_at->format('Y-m-d H:i');
+
+        return $turn->isDaily()
+            ? ['at' => $at, 'you_wrote_first' => mb_strimwidth($turn->answer, 0, $chars, '…')]
+            : ['at' => $at, 'they_asked' => mb_strimwidth($turn->question, 0, $chars, '…'), 'you_answered' => mb_strimwidth($turn->answer, 0, $chars, '…')];
     }
 }

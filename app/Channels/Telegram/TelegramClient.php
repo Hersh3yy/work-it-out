@@ -88,7 +88,7 @@ final readonly class TelegramClient
                 $method,
                 $response->status(),
                 (string) $response->json('description', ''),
-            ));
+            ), $response->status());
         }
 
         return $response->json() ?? [];

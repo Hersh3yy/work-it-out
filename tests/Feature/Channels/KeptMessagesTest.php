@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Actions\Conversation\KeepMessage;
 use App\Channels\HandleInboundMessage;
+use App\Channels\Telegram\TelegramChannel;
 use App\Coach\CoachContext;
+use App\Enums\ChatProvider;
 use App\Jobs\ProcessWaitingMessage;
 use App\Models\WaitingMessage;
 use Illuminate\Support\Facades\Queue;
@@ -30,7 +32,8 @@ function aiDownForOneMessage(string $text = 'benched 100 3x5'): WaitingMessage
 function runRetry(WaitingMessage $waiting): FakeChatChannel
 {
     $channel = new FakeChatChannel;
-    app()->call([new ProcessWaitingMessage($waiting), 'handle'], ['channel' => $channel]);
+    app()->instance(TelegramChannel::class, $channel);
+    app()->call([new ProcessWaitingMessage($waiting), 'handle']);
 
     return $channel;
 }
@@ -103,4 +106,14 @@ it('tells the coach which messages are still waiting', function (): void {
 
 it('keeps the reply text the person sees', function (): void {
     expect(KeepMessage::REPLY)->toContain('no need to send it again');
+});
+
+it('answers a kept message from a chat without a channel and sends nothing', function (): void {
+    $waiting = aiDownForOneMessage();
+    $waiting->update(['provider' => ChatProvider::Simulate]);
+    fakeSmartLogParser(FakeSmartLogParser::workout());
+
+    expect(runRetry($waiting)->sent)->toBe([])
+        ->and($waiting->fresh()->status)->toBe(WaitingMessage::DONE);
+    $this->assertDatabaseCount('activity_logs', 1);
 });

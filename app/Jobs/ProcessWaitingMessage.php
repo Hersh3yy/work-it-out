@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Channels\ChatChannels;
 use App\Contracts\Channels\ChatChannel;
 use App\Conversation\RespondToText;
 use App\Exceptions\AiUnavailable;
@@ -40,7 +41,7 @@ final class ProcessWaitingMessage implements ShouldQueue
         return count(config('conversation.retry_delays'));
     }
 
-    public function handle(RespondToText $respond, ChatChannel $channel): void
+    public function handle(RespondToText $respond, ChatChannels $channels): void
     {
         $waiting = $this->waiting->fresh();
 
@@ -49,6 +50,7 @@ final class ProcessWaitingMessage implements ShouldQueue
         }
 
         $waiting->increment('attempts');
+        $channel = $channels->for($waiting->provider);
 
         try {
             $reply = $respond->reply($waiting->user, $waiting->text, $waiting->source);
@@ -59,10 +61,10 @@ final class ProcessWaitingMessage implements ShouldQueue
         }
 
         $waiting->update(['status' => WaitingMessage::DONE, 'handled_at' => now()]);
-        $channel->send($waiting->chat_id, "About \"{$waiting->excerpt()}\":\n\n{$reply}");
+        $channel?->send($waiting->chat_id, "About \"{$waiting->excerpt()}\":\n\n{$reply}");
     }
 
-    private function tryAgainOrGiveUp(WaitingMessage $waiting, ChatChannel $channel): void
+    private function tryAgainOrGiveUp(WaitingMessage $waiting, ?ChatChannel $channel): void
     {
         if ($waiting->attempts < self::maxTries()) {
             $this->release(self::delayBefore($waiting->attempts + 1));
@@ -71,6 +73,6 @@ final class ProcessWaitingMessage implements ShouldQueue
         }
 
         $waiting->update(['status' => WaitingMessage::FAILED, 'handled_at' => now()]);
-        $channel->send($waiting->chat_id, "I still could not process \"{$waiting->excerpt()}\" after several tries. Send it again when you like.");
+        $channel?->send($waiting->chat_id, "I still could not process \"{$waiting->excerpt()}\" after several tries. Send it again when you like.");
     }
 }
