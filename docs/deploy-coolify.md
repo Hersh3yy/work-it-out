@@ -71,7 +71,7 @@ If something goes wrong with a link: a new `channel:invite` for the same email m
 
 Decision 2026-10-29: the app deploys on **Netlify**, not Coolify, from its own repository (`~/Code/feetness/feetness-app`, moved out of `client/` on 2026-10-30). Steps are in that repository's README. What Coolify still needs for that:
 
-- **HTTPS on the API.** The Netlify site is HTTPS and browsers block calls to an `http://` API from it. Point a (sub)domain's A record at 84.247.178.198, set it on the app in Coolify as `https://api.<domain>` and let Coolify issue the Let's Encrypt certificate (sslip.io names get no certificate in practice because of Let's Encrypt's per-domain limits). Then `APP_URL=https://api.<domain>`.
+- **HTTPS on the API.** The Netlify site is HTTPS and browsers block calls to an `http://` API from it. Point a (sub)domain's A record at the server's address (in `storage/app/ops.md`), set it on the app in Coolify as `https://api.<domain>` and let Coolify issue the Let's Encrypt certificate (sslip.io names get no certificate in practice because of Let's Encrypt's per-domain limits). Then `APP_URL=https://api.<domain>`.
 - `APP_WEB_URL=https://<site>.netlify.app` and `CORS_ALLOWED_ORIGINS` with the same origin, then redeploy.
 
 The Coolify alternative, kept in case Netlify is dropped: a static Nuxt build served by nginx (Dockerfile and nginx.conf in the app repository), as a second Coolify application:

@@ -22,10 +22,10 @@
 
 ## Start here (next session, any machine)
 
-**v0 is live (2026-10-18).** Coolify app on 84.247.178.198 (http://gbvqkbpmen41pdhf1eqgkzca.84.247.178.198.sslip.io), Postgres 18 beside it, Telegram bot @LarryTheLobsterFromSpongebobBot polling on the server. **Every push to `master` deploys automatically** (GitHub App webhook); a deploy that fails its health check rolls back and the old version keeps running. CI runs in parallel and does not gate the deploy, so run both suites before pushing.
+**v0 is live (2026-10-18).** Coolify app on the VPS (address, URL and bot name in the private ops note, `storage/app/ops.md`, ignored by git), Postgres 18 beside it, the Telegram bot polling on the server. **Every push to `master` deploys automatically** (GitHub App webhook); a deploy that fails its health check rolls back and the old version keeps running. CI runs in parallel and does not gate the deploy, so run both suites before pushing.
 
-- Server access: `ssh hiren@84.247.178.198` (this laptop's key; user in the `docker` group). App container: `A=$(docker ps --format "{{.Names}}" | grep gbvqkbpmen41pdhf1eqgkzca | head -1)`, then `docker exec $A php artisan ...` (e.g. `channel:invite email --name=X`, `channel:unlink email`). Deploy history: `docker exec coolify-db psql -U coolify -d coolify -Atc "select id,status,left(commit,7),created_at from application_deployment_queues order by id desc limit 3"`.
-- Open: everything in `docs/alpha-launch.md` (new bot token, paid Gemini, firewall 8000/6001/6002, 2FA, backups, API domain with HTTPS, the app on Netlify, inviting testers).
+- Server access: `ssh <user>@<server>` (this laptop's key; user and address in `storage/app/ops.md`). App container: `A=$(docker ps --format "{{.Names}}" | grep <app-uuid> | head -1)`, then `docker exec $A php artisan ...` (e.g. `channel:invite email --name=X`, `channel:unlink email`). Deploy history: `docker exec coolify-db psql -U coolify -d coolify -Atc "select id,status,left(commit,7),created_at from application_deployment_queues order by id desc limit 3"`.
+- Open: everything in `docs/alpha-launch.md` (new bot token, paid Gemini, firewall, 2FA, backups, API domain with HTTPS, the app on Netlify, inviting testers).
 - Kickoff page: `docs/session-kickoff.md` says where things stand, what waits for Hiren and what did not travel through git. CI is red since `a707178` because of a new `laravel/framework` advisory; the fix is in that page.
 - Latest direction (2026-11-14): read `docs/direction-2026-11-14.md` before anything else. It holds Hiren's verdict on the advice (generic, no coaches in sight), the model switch for the coach that needs no code, the GDPR answer, what the app shows and lacks, and the build order that waits for his go.
 - Method cards (2026-11-14): `docs/method-cards-2026-11-14.md` is the first draft of "one or two proven ways per question" (running further, cardio fitness, the compound day, a goal with a date), with the AI and training terms explained. Hiren confirms or swaps the picks; then the cards go into the coach's context.
@@ -113,6 +113,7 @@ What keeps it yellow: the written profile and limitation parsing run on Gemini's
 | minor | README is stock Laravel; `ruby-app-scaffold-prompt.md` is a stale spec | repo root |
 | fixed 2026-11-14 | CI was red since `a707178` on GHSA-63hm-g96r-2m2q (`laravel/framework` below 13.40.0), and the audit step sat before Pint and the SQLite suite, so neither ran. Now 13.42, `^13.40`, audit in its own job | `composer.json`, `.github/workflows/test.yml` |
 | major | Deploys do not wait for CI: every push to `master` deploys through the Coolify webhook while the tests are still running. Turn on Coolify's wait for checks, or deploy from a workflow step after both test jobs (audit 2026-11-14 item 3) | Coolify, `docs/deploy-coolify.md:3` |
+| fixed 2026-11-15 | The public repository showed the server address, SSH login and container names (audit 2026-11-14 C5). Moved to `storage/app/ops.md`; still in git history | `PROJECT.md`, `docs/` |
 | warning | No per-user throttle on the chat door; the HTTP door has one (audit 2026-11-14 C3) | `app/Channels/HandleInboundMessage.php` |
 | warning | During a deploy the old and new poller can both handle the same Telegram update (audit 2026-11-14 C4) | `app/Console/Commands/TelegramPoll.php:41,62-64` |
 | warning | `ProfileVersion::ROLLING` and `FULL` are a string set where an enum belongs (seen in the clean-code check of 14 Nov, not changed) | `app/Models/ProfileVersion.php` |
@@ -302,6 +303,10 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-11-15 (evening) — MVP week 1 on `mvp-week1`, one commit per step
+- Hiren: "do all of week 1's tasks that are code/commitable (1 commit per step)". Plan: Week 1 of the MVP plan of 15 Nov. Branch `mvp-week1` from `master`, not pushed: Hiren pushes after his server steps.
+- Step 1, server details out (audit 2026-11-14 C5): the address, SSH login, app and database container names, bot name, port probe and a work email are gone from `PROJECT.md`, `docs/` and `docs/technical/`; the docs point at the private ops note `storage/app/ops.md` (ignored by git, written on this laptop). Git history is not rewritten: the old values stay public, so the firewall and key-only SSH (Hiren's step) are what protect the server.
+
 ### 2026-11-15 — every saved message audited; replay as Opus and Sonnet; prompts from the misses
 - Hiren: recheck every message received, judge what was saved, replay them as Opus and as Sonnet. Production read read-only (ssh, Postgres with `default_transaction_read_only=on`). Report, raw dump and both replays in `storage/app/audit/audit-2026-11-15.md` and `storage/app/audit/2026-11-15/` (gitignored, personal data, this laptop only).
 - Worst saves: the 5 Nov session has no exercises; 7 Nov bench is 11 sets under two names; 21 Oct squat 5x90 instead of 90 then 4x80; back replies saved as logs before 12 Nov; on 15 Nov "was sick yesterday" and "the lower the better right?" filed as back updates. The app dates the back from 2 Nov (it was 26 Oct) and has no goal store.
@@ -351,7 +356,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 ### 2026-11-11 — the morning message
 - Hiren, unhappy after the weekend (logs not yet seen; he runs the audit), asked for proactive coaching once a day at 8, configurable, next to asking. Built on `daily-coaching`: `users.daily_coaching_hour` (default 8, null off) and `coach_turns.kind` (asked, daily); `User::dueForMorningMessage()` scope; `coach:daily` hourly from the scheduler (`--user=email` sends now and prints); `SendDailyCoachingTo` job (unique per person per day, 3 tries 10 min apart); `SendDailyCoaching` action with a fixed morning brief over `CoachContext`, stored as a daily turn, sent on every linked chat through `ChatChannel`; `CoachBudget` (the monthly cap, now shared with asked questions); `/daily` command; `ChatCommand::reply` takes the argument after the word (`HandleInboundMessage::COMMAND_WORD`); `FakeChatChannel`. 7 tests; 290 on SQLite.
-- Hiren's steps: redeploy happens on push; run `channel:telegram:setup` on the server so `/daily` is in the menu; the first message comes at 08:00 Amsterdam tomorrow, or now with `php artisan coach:daily --user=hiren.budhrani@mogelijk.nl`.
+- Hiren's steps: redeploy happens on push; run `channel:telegram:setup` on the server so `/daily` is in the menu; the first message comes at 08:00 Amsterdam tomorrow, or now with `php artisan coach:daily --user=<your email>`.
 
 ### 2026-11-09 — step 0 of the audit: test guards; docs on the journey, classifier and prompts
 - Hiren: "go for next step then push", and expand the technical documentation on Laya and the classifier, the prompts, and an illustrated journey of a message (logging, profile update, AI usage).
@@ -425,7 +430,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - App: `client/` is a Nuxt 4.6 single-page PWA (Tailwind 4, atomic design, one SVG sprite, `@vite-pwa/nuxt`), with a Dockerfile (static build behind nginx) and README for Coolify. Verified in the browser against real data: Hiren's messages replayed locally through Gemini, profile rebuilt (3 cited notes including the injury), home and logs pages checked on desktop and at 375 px, `npm run generate` produces `sw.js` and the manifest.
 - Classifier: investigated again. Gemini stays; a shadow decorator comes first; Laya on the VPS or Jev via OpenRouter is Hiren's step. Numbers and reasoning in PLAN.md section 4 (2026-10-29).
 - 233 tests on SQLite and Postgres, Pint clean. Eval case found, not fixed: a 70 kg warm-up line plus "2x110kg x 5 times" comes back from Gemini as one exercise with a set_list, so the sets-or-reps rule does not fire and the "5" answer lands in the warm-up reps.
-- Deploys 114 and 115 finished; both migrations ran on production; `channel:telegram:setup` run on the server over SSH, menu now `/help /undo /me /login /better`. CI first failed on a new `symfony/mime` advisory (CVE-2026-45070), bumped to 8.1.10. Server check: 11 GB RAM with 1.6 used, disk 9 %, Coolify 4.5.3; ports 8000, 6001 and 6002 still open to the world (checklist item).
+- Deploys 114 and 115 finished; both migrations ran on production; `channel:telegram:setup` run on the server over SSH, menu now `/help /undo /me /login /better`. CI first failed on a new `symfony/mime` advisory (CVE-2026-45070), bumped to 8.1.10. Server check: 11 GB RAM with 1.6 used, disk 9 %, Coolify 4.5.3; the firewall is a checklist item.
 - Hiren chose Netlify for the app: `netlify.toml`, `client/public/_redirects`, `client/public/_headers` added. Blocker before it works: the API must be HTTPS on a real domain (the sslip.io address is HTTP only).
 - Hiren's steps: domain + HTTPS for the API, the Netlify site with its two variables, `APP_WEB_URL` and `CORS_ALLOWED_ORIGINS`, revoke the old bot token.
 
@@ -445,8 +450,8 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - Open: correct the 2026-10-21 squat on production (needs Hiren's OK); profile questions (the daily check-in) after drafts.
 
 ### 2026-10-18 (night) — v0 live; push deploys
-- Deploy 108 (commit 0be8aaf, triggered by the push, `is_webhook` true) finished: start log `==> Database: pgsql host=8xjebo68de4epsymjzpwgf9j port=5432 database=postgres`, 22 migrations, `telegram-poller` listening; public checks: home 200, `/up` 200, register 403, lab 404. No database login failures after 15:51.
-- `channel:telegram:setup` on the server (bot @LarryTheLobsterFromSpongebobBot, menu /help /undo) and `channel:invite` for Hiren (user created, one-time link valid until 2026-10-25).
+- Deploy 108 (commit 0be8aaf, triggered by the push, `is_webhook` true) finished: start log `==> Database: pgsql host=<db-host> port=5432 database=postgres`, 22 migrations, `telegram-poller` listening; public checks: home 200, `/up` 200, register 403, lab 404. No database login failures after 15:51.
+- `channel:telegram:setup` on the server (menu /help /undo) and `channel:invite` for Hiren (user created, one-time link valid until 2026-10-25).
 - Coolify: auto-deploy enabled, source is the `hersh3yy` GitHub App, so every push to `master` deploys. Docs updated (they said manual).
 
 ### 2026-10-18 (evening) — four failed deploys, each one step closer
@@ -456,7 +461,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - Secrets that appeared in chat today: the old database URL with password (changed since), the bot token in a BotFather screenshot (revoke recommended). Start here rewritten with the exact next steps.
 
 ### 2026-10-18 (later) — first real deploy failed on DB_URL; start script now says why
-- SSH from this laptop to the Coolify server works with the laptop's key (`ssh hiren@84.247.178.198`, user in the `docker` group; password logins still on). Server healthy: 6 cores, 11 GB (1.6 used), disk 10%, nothing unusual on CPU.
+- SSH from this laptop to the Coolify server works with the laptop's key (user in the `docker` group; password logins still on). Server healthy: 6 cores, 11 GB (1.6 used), disk 10%, nothing unusual on CPU.
 - Hiren pasted the environment variables and deployed (deployment 104, commit 7618f61): build fine, new container failed its health check and Coolify rolled back. Cause: migrations tried `127.0.0.1:5432` (connection refused). All 20 variables are stored with runtime on; Laravel's `ConfigurationUrlParser` turns a `DB_URL` value with `DB_URL=` in front, a leading space or quotes into host 127.0.0.1 (verified locally). Hiren to check the value starts with `postgres://`.
 - `docker/entrypoint.sh` now prints `==> Database: pgsql host=… port=… database=…` (parsed the way Laravel connects; never the password; a malformed name prints as `(unreadable)`) and in production exits at once with a clear hint when the host is 127.0.0.1, instead of retrying for 90 seconds.
 
@@ -473,7 +478,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 ### 2026-10-12 (night) — Coolify Postgres created; handoff for tomorrow
 - Hiren created Postgres 18 on Coolify (Private, no port mapping, user and database `postgres`, SSL off on the internal network). `php artisan key:generate` failed in the app container because there is no `.env` there; the fix is `key:generate --show` and pasting into Coolify. The app still has no environment variables and runs the build from 23:26 on 2026-10-11, before the hardening; it needs the env and a redeploy of the latest `master`.
-- Port probe of 84.247.178.198 from the laptop: 22, 80, 443 open; 3306, 5432, 6379, 9000 refused; 8000 (Coolify dashboard, plain HTTP) and 6001 (Coolify realtime) open to the internet. `/up` on the app answered 200.
+- Port probe of the server from the laptop (results in `storage/app/ops.md`). `/up` on the app answered 200.
 - The database's internal URL with its password was visible in a screenshot in chat: change the password if that image is shared anywhere.
 - Start here rewritten as tomorrow's checklist. `docs/deploy-coolify.md`: `key:generate --show`, where to find the internal URL, deploy the latest `master`.
 

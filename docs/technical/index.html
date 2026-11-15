@@ -56,7 +56,7 @@
   <tr><th>Part</th><th>Where</th><th>What it is</th></tr>
   <tr><td>Backend (this document)</td><td><code>~/Code/feetness/work-it-out</code>, GitHub <code>Hersh3yy/work-it-out</code>, branch <code>master</code></td><td>The Laravel API, the Telegram poller, the queue worker and the scheduler, in one Docker image</td></tr>
   <tr><td>App</td><td><code>~/Code/feetness/feetness-app</code></td><td>Nuxt 4 PWA (Tailwind 4, atomic design); reads the API; deploys on Netlify</td></tr>
-  <tr><td>Hosting</td><td>Coolify on 84.247.178.198</td><td>Every push to <code>master</code> builds and deploys; a failed health check keeps the old version</td></tr>
+  <tr><td>Hosting</td><td>Coolify on a VPS</td><td>Every push to <code>master</code> builds and deploys; a failed health check keeps the old version</td></tr>
   <tr><td>Chat door</td><td>Telegram bot, long polling</td><td>Invite-only: one-time links from <code>channel:invite</code></td></tr>
 </table></div>
 <p class="prose">Ground rules that shape the code (from <code>CLAUDE.md</code> and <code>PLAN.md</code> section 4): the AI never writes assumptions or invents numbers; numbers are computed in plain PHP; every saved fact cites the message it came from and disappears with it on <code>/undo</code>; while something is unclear the bot asks instead of guessing; every behaviour has a test that runs without AI; code reads without comments.</p>
@@ -551,7 +551,7 @@ php artisan log:parse "squat 5x5 100"</code></pre>
 <h3>Deploys and the server</h3>
 <ul class="prose">
   <li>Push to <code>master</code>: CI runs both test suites while Coolify builds; the start script migrates; the health check guards the switch.</li>
-  <li>Server: <code>ssh hiren@84.247.178.198</code>; the app container's name contains <code>gbvqkbpmen41pdhf1eqgkzca</code>; deploy history is in Coolify's own database.</li>
+  <li>Server: address, SSH user and the app container's name are in the private ops note <code>storage/app/ops.md</code> (ignored by git); deploy history is in Coolify's own database.</li>
   <li>Never expose service ports: a previous server was cryptojacked through php-fpm on 9000. Secrets only in environment variables.</li>
   <li>Step-by-step: <code>docs/deploy-coolify.md</code>; getting testers in: <code>docs/alpha-launch.md</code>.</li>
 </ul>
