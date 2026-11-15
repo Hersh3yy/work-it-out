@@ -16,7 +16,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Ai\Concerns\HasConversations;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable([
@@ -40,7 +39,7 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasConversations, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected function casts(): array
     {
@@ -83,11 +82,7 @@ class User extends Authenticatable
         return $this->hasMany(Limitation::class);
     }
 
-    /**
-     * Newest first.
-     *
-     * @return HasMany<CoachTurn, $this>
-     */
+    /** @return HasMany<WaitingMessage, $this> */
     public function waitingMessages(): HasMany
     {
         return $this->hasMany(WaitingMessage::class);

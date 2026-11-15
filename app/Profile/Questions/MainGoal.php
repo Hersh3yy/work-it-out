@@ -15,7 +15,7 @@ final class MainGoal implements ProfileQuestion
 {
     private const int MAX_WORDS = 3;
 
-    /** @var array<string, PrimaryGoal> option number or keyword => goal */
+    /** @var array<int|string, PrimaryGoal> option number or keyword => goal */
     private const array CHOICES = [
         '1' => PrimaryGoal::BuildMuscle,
         '2' => PrimaryGoal::LoseFat,

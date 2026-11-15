@@ -1,24 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\CoachTurn, App\\Models\\User\>\:\:waiting\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Actions/Conversation/KeepMessage.php
-
-		-
-			message: '#^Method App\\Actions\\Conversation\\KeepMessage\:\:handle\(\) should return App\\Models\\WaitingMessage but returns App\\Models\\CoachTurn\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Actions/Conversation/KeepMessage.php
-
-		-
-			message: '#^Parameter \#1 \$waiting of job class App\\Jobs\\ProcessWaitingMessage constructor expects App\\Models\\WaitingMessage in App\\Jobs\\ProcessWaitingMessage\:\:dispatch\(\), App\\Models\\CoachTurn given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Actions/Conversation/KeepMessage.php
-
-		-
 			message: '#^Offset ''candidates'' on array\{is_limitation\: bool, body_area\: string\|null, candidates\: list\<string\>, severity\: string\|null, duration_days\: int\|null, started_days_ago\: int\|null, note\: string\} on left side of \?\? always exists and is not nullable\.$#'
 			identifier: nullCoalesce.offset
 			count: 1
@@ -89,12 +71,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Ai/Usage/UsageReport.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\CoachTurn, App\\Models\\User\>\:\:waiting\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Coach/CoachContext.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>notes" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -169,12 +145,6 @@ parameters:
 			path: app/Models/ExerciseEntry.php
 
 		-
-			message: '#^Method App\\Models\\User\:\:waitingMessages\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\CoachTurn, \$this\(App\\Models\\User\)\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\WaitingMessage, \$this\(App\\Models\\User\)\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Models/User.php
-
-		-
 			message: '#^Cannot access property \$value on string\.$#'
 			identifier: property.nonObject
 			count: 2
@@ -191,12 +161,6 @@ parameters:
 			identifier: method.nonObject
 			count: 3
 			path: app/Profile/ProfileFacts.php
-
-		-
-			message: '#^Constant App\\Profile\\Questions\\MainGoal\:\:CHOICES \(array\<string, App\\Enums\\PrimaryGoal\>\) does not accept value array\<int\|string, App\\Enums\\PrimaryGoal\:\:BuildMuscle\|App\\Enums\\PrimaryGoal\:\:GeneralFitness\|App\\Enums\\PrimaryGoal\:\:ImproveEndurance\|App\\Enums\\PrimaryGoal\:\:LoseFat\>\.$#'
-			identifier: classConstant.value
-			count: 1
-			path: app/Profile/Questions/MainGoal.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>notes" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
