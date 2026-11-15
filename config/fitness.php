@@ -64,4 +64,9 @@ return [
         'illness_cap' => 50,
     ],
 
+    'level' => [
+        // Convention (Feetness, 15 November): every session that trains a quality earns it this many points; level is the sum, so it only grows.
+        'points_per_session' => 1,
+    ],
+
 ];

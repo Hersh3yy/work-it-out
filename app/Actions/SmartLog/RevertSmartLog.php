@@ -21,6 +21,7 @@ final readonly class RevertSmartLog
     {
         $user = $log->user;
         $type = $log->log_type;
+        $loggedOn = $log->logged_on->toImmutable();
         $loggable = $log->loggable;
 
         DB::transaction(function () use ($log, $loggable, $user): void {
@@ -42,6 +43,6 @@ final readonly class RevertSmartLog
             $log->delete();
         });
 
-        LogReverted::dispatch($user, $type);
+        LogReverted::dispatch($user, $type, $loggedOn);
     }
 }

@@ -125,6 +125,12 @@ class User extends Authenticatable
         return $this->hasMany(DiaryEntry::class)->latest();
     }
 
+    /** @return HasMany<QualitySnapshot, $this> */
+    public function qualitySnapshots(): HasMany
+    {
+        return $this->hasMany(QualitySnapshot::class);
+    }
+
     /**
      * Who gets the morning message now: linked to a chat, heard from within
      * coach.daily.quiet_after_days, their hour in the app timezone, and
