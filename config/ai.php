@@ -80,7 +80,8 @@ return [
     | Read by php artisan ai:usage. A model without a price is reported as
     | unpriced; nothing is guessed. DeepSeek bills a lower rate off-peak;
     | the peak rate is kept here as the upper bound. Gemini 3.8 Flash
-    | doubles on 1 January 2027.
+    | doubles on 1 January 2027. Mistral (read 15 November 2026) is priced at
+    | the EU endpoint's rate, 1.1 times the global list price.
     */
     'prices' => [
         'gemini-3.5-flash-lite' => ['input' => 0.30, 'output' => 2.50],
@@ -88,6 +89,8 @@ return [
         'gemini-3.8-flash' => ['input' => 0.75, 'output' => 3.75],
         'deepseek-flash' => ['input' => 0.30, 'output' => 1.20],
         'deepseek-v4-pro' => ['input' => 1.32, 'output' => 3.96],
+        'mistral-large-4-0' => ['input' => 0.77, 'output' => 2.31],
+        'mistral-small-2603' => ['input' => 0.165, 'output' => 0.66],
     ],
 
     /*
@@ -231,6 +234,8 @@ return [
         'mistral' => [
             'driver' => 'mistral',
             'key' => env('MISTRAL_API_KEY'),
+            // https://api.eu.mistral.ai/v1 keeps inference in the EU; the global default promises no location.
+            'url' => env('MISTRAL_URL', 'https://api.mistral.ai/v1'),
         ],
 
         'ollama' => [
