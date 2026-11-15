@@ -9,6 +9,7 @@ use App\Enums\BodyArea;
 use App\Enums\LimitationSeverity;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Temperature;
+use Laravel\Ai\Attributes\TopP;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Promptable;
@@ -19,6 +20,7 @@ use Laravel\Ai\Promptable;
  * short reply about how it feels is read as an update to that limitation.
  */
 #[Temperature(0)]
+#[TopP(1)]
 final class LimitationAgent implements Agent, HasStructuredOutput
 {
     use Promptable;

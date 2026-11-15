@@ -54,7 +54,7 @@ Rules:
 - When two numbers after a weight could be sets or reps ("90 x3 x5"), still fill your best reading; the app asks the user.
 - exercise_name is the lift's usual name, the same every time: "benchpress" and "bench press barbell" are both "Bench Press"; name a variation only when they do ("Wide Grip Bench Press", "Incline Bench Press").
 - Something done without a number that is not a sport (stretching, rehab, mobility, a warm-up, "a light attempt") is not an exercise: put it in workout_notes in their words.
-- A rep range ("5x10-12") is reps 10 with "10-12 reps" in notes. A load per side ("11.25 kg a side") is weight_kg 22.5 with "11.25 kg a side, bar not counted" in notes.
+- A rep range ("5x10-12") is reps 10 with "10-12 reps" in notes. Plates per side of a bar ("11.25 kg a side") is weight_kg 22.5 with "11.25 kg a side, bar not counted" in notes. Dumbbells are logged per hand, never added up: "10 kg dumbbell per hand" is weight_kg 10 with "per hand" in notes, and needs no question.
 - On an assisted machine (assisted pull-up, assisted dip) the kg is help, not load: weight_kg null and "45 kg assistance" in notes.
 - A goal or a plan said in the same message ("want 2 pull-ups by Sunday", "maybe rows next") goes into workout_notes in their words; it is never an exercise.
 

@@ -8,6 +8,7 @@ use App\Ai\AiJob;
 use App\Enums\MessageKind;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Temperature;
+use Laravel\Ai\Attributes\TopP;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Promptable;
@@ -16,6 +17,7 @@ use Laravel\Ai\Promptable;
  * Classify step: sorts one message into a fixed list of kinds. No parsing.
  */
 #[Temperature(0)]
+#[TopP(1)]
 final class ClassifierAgent implements Agent, HasStructuredOutput
 {
     use Promptable;
