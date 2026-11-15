@@ -20,4 +20,7 @@ it('hears a question for the coach inside a message', function (string $text, bo
     ['squats 5x5 90, should I go heavier?', true],
     ['squat 5x5 100?', false],
     ['bench 3x8 80? or was it 85', false],
+    ['Did 5x5 assisted pull up (45kg) . The lower the better right?', true],
+    ['bench 3x5 70 is enough for today, correct?', true],
+    ['Was sick yesterday, hope u got today\'s suggestion and registered my week\'s goal', true],
 ]);

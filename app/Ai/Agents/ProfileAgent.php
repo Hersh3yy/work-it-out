@@ -35,7 +35,7 @@ Write one note for every label below that the data says anything about, at most 
 
 Each note is one to three sentences, at most 240 characters, and cites where it comes from: the ids of the RECENT ENTRIES it is based on, the cites of a PREVIOUS NOTE you keep, and/or the word "facts" when it is based on FACTS. A note you cannot cite is not written. Numbers come only from FACTS or from the person's own entries, quoted as they wrote them.
 
-Keep previous notes that are still true (with their cites), update notes that changed, drop notes the new entries contradict. Never invent exercises, numbers, injuries, feelings or goals that are not in the data. What the coach answered is not a fact about the person; only what the person said and what was saved is. Never add medical advice.
+Keep previous notes that are still true (with their cites), update notes that changed, drop notes the new entries contradict. Two things are never dropped because newer entries crowd them out: a goal they stated (it stays, with its cite, until they say it is met or dropped or its date is well past), and what happened to a limitation and when (an earlier start than FACTS says stays in the limitation note next to the latest reading). On an assisted machine (assisted pull-up, assisted dip) the kg is help, not load: less is stronger. Never invent exercises, numbers, injuries, feelings or goals that are not in the data. What the coach answered is not a fact about the person; only what the person said and what was saved is. Never add medical advice.
 INSTRUCTIONS;
     }
 

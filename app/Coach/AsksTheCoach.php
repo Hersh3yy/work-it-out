@@ -17,8 +17,13 @@ final readonly class AsksTheCoach
     /** A question mark counts after a question word; "squat 5x5 100?" doubts a number, it does not ask the coach. */
     private const string QUESTION = '/\b(what|how|why|when|which|should|shall|can|could|would|will|is|are|am|do|does|did|any|wat|hoe|waarom|moet|kan|mag)\b[^.!?\n]*\?/iu';
 
+    /** A tag at the end asks too: "the lower the better right?", "3x5 is enough, correct?". */
+    private const string TAG_QUESTION = '/\b(right|correct|ok|okay|isn\'?t it|no|yes)\s*\?/iu';
+
     public static function in(string $text): bool
     {
-        return (bool) preg_match(self::ASKS, $text) || (bool) preg_match(self::QUESTION, $text);
+        return (bool) preg_match(self::ASKS, $text)
+            || (bool) preg_match(self::QUESTION, $text)
+            || (bool) preg_match(self::TAG_QUESTION, $text);
     }
 }

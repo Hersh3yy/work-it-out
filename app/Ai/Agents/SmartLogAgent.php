@@ -46,6 +46,11 @@ Rules:
 - exercises: one item per exercise, in the order written. Weights in kg (convert lb), distance in meters, durations in seconds.
 - set_list: when the sets of an exercise differ in weight or reps, list every set in order with its own reps and weight_kg. "squats 5x5 90 80 80 80 80" is sets 5, reps 5 and set_list [5 @ 90, 5 @ 80, 5 @ 80, 5 @ 80, 5 @ 80]. When every set is the same, leave set_list empty and use sets, reps and weight_kg.
 - When two numbers after a weight could be sets or reps ("90 x3 x5"), still fill your best reading; the app asks the user.
+- exercise_name is the lift's usual name, the same every time: "benchpress" and "bench press barbell" are both "Bench Press"; name a variation only when they do ("Wide Grip Bench Press", "Incline Bench Press").
+- Something done without a number that is not a sport (stretching, rehab, mobility, a warm-up, "a light attempt") is not an exercise: put it in workout_notes in their words.
+- A rep range ("5x10-12") is reps 10 with "10-12 reps" in notes. A load per side ("11.25 kg a side") is weight_kg 22.5 with "11.25 kg a side, bar not counted" in notes.
+- On an assisted machine (assisted pull-up, assisted dip) the kg is help, not load: weight_kg null and "45 kg assistance" in notes.
+- A goal or a plan said in the same message ("want 2 pull-ups by Sunday", "maybe rows next") goes into workout_notes in their words; it is never an exercise.
 
 Examples (message, then the important fields):
 - "bench 3x8 80, then incline db 3x10" -> workout; exercises: Bench Press sets 3 reps 8 weight 80; Incline DB Press sets 3 reps 10 weight null; questions: one asking the incline weight (field "exercises.1.weight_kg").
@@ -53,6 +58,8 @@ Examples (message, then the important fields):
 - "padel for an hour" -> workout; exercises: Padel duration 3600; no questions.
 - "yesterday squats 5x5, 90 80 80 80 80" -> workout; logged_on yesterday; exercises: Squat sets 5 reps 5 weight null, set_list five items: reps 5 weight 90, then four times reps 5 weight 80.
 - "104.5kg" -> biometrics; weight_kg_stat 104.5.
+- "row 41kg 5x10-12, hamstring curls 50kg 2 sets then 40kg 3 sets, 10 reps" -> workout; Row sets 5 reps 10 weight 41 notes "10-12 reps"; Hamstring Curl set_list 10 @ 50, 10 @ 50, 10 @ 40, 10 @ 40, 10 @ 40.
+- "overhead press 6x8 40, did some rehab for the back" -> workout; Overhead Press sets 6 reps 8 weight 40; workout_notes "rehab for the back"; no rehab exercise.
 
 - questions: when a value an entry needs is missing, add one item with the field (for example "exercises.1.weight_kg") and one short question ("What weight for the incline press?"). A weighted lift needs sets, reps and weight; a bodyweight exercise needs no weight; cardio needs a time or a distance. At most one question; pick the most important. Empty when nothing is missing.
 INSTRUCTIONS;
