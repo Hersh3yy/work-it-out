@@ -285,6 +285,10 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-11-15 (late night) — phase 2, the game's foundation, on `game-foundation`
+- Hiren: phase 2 step by step, one commit each, never pushed. Worktree `work-it-out-phase2`, branch `game-foundation` from `mvp-week1` with `origin/master` and `pitch` merged in (one conflict, this diary: both entries kept).
+- Step 2: `App\Fitness\Energy` (lift, last, heal) and `Quality` (strength, power, endurance, core, mobility, recovery), each quality knows its energy; `TrainerPersona::energy()` replaces the unused `rpgCategory()`. 420 tests on SQLite and Postgres.
+
 ### 2026-11-15 (night) — model comparison on Hiren's messages; profile once per session; Mistral fixes
 - Hiren: compare the existing setup, Claude tiers and Mistral tiers on his own messages (quality, speed, cost). Every message replayed through `HandleInboundMessage` with the clock set per message, on a throwaway copy, EU endpoint; report and data in `storage/app/audit/model-comparison-2026-11-15.md` (gitignored, this laptop).
 - Mistral Large 4 always reasons (`reasoning_effort` none refused): 15 to 40 s per call, coach and profile time out at 60 s. Dropped. Medium 3.5 and Small 4 answer in 1 to 4 s; Medium reads logs and writes the profile well, its coach is formulaic; Small invents numbers. Gemini flash-lite on today's prompts reads logs as well as Medium. Claude coached best in the hand replay; not run through the app (no key).

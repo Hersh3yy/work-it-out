@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
+use App\Fitness\Energy;
+
 /**
  * The three canonical AI coaches.
  *
@@ -14,13 +16,13 @@ namespace App\Enums;
  */
 enum TrainerPersona: string
 {
-    /** Tough-love drill sergeant — strength focus */
+    /** Tough-love drill sergeant, master of the energy that lifts */
     case LtSurge = 'lt_surge';
 
-    /** High-energy performance athlete — stamina focus */
+    /** High-energy performance athlete, master of the energy that lasts */
     case Shen = 'shen';
 
-    /** Recovery, mobility and long-term health — vitality focus */
+    /** Recovery, mobility and long-term health, master of the energy that heals */
     case Latika = 'latika';
 
     public function label(): string
@@ -32,12 +34,12 @@ enum TrainerPersona: string
         };
     }
 
-    public function rpgCategory(): string
+    public function energy(): Energy
     {
         return match ($this) {
-            self::LtSurge => 'strength',
-            self::Shen => 'stamina',
-            self::Latika => 'vitality',
+            self::LtSurge => Energy::Lift,
+            self::Shen => Energy::Last,
+            self::Latika => Energy::Heal,
         };
     }
 
