@@ -95,7 +95,7 @@ final readonly class UpdateProfile
      */
     private function fromLog(ActivityLog $log): array
     {
-        $exercises = $log->exerciseEntries->sortBy('sort_order')->map($this->lines->for(...))->implode('; ');
+        $exercises = implode('; ', $this->lines->forAll($log->exerciseEntries->sortBy('sort_order')));
 
         return [
             'at' => $log->created_at,

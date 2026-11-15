@@ -10,19 +10,6 @@ use App\Models\WorkoutSession;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-/*
- * Hiren's superset of 2026-11-15: "10 pushups, 12 lying leg raises, 40 second
- * plank, 4 of those". Saved before this as Plank "?×?" four times.
- */
-function supersetFacts(): array
-{
-    return workoutFacts([
-        ['exercise_name' => 'Push-ups', 'sets' => 4, 'reps' => 10, 'bodyweight' => true, 'group' => 'Superset'],
-        ['exercise_name' => 'Lying Leg Raise', 'sets' => 4, 'reps' => 12, 'bodyweight' => true, 'group' => 'Superset'],
-        ['exercise_name' => 'Plank', 'sets' => 4, 'duration_seconds' => 40, 'bodyweight' => true, 'group' => 'Superset'],
-    ]);
-}
-
 it('stores a timed set\'s seconds on every set row and totals them on the entry', function (): void {
     $user = User::factory()->create();
 

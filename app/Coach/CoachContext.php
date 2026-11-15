@@ -121,7 +121,7 @@ final readonly class CoachContext
             'kind' => $log->log_type->value,
             'message' => mb_strimwidth($log->raw_message, 0, $chars, '…'),
             'saved_as' => mb_strimwidth($log->summary, 0, $chars, '…'),
-            'exercises' => $log->exerciseEntries->sortBy('sort_order')->map($lines->for(...))->values()->all(),
+            'exercises' => $lines->forAll($log->exerciseEntries->sortBy('sort_order')),
         ];
     }
 

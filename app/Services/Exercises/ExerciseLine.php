@@ -39,6 +39,51 @@ final readonly class ExerciseLine
     }
 
     /**
+     * The lines of several exercises in order, a superset or circuit folded
+     * into one: "Superset x4: Push-ups 10, Lying Leg Raise 12, Plank 40s".
+     *
+     * @param  iterable<ExerciseEntry>  $entries  in sort order
+     * @return list<string>
+     */
+    public function forAll(iterable $entries): array
+    {
+        $lines = [];
+        $group = null;
+
+        foreach ($entries as $entry) {
+            if ($entry->group_label === null) {
+                $lines[] = $this->for($entry);
+                $group = null;
+
+                continue;
+            }
+
+            if ($entry->group_label !== $group) {
+                $group = $entry->group_label;
+                $lines[] = sprintf('%s x%d: %s', $group, $entry->sets ?? 1, $this->oneRound($entry));
+
+                continue;
+            }
+
+            $lines[array_key_last($lines)] .= ', '.$this->oneRound($entry);
+        }
+
+        return $lines;
+    }
+
+    /** One round of a grouped exercise: "Push-ups 10", "Plank 40s", "Kettlebell Swing 8 @ 24 kg". */
+    private function oneRound(ExerciseEntry $entry): string
+    {
+        $one = $entry->setRows()->first();
+
+        return self::join([
+            $entry->exercise_name,
+            self::work(null, $one->reps ?? $entry->reps, $one->duration_seconds ?? null, $one->distance_meters ?? null),
+            $entry->assisted || $entry->bodyweight ? null : self::load($entry),
+        ], [self::help($entry)]);
+    }
+
+    /**
      * The words of the line, then what follows a comma: "Squat 5x5 @ 100 kg, 2 in reserve".
      *
      * @param  list<string|null>  $words

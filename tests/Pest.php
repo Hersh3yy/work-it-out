@@ -115,6 +115,19 @@ function workoutFacts(array $exercises, array $overrides = []): array
     ], $overrides);
 }
 
+/*
+ * Hiren's superset of 2026-11-15: "10 pushups, 12 lying leg raises, 40 second
+ * plank, 4 of those". Saved before this as Plank "?×?" four times.
+ */
+function supersetFacts(): array
+{
+    return workoutFacts([
+        ['exercise_name' => 'Push-ups', 'sets' => 4, 'reps' => 10, 'bodyweight' => true, 'group' => 'Superset'],
+        ['exercise_name' => 'Lying Leg Raise', 'sets' => 4, 'reps' => 12, 'bodyweight' => true, 'group' => 'Superset'],
+        ['exercise_name' => 'Plank', 'sets' => 4, 'duration_seconds' => 40, 'bodyweight' => true, 'group' => 'Superset'],
+    ]);
+}
+
 function lift(string $name, ?float $kg = 80.0, int $sets = 3, int $reps = 8): array
 {
     return ['exercise_name' => $name, 'sets' => $sets, 'reps' => $reps, 'weight_kg' => $kg];
