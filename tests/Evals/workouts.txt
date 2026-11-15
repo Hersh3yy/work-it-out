@@ -1,6 +1,6 @@
 # The ways people text a workout, one message per line: message, a tab, the shape it should save.
 # "\n" inside a message is a line break. Lines starting with # are comments.
-# Run them all, saving nothing: php artisan log:parse --file=tests/Evals/workouts.txt
+# Run them all, saving nothing: php artisan log:parse --file=tests/Evals/workouts.txt --pause=4
 # Results per run live in tests/Evals/workouts-results.md.
 #
 # Shape notation: Name sets x reps @ kg; "bw" bodyweight; "40s" a timed set; "help" assistance;

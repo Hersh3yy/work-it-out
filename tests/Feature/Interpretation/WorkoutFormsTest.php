@@ -118,3 +118,20 @@ it('keeps the effort said for all sets and for one set', function (): void {
 
     expect($read['lines'])->toBe(['Squat 5x5 @ 100 kg, 2 in reserve', 'Bench Press 80 kg × 8, 8, 6 (to failure)']);
 });
+
+it('runs a whole catalogue through the reader and prints each result beside its expected shape', function (): void {
+    linkedUser();
+    classifierSays(MessageKind::Workout);
+    $parser = fakeSmartLogParser(new FakeSmartLogParser(supersetFacts()));
+    $file = tempnam(sys_get_temp_dir(), 'catalogue');
+    file_put_contents($file, "# a comment\n\nDid a superset\\n10 pushups\\n40 second plank\\n4 of those\tsuperset x4\n");
+
+    $this->artisan('log:parse', ['--file' => $file])
+        ->expectsOutput('01 | Did a superset\n10 pushups\n40 second plank\n4 of those')
+        ->expectsOutput('   expected  superset x4')
+        ->expectsOutput('   got       workout: Push-ups 4x10 bodyweight [Superset]; Lying Leg Raise 4x12 bodyweight [Superset]; Plank 4x? s 40 bodyweight [Superset]')
+        ->assertSuccessful();
+
+    expect($parser->calls[0]['message'])->toBe("Did a superset\n10 pushups\n40 second plank\n4 of those");
+    unlink($file);
+});
