@@ -302,6 +302,13 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-11-15 — the coach and the profile ready for Mistral (EU)
+- Hiren wants the coach on an EU provider instead of Gemini Flash-Lite, probably the profile too; logging, the classifier and the injury reader stay on Gemini (they share the `log` job). Branch `mistral-coach`, in its own worktree because another session had the main checkout mid clean-up.
+- From Mistral's docs (15 Nov): Large 4 is `mistral-large-4-0` at $0.70 in and $2.10 out; the library's default `mistral-large-2512` is Large 3 and `mistral-medium-3-5` is Medium 3.5, both deprecated since 31 Oct. Reasoning is opt-in through `reasoning_effort`, which the app does not send; what Large 4 does without it is not documented. Regional inference is a separate endpoint, `api.eu.mistral.ai`, at 1.1 times list price; the global endpoint promises no location.
+- Built: `config/ai.php` Mistral provider reads `MISTRAL_URL`; `prices` has `mistral-large-4-0` and `mistral-small-2603` at the EU rate; `.env.example` lines; `tests/Feature/Ai/MistralTest.php` runs the real coach and profile adapters on the library's Mistral driver with HTTP faked (EU URL, model, `max_tokens`, json_schema, recorded model, cost). 372 tests on SQLite and Postgres, pint clean, clean-code check run.
+- Pick, prices, privacy and Hiren's Coolify steps: `docs/mistral-2026-11-15.md`. The coach caps stay at 800/1500/2000; the DeepSeek-sized caps are not needed unless the first real call shows reasoning tokens.
+- Not done: no real Mistral call yet (no `MISTRAL_API_KEY` in the local `.env`), so the model ids against `GET /v1/models` on the EU endpoint, the `model` string Mistral answers with, thinking, and answer quality are unverified. A `coach:try` command to compare two models was offered, not built.
+
 ### 2026-11-14 (late) — CI green again; the audit's "fix first" list, test first
 - Hiren, on this laptop: "go for it, make sure we stick to design patterns". Branch `fix-first-2026-11-14`, merged to `master`.
 - CI (c8eea9f): `laravel/framework` 13.42 with the constraint `^13.40` for GHSA-63hm-g96r-2m2q; `composer audit --locked` moved to its own job so an advisory can no longer skip Pint and the SQLite suite.
