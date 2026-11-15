@@ -57,7 +57,7 @@ Rules:
 - When two numbers after a weight could be sets or reps ("90 x3 x5"), still fill your best reading; the app asks the user.
 - exercise_name is the lift's usual name, the same every time: "benchpress" and "bench press barbell" are both "Bench Press"; name a variation only when they do ("Wide Grip Bench Press", "Incline Bench Press"). English names for Dutch ones ("bankdrukken" is "Bench Press", "hardlopen" is "Run").
 - bodyweight: true for an exercise done with the body alone (push-ups, pull-ups, chin-ups, dips, sit-ups, leg raises, burpees, planks, dead hangs, air squats, box jumps). Then weight_kg is null and no weight question is asked. "10 pushups" is Push-ups sets 1 reps 10 bodyweight true, nothing to ask.
-- A timed set ("40 second plank", "plank 1 min", "3 x 45s plank", "dead hang 30 seconds, 3 times") is sets (1 when not said) with duration_seconds the time of ONE set (40, 60, 45, 30) and reps null. A whole-effort cardio time without sets ("ran 30 min", "padel for an hour") is sets null with the whole time.
+- A timed set ("40 second plank", "plank 1 min", "3 x 45s plank", "dead hang 30 seconds, 3 times") is sets (1 when not said) with duration_seconds the time of ONE set (40, 60, 45, 30); a hold has no reps. A whole-effort cardio time without sets ("ran 30 min", "padel for an hour") is sets null with the whole time.
 - Intervals ("8x400m", "4x4 min on the bike", "10x100m sprints") are sets (8, 4, 10) with distance_meters or duration_seconds of ONE interval (400, 240, 100).
 - A superset, circuit, "4 rounds of ..." or "4 of those": every exercise in it gets group "Superset" (or "Circuit"; a second one in the same message "Superset 2") and sets = the number of rounds, reps = the reps of one round. "10 pushups, 12 leg raises, 40 second plank, 4 of those" is three exercises, each group "Superset", sets 4, reps 10 and 12, the plank duration_seconds 40. An AMRAP with a round count is the same with "AMRAP" and its minutes in notes; an EMOM is the lift with sets = the minutes and "EMOM 10 min" in notes.
 - Effort: "RPE 8" is rpe 8; "RIR 2", "left 2 in the tank", "2 in reserve" is rir 2; "to failure", "till failure" is rir 0. On the exercise when said for all sets, on the set in set_list when said for one ("last set to failure").
@@ -69,7 +69,7 @@ Rules:
 - On an assisted machine (assisted pull-up, assisted dip, "30kg assist") the kg is help, not load: assisted true with weight_kg the help (45) and the name "Assisted Pull-up". No record and no volume come from it.
 - Something done without a number that is not a sport (stretching, rehab, mobility, a warm-up, "a light attempt") is not an exercise: put it in workout_notes in their words.
 - A goal or a plan said in the same message ("want 2 pull-ups by Sunday", "maybe rows next", "next week I want 40kg x 3") goes into workout_notes in their words; it is never an exercise. A message that is only a goal or a plan is log_type "general".
-- A message that only adds to or answers an earlier one ("3 more sets of bench 70", "one more set at 85", "5 reps each set") is read on its own: "3 more sets of bench press 70" is Bench Press sets 3 weight 70 reps null; a bare "5 reps each set" has no exercise and is "general".
+- A message that only adds to or answers an earlier one ("3 more sets of bench 70", "one more set at 85", "5 reps each set") is read on its own: "3 more sets of bench press 70" is Bench Press sets 3 weight 70 with the reps left empty, so the app asks; a bare "5 reps each set" has no exercise and is "general".
 
 Examples (message, then the important fields):
 - "bench 3x8 80, then incline db 3x10" -> workout; exercises: Bench Press sets 3 reps 8 weight 80; Incline DB Press sets 3 reps 10 weight null; questions: one asking the incline weight (field "exercises.1.weight_kg").
@@ -105,10 +105,10 @@ INSTRUCTIONS;
 
         $exerciseItem = $schema->object([
             'exercise_name' => $schema->string()->required(),
-            'set_list' => $schema->array()->items($setItem),
-            'sets' => $schema->integer()->nullable(),
-            'reps' => $schema->integer()->nullable(),
-            'weight_kg' => $schema->number()->nullable(),
+            'sets' => $schema->integer()->nullable()->required(),
+            'reps' => $schema->integer()->nullable()->required(),
+            'weight_kg' => $schema->number()->nullable()->required(),
+            'set_list' => $schema->array()->items($setItem)->required(),
             'weight_lb' => $schema->number()->nullable(),
             'per_side_kg' => $schema->number()->nullable(),
             'duration_seconds' => $schema->integer()->nullable(),
@@ -144,12 +144,12 @@ INSTRUCTIONS;
             'energy_level' => $schema->integer()->nullable()
                 ->description('Energy level 1-5, only if stated'),
             'workout_notes' => $schema->string()->nullable(),
-            'exercises' => $schema->array()->items($exerciseItem),
+            'exercises' => $schema->array()->items($exerciseItem)->required(),
 
             // Biometrics
             'weight_kg_stat' => $schema->number()->nullable(),
 
-            'questions' => $schema->array()->items($questionItem),
+            'questions' => $schema->array()->items($questionItem)->required(),
         ];
     }
 }

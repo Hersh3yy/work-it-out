@@ -35,7 +35,7 @@ it('tells the log reader every way a workout is texted, and to leave the sums to
         ->toContain('per_side_kg 11.25 with weight_kg null; the app doubles it')
         ->toContain('"185 lb" is weight_lb 185 with weight_kg null')
         ->toContain('never work out the time from it')
-        ->toContain('"3 more sets of bench press 70" is Bench Press sets 3 weight 70 reps null');
+        ->toContain('"3 more sets of bench press 70" is Bench Press sets 3 weight 70 with the reps left empty');
 });
 
 it('makes the coach answer first, keep goals in words and never claim a save', function (): void {
