@@ -23,9 +23,9 @@ final class PersonalRecordService implements PersonalRecords
 {
     private const int MAX_STRENGTH_RECORDS = 8;
 
-    private const array RUN_KEYWORDS = ['run', 'jog', 'sprint', 'treadmill', '5k', '10k', 'marathon'];
+    public const array RUN_KEYWORDS = ['run', 'jog', 'sprint', 'treadmill', '5k', '10k', 'marathon'];
 
-    private const array SPORT_KEYWORDS = [
+    public const array SPORT_KEYWORDS = [
         'padel', 'tennis', 'squash', 'badminton', 'football', 'soccer',
         'basketball', 'volleyball', 'climbing', 'boxing', 'swimming', 'cycling',
     ];

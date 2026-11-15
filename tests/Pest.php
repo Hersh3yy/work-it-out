@@ -12,6 +12,7 @@ use App\Enums\ChatProvider;
 use App\Enums\MessageKind;
 use App\Models\ChannelIdentity;
 use App\Models\User;
+use App\Models\WorkoutSession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Fakes\FakeCoachAdvisor;
 use Tests\Fakes\FakeLimitationParser;
@@ -157,4 +158,31 @@ function classifierSays(MessageKind $kind): FakeMessageClassifier
 function useRealAdapter(string $port): void
 {
     app()->forgetInstance($port);
+}
+
+/**
+ * A session some days back at 18:00 with these exercise entries; an entry's
+ * `set_list` becomes its set rows.
+ *
+ * @param  array<string, mixed>  ...$entries
+ */
+function trainedDaysAgo(User $user, int $daysAgo, array ...$entries): WorkoutSession
+{
+    $session = WorkoutSession::factory()->for($user)->create([
+        'logged_at' => today()->subDays($daysAgo)->setTime(18, 0),
+        'duration_minutes' => null,
+        'completed_planned' => true,
+    ]);
+
+    foreach (array_values($entries) as $order => $attributes) {
+        $sets = $attributes['set_list'] ?? [];
+        unset($attributes['set_list']);
+        $entry = $session->exerciseEntries()->create(['sets' => null, 'reps' => null, 'weight_kg' => null, ...$attributes, 'sort_order' => $order]);
+
+        if ($sets !== []) {
+            $entry->replaceSets($sets);
+        }
+    }
+
+    return $session;
 }

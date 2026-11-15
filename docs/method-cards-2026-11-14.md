@@ -131,6 +131,17 @@ Later, and only when the numbers ask for it: embeddings above roughly fifty card
 - Which card first. Proposed: card 3 (he lifts three times a week, the data is there, the morning message already attempts it), then card 4 (it needs n36, which was next anyway), then 1 and 2.
 - Whether step 1 above may be built as soon as the picks are confirmed.
 
+## Numbers in code
+
+Each number in `config/fitness.php` cites one line here. "Convention" means common coaching practice, not a study; ours to tune.
+
+- Power windows: strength over 56 days (card 3, the e1RM trend over four to eight weeks); cardio minutes over 7 days (card 2); the longest run over 30 days (card 1); core over 56 days (convention, same as strength).
+- e1RM: Epley, weight x (1 + reps / 30), from sets of 1 to 10 reps (Hiren, 15 November; replaces the Brzycki and Epley split of the metrics catalogue).
+- Strength standards, e1RM per kilo of body weight for an intermediate lifter: squat 1.25, deadlift 1.5, bench press 1.0, overhead press 0.65 (common strength-standard tables, from memory, to verify).
+- Cardio: 150 minutes a week (card 2, WHO 2020 guideline for adults).
+- Core: a two-minute plank and a farmer's carry at half body weight per hand count as the standard (card 4's tests, convention).
+- Recovery: two rest days in seven (convention); an active limitation takes 10, 25 or 50 percent off recovery when mild, moderate or severe, and an unknown severity counts as moderate (convention, Feetness 15 November).
+
 ## Sources
 
 - Running, single-session spikes: Frandsen and others, British Journal of Sports Medicine 2025. Summary by the journal: https://blogs.bmj.com/bjsm/?p=11751 . Checked 14 November through secondary summaries, not the paper.

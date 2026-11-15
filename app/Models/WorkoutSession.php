@@ -13,7 +13,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon $logged_at
+ * @property int|null $duration_minutes
+ */
 #[Fillable([
     'user_id',
     'logged_at',
