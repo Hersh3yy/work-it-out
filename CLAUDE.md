@@ -14,6 +14,7 @@ You are working in Hiren's fitness-coach backend. Before doing anything:
 - No nutrition. It was deleted on 15 Nov 2026; do not bring it back.
 - Telegram does: free-text activity log, weight log, limitations ("hurt my back") and how they are going, answers to open questions, coach questions ("30 min, 3 things, go"), the coach's morning message (`/daily 7`, `/daily off`), `/undo`, `/me`, `/login`, `/better`; later `/next`. Profile, goals, stats and history live in the app.
 - Every step ships with a test that runs with zero AI calls (the fakes in `tests/Fakes`) or an exact curl. Nothing without a test.
+- `docs/pitch.md` is the living elevator pitch. Update it (and its change log) at the end of every working session that changes what Feetness is, does or plans, and whenever Hiren asks; then mirror it to the private page "Feetness Elevator Pitch" on claude.ai.
 - Plain writing: no em-dashes, no bold-label lists, specific `file:line` evidence, honest about what is unverified.
 - Code reads without comments. Every piece sits where its pattern says (ports and adapters for AI, actions for writes, observers for side effects, chains for answers, commands for slash commands, named rules, strategies for choices); names say what things are; short methods; comments only say why. Run the `clean-code-check` skill (`.claude/skills/clean-code-check/SKILL.md`) on the diff before every commit.
 - Never expose service ports. A previous VPS was cryptojacked through php-fpm:9000. Secrets only in env.
