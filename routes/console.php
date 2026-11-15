@@ -21,3 +21,6 @@ Schedule::command('ai:usage --since=7d --by=job')->weeklyOn(1, '05:00')->appendO
 // Every hour on the hour: the morning message for everyone whose hour it is
 // (users.daily_coaching_hour in config coach.daily.timezone).
 Schedule::command('coach:daily')->hourly()->withoutOverlapping();
+
+// App tokens expire after 30 days (config/sanctum.php); clear the dead rows.
+Schedule::command('sanctum:prune-expired --hours=24')->daily();

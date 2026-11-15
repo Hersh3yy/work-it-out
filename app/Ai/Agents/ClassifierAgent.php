@@ -19,6 +19,12 @@ final class ClassifierAgent implements Agent, HasStructuredOutput
 {
     use Promptable;
 
+    /** Seconds before this call counts as an outage (config/ai.php timeouts). */
+    public function timeout(): int
+    {
+        return (int) config('ai.timeouts.classify');
+    }
+
     public function instructions(): string
     {
         return <<<'INSTRUCTIONS'

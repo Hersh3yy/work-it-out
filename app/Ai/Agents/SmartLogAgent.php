@@ -31,6 +31,12 @@ final class SmartLogAgent implements Agent, HasStructuredOutput
         private readonly string $today,
     ) {}
 
+    /** Seconds before this call counts as an outage (config/ai.php timeouts). */
+    public function timeout(): int
+    {
+        return (int) config('ai.timeouts.log');
+    }
+
     public function instructions(): string
     {
         return <<<INSTRUCTIONS

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Conversation\Answers;
 
-use App\Events\LogRecorded;
+use App\Actions\Limitations\AnswerRedFlagScreen;
 use App\Limitations\RedFlagScreen;
 use App\Models\Limitation;
 use App\Models\User;
@@ -21,6 +21,7 @@ final readonly class RedFlagScreenAnswer implements AnswerHandler
 
     public function __construct(
         private OpenQuestions $openQuestions,
+        private AnswerRedFlagScreen $answerScreen,
     ) {}
 
     public function handle(User $user, string $text): ?Answer
@@ -50,9 +51,7 @@ final readonly class RedFlagScreenAnswer implements AnswerHandler
             return null;
         }
 
-        $limitation->update(['red_flags' => $result]);
-        $open->log->update(['questions' => null]);
-        LogRecorded::dispatch($open->log);
+        $this->answerScreen->handle($open->log, $limitation, $result);
 
         return new Answer($result === Limitation::RED_FLAGS_FLAGGED ? RedFlagScreen::FLAGGED_REPLY : RedFlagScreen::CLEAR_REPLY);
     }

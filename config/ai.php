@@ -46,6 +46,21 @@ return [
     ],
 
     /*
+    | Seconds each agent waits for a model before the call counts as an
+    | outage and the next model in the chain is asked. The library's default
+    | is 60 s; one hung model then held the poller, and everyone behind it,
+    | for a minute per try. The queue worker's --timeout
+    | (docker/supervisor/supervisord.conf) outlasts all of them twice over.
+    */
+    'timeouts' => [
+        'classify' => (int) env('AI_CLASSIFY_TIMEOUT', 15),
+        'log' => (int) env('AI_LOG_TIMEOUT', 30),
+        'limitation' => (int) env('AI_LIMITATION_TIMEOUT', 20),
+        'coach' => (int) env('AI_COACH_TIMEOUT', 45),
+        'profile' => (int) env('AI_PROFILE_TIMEOUT', 60),
+    ],
+
+    /*
     | Models tried after a job's own (and the log job's) when those are
     | overloaded, rate limited or unreachable, in order, as provider:model,
     | comma separated: AI_FALLBACKS=gemini:gemini-3.5-flash,deepseek:deepseek-flash

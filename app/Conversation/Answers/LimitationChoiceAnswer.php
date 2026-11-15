@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Conversation\Answers;
 
+use App\Actions\Limitations\SetLimitationArea;
 use App\Enums\BodyArea;
-use App\Events\LogRecorded;
 use App\Limitations\RedFlagScreen;
 use App\Models\User;
 
@@ -22,6 +22,7 @@ final readonly class LimitationChoiceAnswer implements AnswerHandler
 
     public function __construct(
         private OpenQuestions $openQuestions,
+        private SetLimitationArea $setArea,
     ) {}
 
     public function handle(User $user, string $text): ?Answer
@@ -47,13 +48,7 @@ final readonly class LimitationChoiceAnswer implements AnswerHandler
             return null;
         }
 
-        $limitation->update(['body_area' => $picked]);
-        $open->log->update([
-            'questions' => [RedFlagScreen::question()],
-            'summary' => 'Limitation: '.$picked->label().', '.$limitation->note,
-        ]);
-        $open->log->diaryEntry()->update(['content' => $open->log->summary]);
-        LogRecorded::dispatch($open->log);
+        $this->setArea->handle($open->log, $limitation, $picked);
 
         return new Answer('Got it: '.$limitation->describe().".\n\n".RedFlagScreen::QUESTION);
     }

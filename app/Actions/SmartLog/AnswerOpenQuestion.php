@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Actions\SmartLog;
 
+use App\Events\LogRecorded;
 use App\Interpretation\NumberReply;
 use App\Models\ActivityLog;
 use App\Models\ExerciseEntry;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Fills in the value a log's open question asked for, without AI.
@@ -42,8 +44,21 @@ final readonly class AnswerOpenQuestion
 
     /**
      * The updated entry, or null when the reply does not answer the question.
+     * The entry, its sets and the closed question are written in one
+     * transaction; LogRecorded follows so stats and the profile see the value.
      */
     public function answer(ActivityLog $log, NumberReply $reply): ?ExerciseEntry
+    {
+        $entry = DB::transaction(fn (): ?ExerciseEntry => $this->fill($log, $reply));
+
+        if ($entry !== null) {
+            LogRecorded::dispatch($log);
+        }
+
+        return $entry;
+    }
+
+    private function fill(ActivityLog $log, NumberReply $reply): ?ExerciseEntry
     {
         if (! preg_match(self::FIELD, (string) ($log->questions[0]['field'] ?? ''), $target)) {
             return null;

@@ -33,8 +33,9 @@ final class ChannelUnlink extends Command
         }
 
         $removed = $user->channelIdentities()->where('provider', $provider->value)->delete();
+        $user->tokens()->delete();
 
-        $this->info(sprintf('Disconnected %d %s account(s) from %s. Their logs are kept. Reconnect with: php artisan channel:invite %s', $removed, $provider->value, $user->email, $user->email));
+        $this->info(sprintf('Disconnected %d %s account(s) from %s and signed the app out. Their logs are kept. Reconnect with: php artisan channel:invite %s', $removed, $provider->value, $user->email, $user->email));
 
         return self::SUCCESS;
     }

@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Actions\SmartLog\RecordSmartLog;
+use App\Events\LogRecorded;
 use App\Models\User;
+use Illuminate\Support\Facades\Event;
 
 function logWithOpenWeight(User $user)
 {
@@ -81,3 +83,16 @@ it('converts units for time and distance answers', function (string $field, stri
     'kilometers' => ['exercises.0.distance_meters', '5k', 'distance_meters', 5000],
     'bare meters' => ['exercises.0.distance_meters', '400', 'distance_meters', 400],
 ]);
+
+it('tells the profile and stats a value was answered, once', function (): void {
+    $user = User::factory()->create();
+    $log = logWithOpenWeight($user);
+    Event::fake([LogRecorded::class]);
+
+    $this->actingAs($user, 'sanctum')
+        ->postJson("/api/log/{$log->id}/answer", ['value' => '30'])
+        ->assertOk();
+
+    Event::assertDispatchedTimes(LogRecorded::class, 1);
+    Event::assertDispatched(LogRecorded::class, fn (LogRecorded $event): bool => $event->log->is($log));
+});

@@ -33,6 +33,7 @@ RUN apk add --no-cache \
         intl \
         mbstring \
         opcache \
+        pcntl \
         pdo_pgsql \
         redis \
         sockets \

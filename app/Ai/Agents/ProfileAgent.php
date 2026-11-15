@@ -21,6 +21,12 @@ final class ProfileAgent implements Agent, HasStructuredOutput
 {
     use Promptable;
 
+    /** Seconds before this call counts as an outage (config/ai.php timeouts). */
+    public function timeout(): int
+    {
+        return (int) config('ai.timeouts.profile');
+    }
+
     public function instructions(): string
     {
         $labels = implode("\n", array_map(static fn (NoteLabel $l): string => '- '.$l->value.': '.$l->describe(), NoteLabel::cases()));

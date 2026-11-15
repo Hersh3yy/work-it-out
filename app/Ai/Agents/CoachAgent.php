@@ -33,6 +33,12 @@ final class CoachAgent implements Agent
         return $this->depth->maxTokens();
     }
 
+    /** Seconds before this call counts as an outage (config/ai.php timeouts). */
+    public function timeout(): int
+    {
+        return (int) config('ai.timeouts.coach');
+    }
+
     public function instructions(): string
     {
         $name = $this->persona->label();
