@@ -1,0 +1,119 @@
+# The ways people text a workout, one message per line: message, a tab, the shape it should save.
+# "\n" inside a message is a line break. Lines starting with # are comments.
+# Run them all, saving nothing: php artisan log:parse --file=tests/Evals/workouts.txt
+# Results per run live in tests/Evals/workouts-results.md.
+#
+# Shape notation: Name sets x reps @ kg; "bw" bodyweight; "40s" a timed set; "help" assistance;
+# "per hand" / "each leg" in notes; "ask: field" when the bot should ask instead of guess;
+# "superset x4 [..]" a group with rounds; "note" something that is not an exercise row.
+#
+# Forms taken from Hiren's own history (paraphrased, never his words), then the common ones.
+
+# --- sets x reps x weight in every order
+bench 3x8 80	Bench Press 3x8 @ 80
+bench 80 3x8	Bench Press 3x8 @ 80
+bench 80kg for 8, 3 sets	Bench Press 3x8 @ 80
+bench 8,8,7 at 80	Bench Press 80x8, 80x8, 80x7 (set list)
+bench press 3 sets of 8 reps 80kg	Bench Press 3x8 @ 80
+overhead press, 6 sets of 8 reps, 40kg	Overhead Press 6x8 @ 40
+35kg preacher curls, sets of 3 reps (heavy for me)\n\n5 sets	Preacher Curl 5x3 @ 35, note "heavy for me"
+incline bench 5x5, 50kg	Incline Bench Press 5x5 @ 50
+tricep pulldowns 18kg 4 sets of 10	Tricep Pulldown 4x10 @ 18
+deadlift 90 x3 x5	ask: sets or reps (two readings)
+deadlift 2x70kg	ask: reps (2 sets or 2 reps)
+
+# --- per-set lists with differing loads
+yesterday squats 5x5\n100 90 90 90 90\nand ran 1k in 6:45	logged_on yesterday; Squat 5x5 @ 100, 90, 90, 90, 90; Run 1 km 6:45
+bench 5x5, 70kg, 70kg, 65, 65, 65	Bench Press 5x5 @ 70, 70, 65, 65, 65
+squat 100x5, 110x5, 120x3	Squat 100x5, 110x5, 120x3
+bench press barbell, sets of 5\n1st set 60kg\n2nd 80kg\n3rd 4th and 5th 70kg	Bench Press 5x5 @ 60, 80, 70, 70, 70
+bench press sets of 5\n2 sets of 60kg, 4 sets of 80kg	Bench Press 6x5 @ 60, 60, 80, 80, 80, 80
+8 sets of 8 wide grip bench press 50kg for 3 sets 60kg for the rest	Wide Grip Bench Press 8x8 @ 50, 50, 50, 60, 60, 60, 60, 60
+hamstring curls, 50kg 2 sets, then 40kg 3 sets, 10 reps	Hamstring Curl 5x10 @ 50, 50, 40, 40, 40
+
+# --- rep ranges
+row 5x10-12 41kg	Row 5x10 @ 41, note "10-12 reps"
+chest supported row (cable) 41kg 5x10-12\npreacher curls, curl bar, 11.25kg a side\nhamstring curls 50kg 2 sets then 40kg 3 sets, 10 reps\n1km 2.5%, 8.5 min treadmill	Row 5x10 @ 41 note "10-12 reps"; Preacher Curl @ 22.5 ask: sets and reps; Hamstring Curl 5x10 @ 50, 50, 40, 40, 40; Treadmill 1 km 8:30 note "2.5%"
+
+# --- bodyweight only
+10 pushups	Push-ups 1x10 bw, no question
+3x12 pushups	Push-ups 3x12 bw
+pull ups 3 sets of 8	Pull-up 3x8 bw
+50 situps and 30 burpees	Sit-up 1x50 bw; Burpee 1x30 bw
+
+# --- timed holds
+40 second plank	Plank 1x40s
+plank 1 min	Plank 1x60s
+3 x 45s plank	Plank 3x45s
+dead hang 30 seconds, 3 times	Dead Hang 3x30s
+
+# --- supersets and circuits
+Did a superset\n10 pushups\n12 lying leg raises for abs\n40 second plank\n\n4 of those	superset x4 [Push-ups 10 bw, Lying Leg Raise 12 bw, Plank 40s]
+superset: 10 pull ups + 10 dips, 3 rounds	superset x3 [Pull-up 10 bw, Dip 10 bw]
+circuit 4 rounds of 10 burpees, 15 squats, 20 situps	circuit x4 [Burpee 10 bw, Squat 15 bw, Sit-up 20 bw]
+4 rounds of 8 kettlebell swings 24kg and 10 box jumps	circuit x4 [Kettlebell Swing 8 @ 24, Box Jump 10 bw]
+superset bench 3x8 80 with rows 3x8 60	superset x3 [Bench Press 8 @ 80, Row 8 @ 60]
+
+# --- unilateral and per hand
+4 sets of 10 hammer curls, 12kg dumbbell per hand	Hammer Curl 4x10 @ 12 note "per hand", no question
+lunges 3x10 each leg 20kg	Lunge 3x10 @ 20 note "each leg"
+single arm row 3x12 each side 25kg	Single Arm Row 3x12 @ 25 note "each side"
+db shoulder press 3x10 22.5 per hand	DB Shoulder Press 3x10 @ 22.5 note "per hand"
+
+# --- assisted machines (the kg is help, not load)
+Did 5x5 assisted pull up (45kg)	Assisted Pull-up 5x5, 45 kg help; no record, no volume
+assisted dips 3x8 30kg assist	Assisted Dip 3x8, 30 kg help
+
+# --- plates per side
+squat 5x5 20 a side	Squat 5x5 @ 40 note "20 kg a side, bar not counted"
+bench 11.25 a side 3x8	Bench Press 3x8 @ 22.5 note "11.25 kg a side, bar not counted"
+
+# --- cardio with distance, time or pace
+5k in 28	Run 5 km 28:00
+ran 30 min	Run 30 min
+ran 5k at 6:00/km	Run 5 km 30:00 (computed from pace)
+cycled 20km in 50 min	Cycling 20 km 50 min
+rowed 2000m in 8:10	Rowing 2 km 8:10
+also treadmill 1k 7 min	Treadmill 1 km 7 min
+padel for an hour	Padel 60 min
+
+# --- intervals
+8x400m	Run 8x400 m (set list, distance per set); ask: time or none
+4x4 min intervals on the bike	Cycling 4x4 min (set list, duration per set)
+10x100m sprints	Sprint 10x100 m
+
+# --- RPE, RIR, failure
+deadlift 3x5 140 rpe 8	Deadlift 3x5 @ 140 rpe 8
+squat 5x5 100 left 2 in the tank	Squat 5x5 @ 100 rir 2
+bench 3x8 80 RIR 2	Bench Press 3x8 @ 80 rir 2
+pull ups 3 sets to failure	Pull-up 3 sets bw, rir 0 (to failure); ask: reps or none
+bench 80 3 sets, last one to failure at 6	Bench Press 80x8?, 80x8?, 80x6 rir 0; ask: reps of the first sets
+
+# --- drop sets, AMRAP, EMOM
+lat pulldown drop set 60 50 40 x10	Lat Pulldown 60x10, 50x10, 40x10 note "drop set"
+amrap 10 min: 5 pull ups 10 pushups 15 squats, 6 rounds	circuit x6 [Pull-up 5 bw, Push-ups 10 bw, Squat 15 bw] duration 10 min, note "AMRAP"
+pushups amrap, got 32	Push-ups 1x32 bw note "AMRAP"
+emom 10 min 5 deadlifts 100	Deadlift 10x5 @ 100 note "EMOM 10 min"
+
+# --- a session told across messages
+I did 3 more sets of bench press 70	Bench Press 3 sets @ 70; ask: reps
+5 reps each set	an answer to the open question, not a new log
+one more set at 85	Bench Press 1 set @ 85; ask: reps (or joins the open session)
+
+# --- mixed units
+bench 3x8 185 lb	Bench Press 3x8 @ 83.9
+ran 3 miles in 27 min	Run 4.83 km 27 min
+dumbbell press 3x10 50 lb per hand	Dumbbell Press 3x10 @ 22.7 note "per hand"
+
+# --- Dutch
+bankdrukken 5 keer 10 met 60 kg	Bench Press 5x10 @ 60
+squat 3x8 20 kg per kant	Squat 3x8 @ 40 note "20 kg per kant, bar not counted"
+10 minuten hardgelopen	Run 10 min
+plank 1 minuut, 3 keer	Plank 3x60s
+schouderdrukken 3x10 met 12 kg per hand	Shoulder Press 3x10 @ 12 note "per hand"
+
+# --- not a workout row: goals, notes, biometrics
+Next week I want to be doing 40kg x 3 rep sets of preacher curls	note (a goal), no exercise row
+starting with wide grip bench press 5x5 70kg, then arms. Goal: 2 assisted pull-ups by Sunday	Wide Grip Bench Press 5x5 @ 70; the goal in workout_notes
+overhead press 6x8 40, did some rehab for the back	Overhead Press 6x8 @ 40; "rehab for the back" in workout_notes
+I weigh 105kg	biometrics 105
