@@ -366,7 +366,18 @@ From Hiren's two sketches (2026-10-04), settled or proposed:
 
 ## 5. The plan
 
-**Next, in order (2026-10-04, after the stepping back).**
+**Next, in order (2026-11-15). This is the one build order; every other page links here instead of keeping its own.** Each step's acceptance criteria are in the MVP plan of 15 Nov (Week 1 and Week 2 tables); the matching roadmap items are in `PROJECT.md`.
+
+MVP, done when Hiren creates an account for a tester, the tester links Telegram, logs a workout and asks the coach (answered by Mistral), sees it in the app on HTTPS, the data is backed up nightly, and Hiren can delete the tester's data on request.
+
+1. Week 1, lean, safe, Mistral (code on `mvp-week1`, one commit per step): server details out of the repo; the legacy clean-up and the Intent lab deleted; this one list; Larastan in CI; answer handlers take only whole answers; safe retries; production hardening; a per-user chat throttle and one poller; Amsterdam time; indexes; one AI job per use; `mistral-coach` merged with `coach:try`. Hiren's server steps: new bot token, Mistral key and env in Coolify, firewall, 2FA, key-only SSH, nightly backups, Coolify waits for CI.
+2. Week 2, accounts, app, testers: admin role and `user:admin`; admin API (list, create with an invite link, new link, delete with every row); `/admin` in the app; a privacy notice on `/start`; the app's audit fixes; the API on HTTPS; the app on Netlify; smoke test and the first two testers.
+3. After the MVP, the coach becomes useful: coaches visible (n39), answers built on the person's numbers (n40), onboarding intake (n30), method cards (n45).
+4. Foundations that make features cheap (tier 2 of `docs/audit-2026-11-08.md`): one exercise vocabulary and strength calculator, one door for the app and Telegram through `RespondToText`, the coach context stored per turn and `AnswerCoachQuestion` split, the API contract (M10).
+5. Features on those foundations: goals with a date (n36), no-number exercises to notes (n37), limitation start and check-in (n31), injury-aware `/next` (n22, M5), the app after Netlify and the app writing (n43, f2), drafts and `/edit` (n16), the Sunday review and plan memory (n42).
+6. Later: the game layer (n47), the body map, handle-only sign-up (n46) then Signal (n48), voice notes, the shadow classifier (n24), simulate and the demo seeder.
+
+**Order of 2026-10-04 (history, kept for the record).**
 
 1. Foundation (1, done 2026-10-04): PHP 8.5; Postgres in Docker locally (MySQL out; SQLite stays for the fast suite; CI job `pest-pgsql`); enums `LogType` and `ChatProvider`; `LogRecorded` and `LogReverted` events with the stats job as a listener (Observer).
 2. Interpreter (2, done 2026-10-05): `Interpreter` port with a classify step and the parse step; named rules (`BareNumberIsNotBodyWeight`, `RepsTimesSetsHasTwoReadings`, `MessageIsNotAboutTraining`); the polite reply for not understood; `php artisan log:parse` dry run; worked examples in the prompt, one retry on invalid JSON, low temperature.

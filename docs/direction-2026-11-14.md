@@ -95,7 +95,9 @@ The router has to be `public/index.php`; Laravel's own `server.php` looks for `i
 
 ChatGPT gives generic advice for free and remembers loosely. Generic advice gives nobody a reason to switch. Feetness can win where ChatGPT is weak: every set stored exactly and every number computed by code, one line from the gym with a receipt and `/undo`, an injury followed by the day, a coach that writes first and knows what was skipped, and three characters who see the same data differently.
 
-## Proposed order (waits for Hiren's go)
+## Proposed order (14 Nov; superseded)
+
+The build order now lives in one place, `PLAN.md` section 5, "Next, in order" (15 Nov). The list below is what was proposed on 14 Nov; its items are in that list.
 
 1. Coaches visible. The coach's name on every answer, `/coach` to switch in Telegram, one command that asks all three for a short take each. This is roadmap item n34, moved up by the verdict.
 2. Answers built on his numbers. One observation with a date and a load from his own logs in each answer, the coach's last plans in its context with whether they were done, and a rule against sending the same plan twice.

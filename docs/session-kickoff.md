@@ -1,6 +1,6 @@
 # Session kickoff
 
-Last updated 14 November 2026 (late), from the other laptop. Read this first on any laptop, then `PROJECT.md`.
+Last updated 14 November 2026 (late), from the other laptop. Read this first on any laptop, then `PROJECT.md`. The build order is `PLAN.md` section 5, "Next, in order"; this page only says where things stand.
 
 ## First thing: what changed on 14 November (late)
 
