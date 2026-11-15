@@ -10,7 +10,7 @@ test('the configured text model reaches every provider we use', function (): voi
 });
 
 it('has one provider and model slot per AI job, empty by default', function (): void {
-    foreach (['log', 'plan', 'chat'] as $job) {
+    foreach (['log', 'chat', 'profile'] as $job) {
         expect(config("ai.jobs.{$job}"))->toHaveKeys(['provider', 'model']);
     }
 });

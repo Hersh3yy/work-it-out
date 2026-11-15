@@ -10,7 +10,6 @@ use App\Events\LogRecorded;
 use App\Models\ActivityLog;
 use App\Models\BodyWeightLog;
 use App\Models\ExerciseEntry;
-use App\Models\NutritionLog;
 use App\Models\User;
 use App\Models\WorkoutSession;
 use App\Services\Exercises\ExerciseAliases;
@@ -65,10 +64,6 @@ final readonly class RecordSmartLog
                 case LogType::Biometrics:
                     $weight = $this->recordWeight($user, $parsed, $loggedOn);
                     $log->loggable()->associate($weight);
-                    break;
-
-                case LogType::Meal:
-                    $log->loggable()->associate($this->recordMeal($user, $parsed, $loggedOn));
                     break;
 
                 case LogType::General:
@@ -200,24 +195,6 @@ final readonly class RecordSmartLog
         }
 
         return $log;
-    }
-
-    /**
-     * Kept until nutrition is removed in M3.
-     *
-     * @param  array<string, mixed>  $parsed
-     */
-    private function recordMeal(User $user, array $parsed, CarbonImmutable $loggedOn): ?NutritionLog
-    {
-        if (empty($parsed['food_name'])) {
-            return null;
-        }
-
-        return $user->nutritionLogs()->create([
-            'logged_at' => $loggedOn->isToday() ? now() : $loggedOn->setTimeFrom(now()),
-            'meal_type' => $parsed['meal_type'] ?? 'snack',
-            'food_name' => mb_substr((string) $parsed['food_name'], 0, 150),
-        ]);
     }
 
     /**

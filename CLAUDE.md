@@ -11,7 +11,7 @@ You are working in Hiren's fitness-coach backend. Before doing anything:
 - No app-code changes without Hiren's explicit green light. Assess, plan and write docs freely; ask before touching `.php`, config, migrations, Docker files.
 - Work on a branch. Merge to `master` only when the milestone's release gate in `PLAN.md` passes and the suite is green.
 - Backend first. Telegram is the main door. The app is the sibling repository `feetness-app` (Nuxt 4 PWA, reads only for now) and signs in with the `/login` link; it only consumes the API's Resources, so the API stays the contract.
-- No nutrition. It is being deleted in M3; do not extend it.
+- No nutrition. It was deleted on 15 Nov 2026; do not bring it back.
 - Telegram does: free-text activity log, weight log, limitations ("hurt my back") and how they are going, answers to open questions, coach questions ("30 min, 3 things, go"), the coach's morning message (`/daily 7`, `/daily off`), `/undo`, `/me`, `/login`, `/better`; later `/next`. Profile, goals, stats and history live in the app.
 - Every step ships with a test that runs with zero AI calls (the fakes in `tests/Fakes`) or an exact curl. Nothing without a test.
 - Plain writing: no em-dashes, no bold-label lists, specific `file:line` evidence, honest about what is unverified.
@@ -38,7 +38,6 @@ API on http://localhost:8088. Local AI uses a free Msty model; see `.env.example
 - Sending on its own (a retried reply, the morning message) goes through `App\Channels\ChatChannels`, one `ChatChannel` adapter per provider in `config/conversation.php` `channels`; the port throws `ChatUnavailable` or `RecipientUnreachable`.
 - Telegram: `php artisan channel:telegram:setup` once, `php artisan channel:invite email` per person (one-time link), `make bot` to run the poller.
 - Try the interpreter alone: `docker compose exec app php artisan log:parse "text"` (saves nothing). The whole chat path without a phone: `php artisan log:simulate --user=<id> "text"`.
-- Intent classifier alone (the current focus): `php artisan intent:try "text"`, the visual explainer in `~/Herd/testbed` (`/classifier`), `/api/lab/intent/explain`, options in `app/Enums/Intent.php`, English only.
 - Classify step alone, per model: `php artisan classify:try "text"`, `make classify-eval`, or `/lab/classify` in a local browser. Laya runs locally with `make laya`; switch the app with `AI_CLASSIFIER=llm|laya|jev`.
 - Written profile: `app/Profile/UpdateProfile.php` (rolling notes with citations), sections in `app/Profile/NoteLabel.php` (the writer picks one per note), `BuildProfile` job, `profile_versions`. Read it with `php artisan profile:show email`, rewrite now with `php artisan profile:rebuild email [--full]`, `/me` in Telegram.
 - Limitations: `app/Limitations` (`RedFlags` runs before any AI, `LimitationContext` tells the reader what is on file and what the coach asked, `ExerciseLoads`, `LimitationCheck`), `app/Actions/Limitations`, the `LimitationParser` port with `SdkLimitationParser` and `LimitationAgent`. Open-question answers without AI: `app/Conversation/Answers`; slash commands: `app/Conversation/Commands`; both listed in `config/conversation.php`. Sign-in links: `app/Actions/Auth`, `POST /api/auth/magic`. App reads: `OverviewController` (`GET /api/me/overview`, `GET /api/logs`).

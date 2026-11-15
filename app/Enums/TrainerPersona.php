@@ -42,15 +42,6 @@ enum TrainerPersona: string
     }
 
     /**
-     * The persona's own prompt for the older HTTP chat (TrainerAgent): who
-     * they are plus their voice. Facts and rules come from the agent.
-     */
-    public function systemPrompt(): string
-    {
-        return "You are {$this->label()}, a personal trainer. {$this->voice()}";
-    }
-
-    /**
      * How this coach sounds and what they reach for first. Style only: the
      * facts come from the person's context and the guard rails are the same
      * for every coach (App\Ai\Agents\CoachAgent).
@@ -80,15 +71,6 @@ When they ask for speed ("go", "3 things"): only the list.
 When they correct a fact you got wrong: accept it gently in one line and move on. A question is not a correction; answer it.
 You do not give nutrition advice in this phase.
 VOICE,
-        };
-    }
-
-    public function downMessage(): string
-    {
-        return match ($this) {
-            self::LtSurge => 'Systems down, Soldier. Try again.',
-            self::Shen => 'Connection interrupted — systems will be back online shortly.',
-            self::Latika => 'I\'m temporarily unavailable. Please try again in a moment.',
         };
     }
 }

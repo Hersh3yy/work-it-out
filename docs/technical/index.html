@@ -320,13 +320,11 @@
 <ul class="prose">
   <li><strong>The safety net.</strong> When Laya or Jev is less sure than <code>AI_CLASSIFIER_MIN_CONFIDENCE</code> (0.6) and <code>AI_CLASSIFIER_FALLBACK</code> is on, the LLM decides instead. The LLM's own confidence is self-reported and steers nothing today.</li>
   <li><strong>Where the wiring is.</strong> The driver is picked in <code>AppServiceProvider</code>; the HTTP client is <code>App\Ai\SystemOne\SystemOneClient</code> (10 second timeout, reads <code>answers.kind</code> or <code>choices.kind</code>).</li>
-  <li><strong>The intent experiment.</strong> <code>IntentClassifier</code> with <code>App\Enums\Intent</code> (workout_log, profile_update, feeling, question, nonsense) is a separate lab question for Laya and Jev, used only by <code>intent:try</code> and <code>/api/lab/intent/explain</code>. It is not in the message path.</li>
 </ul>
 
 <h3>Trying it</h3>
 <pre><code>php artisan classify:try "back is 70% today"            # one message, every driver side by side
 make classify-eval                                       # tests/Evals/classify.txt (34 messages): rules and Laya
-php artisan intent:try "text"                            # the intent experiment
 php artisan log:parse "benched 100 3x5"                  # classify + parse, saves nothing
 open http://localhost:8088/lab/classify                  # the same in a browser, local only</code></pre>
 

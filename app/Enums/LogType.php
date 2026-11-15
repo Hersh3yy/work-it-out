@@ -12,7 +12,6 @@ enum LogType: string
 {
     case Workout = 'workout';
     case Biometrics = 'biometrics';
-    case Meal = 'meal';
     case General = 'general';
 
     /**

@@ -6,11 +6,8 @@ use App\Channels\InboundMessage;
 use App\Contracts\Ai\CoachAdvisor;
 use App\Contracts\Ai\LimitationParser;
 use App\Contracts\Ai\MessageClassifier;
-use App\Contracts\Ai\NutritionParser;
-use App\Contracts\Ai\PlanGenerator;
 use App\Contracts\Ai\ProfileBuilder;
 use App\Contracts\Ai\SmartLogParser;
-use App\Contracts\Ai\TrainerChat;
 use App\Enums\ChatProvider;
 use App\Enums\MessageKind;
 use App\Models\ChannelIdentity;
@@ -19,11 +16,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Fakes\FakeCoachAdvisor;
 use Tests\Fakes\FakeLimitationParser;
 use Tests\Fakes\FakeMessageClassifier;
-use Tests\Fakes\FakeNutritionParser;
-use Tests\Fakes\FakePlanGenerator;
 use Tests\Fakes\FakeProfileBuilder;
 use Tests\Fakes\FakeSmartLogParser;
-use Tests\Fakes\FakeTrainerChat;
 use Tests\TestCase;
 
 /*
@@ -75,22 +69,6 @@ expect()->extend('toBeOne', function () {
 | the fake instance so tests can queue replies and assert recorded calls.
 */
 
-function fakeTrainerChat(?FakeTrainerChat $fake = null): FakeTrainerChat
-{
-    $fake ??= new FakeTrainerChat;
-    app()->instance(TrainerChat::class, $fake);
-
-    return $fake;
-}
-
-function fakePlanGenerator(?FakePlanGenerator $fake = null): FakePlanGenerator
-{
-    $fake ??= new FakePlanGenerator;
-    app()->instance(PlanGenerator::class, $fake);
-
-    return $fake;
-}
-
 function fakeSmartLogParser(?FakeSmartLogParser $fake = null): FakeSmartLogParser
 {
     $fake ??= FakeSmartLogParser::workout();
@@ -119,14 +97,6 @@ function fakeLimitationParser(?FakeLimitationParser $fake = null): FakeLimitatio
 {
     $fake ??= new FakeLimitationParser;
     app()->instance(LimitationParser::class, $fake);
-
-    return $fake;
-}
-
-function fakeNutritionParser(?FakeNutritionParser $fake = null): FakeNutritionParser
-{
-    $fake ??= new FakeNutritionParser;
-    app()->instance(NutritionParser::class, $fake);
 
     return $fake;
 }

@@ -56,23 +56,6 @@ make test               # Pest, runs inside the container
 ```
 API on http://localhost:8088, Mailpit on http://localhost:8025. Register a test user with `make register-test`. Local AI runs against a **free local model** (Msty MLX / Granite) via an OpenAI-compatible endpoint — you develop without spending a cent on tokens. Hosted parsing: set `AI_LOG_PROVIDER=gemini` and `AI_LOG_MODEL=gemini-3.5-flash-lite` (gemini-2.5 is retired for new keys). Each job (log, plan, chat) has its own provider and model in `config/ai.php` `jobs`. Dry run a message with `php artisan log:parse "bench 3x8 80"`; full chat path with `php artisan log:simulate --user=1 "..."`; the bot with `php artisan channel:telegram:poll`.
 
-### Intent lab (start here for the classifier)
-
-Plain version: before anything else, one small AI model reads the message and picks what the user means from five options: `workout_log`, `profile_update`, `feeling`, `question`, `nonsense`. It runs on this laptop (Laya), free, about 60 ms. It does not write text; it only scores the five options. Exercise names, sets and weights are a later step (the parser), not the classifier's job.
-
-Start it: three terminals, then one URL.
-
-| Terminal | Command | What it is | Check it at |
-|---|---|---|---|
-| 1 | `cd ~/Documents/koala/work-it-out && make laya` | the model | http://127.0.0.1:8765/health |
-| 2 | `cd ~/Documents/koala/work-it-out && make lab-api` | the Feetness lab API | http://127.0.0.1:8099/api/lab/intent |
-| 3 | `cd ~/Herd/testbed && npm run dev` | the visual page | http://127.0.0.1:4321 |
-
-Then open **http://127.0.0.1:4321/classifier**.
-
-First time only: `uv tool install "laya[serve]" --python 3.13` (the model, about 2.3 GB on first start), `composer install` in work-it-out, `npm install` and `cp .env.example .env` in the testbed. Without the browser: `php artisan intent:try "my left knee hurts"` and `php artisan intent:try --file=tests/Evals/intent.txt`.
-The visual explainer lives in the separate Astro testbed `~/Herd/testbed` (page `/classifier`); it only calls `POST /api/lab/intent`, `/api/lab/intent/explain` and `/api/lab/intent/eval` on this app; those routes need no login and exist only in local and testing. Options and their descriptions live in `app/Enums/Intent.php`; edit them and rescore. Not yet wired into the real chat path.
-
 ### Classifier lab (the classify step alone, per model)
 
 ```bash
@@ -108,8 +91,7 @@ What keeps it yellow: the written profile and limitation parsing run on Gemini's
 | warning | Seeder has one user and leaves activity logs and diary empty; no factories for `ActivityLog`, `DiaryEntry`, `CustomRpgStat` | `database/seeders/DatabaseSeeder.php` |
 | warning | Dashboard runs overlapping full-history queries; `PersonalRecordService` scans all history uncached; no `(user_id, logged_at)` indexes | `DashboardController.php`, `PersonalRecordService.php` |
 | warning | `/diary` returns a raw paginator, not a Resource; decimals still serialize as strings in some Resources | `DiaryController.php:22`, `UserResource.php` |
-| warning | Nutrition is still in the code (routes, controller, parser, meal branch in `RecordSmartLog`). Decided: delete in M3, after v0 | `routes/api.php`, `RecordSmartLog::recordMeal` |
-| minor | No login or register rate limiter beyond the global 60/min; no conversation ownership check in chat | `AppServiceProvider.php`, `AiTrainerController.php` |
+| fixed 2026-11-15 | Nutrition, the old trainer chat and plan stack, the RPG stat sheet, the workout, dashboard, diary, stats, profile and register endpoints and the Intent lab are deleted (audit 2026-11-08 tier 2 #2); a migration drops their tables | `2026_11_15_000001_drop_legacy_nutrition_rpg_and_chat_tables.php` |
 | minor | README is stock Laravel; `ruby-app-scaffold-prompt.md` is a stale spec | repo root |
 | fixed 2026-11-14 | CI was red since `a707178` on GHSA-63hm-g96r-2m2q (`laravel/framework` below 13.40.0), and the audit step sat before Pint and the SQLite suite, so neither ran. Now 13.42, `^13.40`, audit in its own job | `composer.json`, `.github/workflows/test.yml` |
 | major | Deploys do not wait for CI: every push to `master` deploys through the Coolify webhook while the tests are still running. Turn on Coolify's wait for checks, or deploy from a workflow step after both test jobs (audit 2026-11-14 item 3) | Coolify, `docs/deploy-coolify.md:3` |
@@ -241,12 +223,12 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 - [x] Foundation: PHP 8.5, Postgres locally, `LogType` and `ChatProvider` enums, `LogRecorded` observer. Done 2026-10-04 <!-- id:n14 cu:123kjkdmppb -->
 - [x] Interpreter: classify, parse, named rules, polite help for not understood, `log:parse` dry run, prompt examples and retry. Done 2026-10-05 <!-- id:n15 cu:123kjkdmppc -->
 - [x] Classifier lab: Laya and Jev behind `MessageClassifier` (one `SystemOneClient`), `AI_CLASSIFIER` switch with LLM fallback, `classify:try`, `/lab/classify`, labelled eval set. Laya local scores 21/31 (68%) at ~80 ms. Done 2026-10-07 <!-- id:n17 cu:123kjkdmppd -->
-- [x] Intent lab: `Intent` enum (workout_log, profile_update, feeling, question, nonsense), `IntentClassifier`, `POST /api/lab/intent`, `intent:try`, English eval set, Astro page (moved to `~/Herd/testbed`). Laya 32/38 (84%), ~60 ms. Done 2026-10-07 <!-- id:n18 cu:123kjkdmppf -->
-- [ ] Wire `Intent` into the real chat path in place of `MessageKind` once the intents feel right in the lab; `profile_update` and `feeling` need somewhere to go (profile fields, notes) <!-- id:n19 cu:123kjkdmppg -->
+- [x] Intent lab: `Intent` enum (workout_log, profile_update, feeling, question, nonsense), `IntentClassifier`, `POST /api/lab/intent`, `intent:try`, English eval set, Astro page (moved to `~/Herd/testbed`). Laya 32/38 (84%), ~60 ms. Done 2026-10-07, deleted 2026-11-15 (it duplicated the classifier lab) <!-- id:n18 cu:123kjkdmppf -->
+- [x] Dropped 2026-11-15, the Intent lab was deleted in the MVP clean-up: wire `Intent` into the real chat path in place of `MessageKind` once the intents feel right in the lab; `profile_update` and `feeling` need somewhere to go (profile fields, notes) <!-- id:n19 cu:123kjkdmppg -->
 - [x] Telegram live: invite links (`channel:invite`), account linking with one-time codes, `channel:telegram:setup`, `make bot`, polite stranger reply. Done 2026-10-11 <!-- id:n17 cu:123kjkdmpph -->
 - [ ] Sets and drafts: per-set storage, exercise kinds, a draft keeps asking while anything is unclear (no cap) and saves only when clear, `cancel`, `/edit` for complete logs <!-- id:n16 cu:123kjkdmppj -->
 - [x] v0 deploy (live 2026-10-18; steps in `docs/deploy-coolify.md`; image hardened and rehearsed; waiting on Hiren: Coolify Postgres, env vars, production bot token): the polling bot as one supervisord worker on a Coolify VPS, registration closed in production, host checklist, smoke from the phone (PLAN.md "v0 deploy") <!-- id:n13 cu:123kjkdmppk -->
-- [ ] M3 Remove nutrition entirely (decided 2026-09-27; waits until after v0), Latika rewritten to recovery/mobility/longevity <!-- id:n4 cu:123kjkdmppn -->
+- [x] M3 Remove nutrition entirely, with the old trainer, plans, RPG stats, the unused endpoints and the Intent lab. Done 2026-11-15 on `mvp-week1` <!-- id:n4 cu:123kjkdmppn -->
 - [ ] M4 Simulate: factories + deterministic two-user seeder, streak on read, HTTP scenario suite (PLAN.md section 6), prompting practices and a live eval set of real messages <!-- id:n5 cu:123kjkdmppp -->
 - [ ] M5 Channel port + the Telegram command set (log, weight, /next, /undo, /coach) + rules-only `/next` + one AI budget shared by HTTP and chat, driven by `channel:simulate`. Profile and stats stay in the app <!-- id:n6 cu:123kjkdmppq -->
 - [ ] M6 Telegram adapter, hardened ingest, host and Coolify checklist, backups, first deploy, first message from the phone. RELEASE 1 <!-- id:n7 cu:123kjkdmppr -->
@@ -305,6 +287,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 ### 2026-11-15 (evening) — MVP week 1 on `mvp-week1`, one commit per step
 - Hiren: "do all of week 1's tasks that are code/commitable (1 commit per step)". Plan: Week 1 of the MVP plan of 15 Nov. Branch `mvp-week1` from `master`, not pushed: Hiren pushes after his server steps.
+- Step 2, the clean-up committed (Hiren's uncommitted `cleanup-legacy` work, 53 files deleted) plus the Intent lab (`IntentLabController`, `/api/lab/intent`, `intent:try`, `IntentClassifier`, the `Intent` enum, its eval file and test, `make lab-api`; `make register-test` too, the route is gone). `2026_11_15_000001_drop_legacy_nutrition_rpg_and_chat_tables` runs on deploy: `dropIfExists` and a column check, so it is safe to run again; tried on a Postgres built from `master`'s migrations (4 tables and the RPG columns gone), then `migrate:refresh` on it alone. 335 tests on SQLite and Postgres.
 - Step 1, server details out (audit 2026-11-14 C5): the address, SSH login, app and database container names, bot name, port probe and a work email are gone from `PROJECT.md`, `docs/` and `docs/technical/`; the docs point at the private ops note `storage/app/ops.md` (ignored by git, written on this laptop). Git history is not rewritten: the old values stay public, so the firewall and key-only SSH (Hiren's step) are what protect the server.
 
 ### 2026-11-15 — every saved message audited; replay as Opus and Sonnet; prompts from the misses

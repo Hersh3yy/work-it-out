@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use App\Contracts\Stats\StatSheet;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -29,7 +28,6 @@ final class UserResource extends JsonResource
             'weekly_adherence_rate' => $this->weekly_adherence_rate,
             'current_streak_days' => $this->current_streak_days,
             'last_active_at' => $this->last_active_at?->toIso8601String(),
-            'rpg' => app(StatSheet::class)->for($this->resource)['rpg'] ?? null,
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

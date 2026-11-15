@@ -5,11 +5,8 @@ declare(strict_types=1);
 use App\Contracts\Ai\CoachAdvisor;
 use App\Contracts\Ai\LimitationParser;
 use App\Contracts\Ai\MessageClassifier;
-use App\Contracts\Ai\NutritionParser;
-use App\Contracts\Ai\PlanGenerator;
 use App\Contracts\Ai\ProfileBuilder;
 use App\Contracts\Ai\SmartLogParser;
-use App\Contracts\Ai\TrainerChat;
 use Illuminate\Support\Facades\Http;
 use Laravel\Ai\Exceptions\FailoverableException;
 use Tests\Fakes\FakeMessageClassifier;
@@ -27,9 +24,6 @@ it('binds every AI port to a fake', function (string $port): void {
     LimitationParser::class,
     CoachAdvisor::class,
     ProfileBuilder::class,
-    TrainerChat::class,
-    PlanGenerator::class,
-    NutritionParser::class,
 ]);
 
 it('gives the suite no real key or bot token', function (string $key): void {

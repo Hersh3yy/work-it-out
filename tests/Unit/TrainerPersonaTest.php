@@ -9,8 +9,7 @@ it('gives every coach a voice for injuries, speed requests and corrections', fun
         ->toContain('When they are hurt:')
         ->toContain('When they ask for speed')
         ->toContain('When they correct a fact you got wrong:')
-        ->toContain('Tone example, never reuse its words')
-        ->and($coach->systemPrompt())->toStartWith('You are '.$coach->label());
+        ->toContain('Tone example, never reuse its words');
 })->with(TrainerPersona::cases());
 
 it('keeps nutrition out of the recovery coach in this phase', function (): void {

@@ -18,7 +18,7 @@ use Illuminate\Support\Carbon;
 /**
  * One free-text log message and what it produced.
  *
- * The loggable is the workout session, body weight or meal the message
+ * The loggable is the workout session or body weight the message
  * landed in. A message merged into an earlier session points at that session;
  * its own exercise entries carry this log's id.
  *

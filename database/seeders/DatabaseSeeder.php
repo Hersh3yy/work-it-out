@@ -33,7 +33,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->seedWorkouts($demo);
-        $this->seedNutrition($demo);
         $this->seedBodyWeight($demo);
     }
 
@@ -85,35 +84,6 @@ class DatabaseSeeder extends Seeder
                         'sort_order' => $sort,
                     ]);
                 }
-            }
-        }
-    }
-
-    private function seedNutrition(User $user): void
-    {
-        $meals = [
-            ['breakfast', 'Oats with banana and peanut butter', 450, 15, 75, 12],
-            ['lunch',     'Chicken breast with rice and broccoli', 520, 52, 55, 8],
-            ['dinner',    'Salmon fillet with sweet potato', 580, 45, 60, 18],
-            ['snack',     'Greek yogurt with berries', 150, 17, 15, 2],
-            ['snack',     'Protein shake', 160, 30, 6, 2],
-        ];
-
-        for ($i = 7; $i >= 0; $i--) {
-            $day = now()->subDays($i);
-
-            foreach ($meals as [$mealType, $foodName, $calories, $protein, $carbs, $fat]) {
-                $user->nutritionLogs()->create([
-                    'logged_at' => $day->copy()->setTime(match ($mealType) {
-                        'breakfast' => 7, 'lunch' => 12, 'dinner' => 19, default => 15
-                    }, 0),
-                    'meal_type' => $mealType,
-                    'food_name' => $foodName,
-                    'calories' => $calories,
-                    'protein_g' => $protein,
-                    'carbs_g' => $carbs,
-                    'fat_g' => $fat,
-                ]);
             }
         }
     }

@@ -2,99 +2,33 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Api\AiTrainerController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\BodyWeightController;
-use App\Http\Controllers\Api\DashboardController;
-use App\Http\Controllers\Api\DiaryController;
-use App\Http\Controllers\Api\IntentLabController;
 use App\Http\Controllers\Api\MagicLoginController;
-use App\Http\Controllers\Api\NutritionLogController;
 use App\Http\Controllers\Api\OverviewController;
-use App\Http\Controllers\Api\PlanController;
-use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SmartLogController;
-use App\Http\Controllers\Api\StatsController;
-use App\Http\Controllers\Api\WorkoutSessionController;
-use App\Http\Middleware\LocalOnly;
 use Illuminate\Support\Facades\Route;
 
 // -------------------------------------------------------------------------
-// Public auth routes
+// Sign in with the one-time link from /login in Telegram
 // -------------------------------------------------------------------------
-Route::prefix('auth')->group(function (): void {
-    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register');
-    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
-    Route::post('/magic', [MagicLoginController::class, 'store'])->middleware('throttle:login');
-});
+Route::post('/auth/magic', [MagicLoginController::class, 'store'])->middleware('throttle:login');
 
 // -------------------------------------------------------------------------
 // Authenticated routes (Sanctum bearer token required)
 // -------------------------------------------------------------------------
 Route::middleware('auth:sanctum')->group(function (): void {
 
-    // Auth management
     Route::post('/auth/logout', [AuthController::class, 'logout']);
-    Route::get('/user', [AuthController::class, 'me']);
 
     // The app's home: facts, written notes, limitations, recent messages
     Route::get('/me/overview', [OverviewController::class, 'show']);
     Route::get('/logs', [OverviewController::class, 'logs']);
     Route::post('/limitations/{limitation}/resolve', [OverviewController::class, 'resolveLimitation']);
 
-    // Profile
-    Route::get('/profile', [ProfileController::class, 'show']);
-    Route::put('/profile', [ProfileController::class, 'update']);
-    Route::put('/profile/trainer', [ProfileController::class, 'updateTrainer']);
-    Route::get('/profile/intake', [ProfileController::class, 'intake']);
-
-    // Real computed stats: personal records + RPG snapshot
-    Route::get('/stats', [StatsController::class, 'index']);
-
-    // Workouts
-    Route::apiResource('workouts', WorkoutSessionController::class)
-        ->only(['index', 'store', 'show', 'destroy']);
-
-    // Nutrition
-    Route::get('/nutrition', [NutritionLogController::class, 'index']);
-    Route::post('/nutrition', [NutritionLogController::class, 'store']);
-    Route::delete('/nutrition/{nutritionLog}', [NutritionLogController::class, 'destroy']);
-
-    // Body weight
-    Route::get('/body-weight', [BodyWeightController::class, 'index']);
-    Route::post('/body-weight', [BodyWeightController::class, 'store']);
-
-    // AI Trainer — rate-limited to 20 requests per user per hour
-    Route::get('/trainer', [AiTrainerController::class, 'index']);
-    Route::post('/trainer/chat', [AiTrainerController::class, 'chat'])
-        ->middleware('throttle:trainer-chat');
-
-    // Smart natural-language log — AI parses, persists, and reacts in one call
+    // The app's door for logging, the same interpreter as the chat
     Route::post('/log', [SmartLogController::class, 'store'])
-        ->middleware('throttle:trainer-chat');
+        ->middleware('throttle:smart-log');
     Route::post('/log/{log}/answer', [SmartLogController::class, 'answer']);
     Route::post('/log/{log}/skip', [SmartLogController::class, 'skip']);
     Route::delete('/log/{log}', [SmartLogController::class, 'destroy']);
-
-    // Coaches' diary
-    Route::get('/diary', [DiaryController::class, 'index']);
-
-    // AI-generated plans — rate-limited alongside trainer chat
-    Route::post('/plans/workout', [PlanController::class, 'workout'])
-        ->middleware('throttle:trainer-chat');
-    Route::post('/plans/meal', [PlanController::class, 'meal'])
-        ->middleware('throttle:trainer-chat');
-
-    // Dashboard summary
-    Route::get('/dashboard', [DashboardController::class, 'index']);
-});
-
-// -------------------------------------------------------------------------
-// Intent lab, local only, no login: the classifier on its own for classifier-lab/
-// -------------------------------------------------------------------------
-Route::middleware(LocalOnly::class)->prefix('lab/intent')->group(function (): void {
-    Route::get('/', [IntentLabController::class, 'options']);
-    Route::post('/', [IntentLabController::class, 'classify']);
-    Route::post('/eval', [IntentLabController::class, 'evaluate']);
-    Route::post('/explain', [IntentLabController::class, 'explain']);
 });

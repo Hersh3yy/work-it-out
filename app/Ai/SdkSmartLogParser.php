@@ -21,8 +21,6 @@ use App\Models\User;
  */
 final readonly class SdkSmartLogParser implements SmartLogParser
 {
-    private const array MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack', 'supplement'];
-
     public function parse(User $user, string $message): array
     {
         $agent = new SmartLogAgent(now()->toDateString());
@@ -59,7 +57,6 @@ final readonly class SdkSmartLogParser implements SmartLogParser
         }
 
         $loggedOn = $raw['logged_on'] ?? null;
-        $mealType = $raw['meal_type'] ?? null;
 
         return [
             'log_type' => $logType,
@@ -73,8 +70,6 @@ final readonly class SdkSmartLogParser implements SmartLogParser
                 self::exercise(...),
                 is_array($raw['exercises'] ?? null) ? $raw['exercises'] : [],
             ))),
-            'meal_type' => in_array($mealType, self::MEAL_TYPES, true) ? $mealType : null,
-            'food_name' => self::text($raw['food_name'] ?? null, 255),
             'weight_kg_stat' => self::number($raw['weight_kg_stat'] ?? null),
             'questions' => array_slice(array_values(array_filter(array_map(
                 self::question(...),

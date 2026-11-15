@@ -46,8 +46,6 @@ final class FakeSmartLogParser implements SmartLogParser
                     'notes' => null,
                 ],
             ],
-            'meal_type' => null,
-            'food_name' => null,
             'weight_kg_stat' => null,
             'questions' => [],
         ]);

@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Ai\Agents\PlanAgent;
 use App\Ai\Agents\SmartLogAgent;
-use App\Contracts\Ai\PlanGenerator;
 use App\Contracts\Ai\SmartLogParser;
 use App\Models\User;
 use Illuminate\Support\Facades\Queue;
@@ -18,7 +16,6 @@ use Tests\Fakes\FakeSmartLogParser;
 
 beforeEach(function (): void {
     useRealAdapter(SmartLogParser::class);
-    useRealAdapter(PlanGenerator::class);
 });
 
 function smartLogPayload(array $overrides = []): array
@@ -40,19 +37,6 @@ it('smart log persists through the real SdkSmartLogParser', function (): void {
         ->assertJsonPath('log_type', 'workout');
 
     $this->assertDatabaseHas('exercise_entries', ['exercise_name' => 'Bench Press']);
-});
-
-it('workout plan generates through the real SdkPlanGenerator', function (): void {
-    Ai::fakeAgent(PlanAgent::class, ['# Shen weekly programme']);
-
-    $user = User::factory()->asShen()->withCompleteProfile()->create();
-
-    $this->actingAs($user, 'sanctum')
-        ->postJson('/api/plans/workout')
-        ->assertOk()
-        ->assertJsonPath('plan', '# Shen weekly programme');
-
-    $this->assertDatabaseCount('agent_conversations', 0);
 });
 
 it('junk payload is a 503 before any write', function (): void {
@@ -90,7 +74,7 @@ it('drops anything beyond facts and coerces types', function (): void {
         ],
     ])]);
 
-    $user = User::factory()->create(['rpg_strength' => 10]);
+    $user = User::factory()->create();
 
     $this->actingAs($user, 'sanctum')
         ->postJson('/api/log', ['message' => 'Benched 80kg 3x5'])
@@ -99,6 +83,5 @@ it('drops anything beyond facts and coerces types', function (): void {
         ->assertJsonPath('entries.0.weight_kg', 80)
         ->assertJsonCount(1, 'questions');
 
-    $this->assertDatabaseCount('custom_rpg_stats', 0);
     expect(mb_strlen((string) $user->workoutSessions()->first()->exerciseEntries()->first()->exercise_name))->toBe(100);
 });

@@ -23,9 +23,10 @@ return [
     |--------------------------------------------------------------------------
     |
     | Each AI job may run on its own provider and model (PLAN.md section 4,
-    | 2026-10-04): log parsing must be cheap and reachable from the gym, the
-    | profile build may run on the laptop's local model, coach chat is open.
-    | Null falls back to the default provider and its default text model.
+    | 2026-10-04). "log" is the classifier, the log reader and the injury
+    | reader; "chat" is the coach (questions and the morning message);
+    | "profile" is the written profile. An empty chat or profile job uses the
+    | log job's provider and model (App\Ai\ModelChain).
     |
     */
 
@@ -34,15 +35,10 @@ return [
             'provider' => env('AI_LOG_PROVIDER'),
             'model' => env('AI_LOG_MODEL'),
         ],
-        'plan' => [
-            'provider' => env('AI_PLAN_PROVIDER'),
-            'model' => env('AI_PLAN_MODEL'),
-        ],
         'chat' => [
             'provider' => env('AI_CHAT_PROVIDER'),
             'model' => env('AI_CHAT_MODEL'),
         ],
-        // The written profile. Empty means the log job's provider and model.
         'profile' => [
             'provider' => env('AI_PROFILE_PROVIDER'),
             'model' => env('AI_PROFILE_MODEL'),
@@ -228,8 +224,8 @@ return [
             // OPENAI_URL points at Msty MLX locally (host.docker.internal for Sail containers).
             // Swap to a cloud / hosted Gemma endpoint via a single env change in production.
             'url' => env('OPENAI_URL', 'https://api.openai.com/v1'),
-            // Disable server-side storage: Msty does not support it, and we use
-            // the AI SDK's RemembersConversations trait for conversation persistence.
+            // Disable server-side storage: Msty does not support it, and no
+            // agent here keeps a conversation (each call gets its context).
             'store' => false,
             'models' => [
                 'text' => [

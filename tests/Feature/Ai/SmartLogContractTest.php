@@ -10,9 +10,7 @@ it('persists a parsed workout end-to-end and returns a receipt', function (): vo
     Queue::fake();
     fakeSmartLogParser(FakeSmartLogParser::workout());
 
-    $user = User::factory()->create([
-        'rpg_strength' => 10, 'rpg_stamina' => 10, 'rpg_vitality' => 10,
-    ]);
+    $user = User::factory()->create();
 
     $this->actingAs($user, 'sanctum')
         ->postJson('/api/log', ['message' => 'Benched 100kg 3x5 today'])
@@ -30,7 +28,6 @@ it('persists a parsed workout end-to-end and returns a receipt', function (): vo
     $this->assertDatabaseHas('workout_sessions', ['user_id' => $user->id, 'duration_minutes' => 45, 'completed_planned' => true]);
     $this->assertDatabaseHas('exercise_entries', ['exercise_name' => 'Bench Press', 'weight_kg' => 100]);
     $this->assertDatabaseHas('activity_logs', ['user_id' => $user->id, 'source' => 'http', 'log_type' => 'workout']);
-    $this->assertDatabaseCount('custom_rpg_stats', 0);
 });
 
 it('returns the question when a value is missing', function (): void {

@@ -7,13 +7,12 @@ namespace App\Actions\SmartLog;
 use App\Events\LogReverted;
 use App\Models\ActivityLog;
 use App\Models\BodyWeightLog;
-use App\Models\NutritionLog;
 use App\Models\WorkoutSession;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Undoes one free-text log completely: the entries it added (and the session
- * if nothing else is left in it), its body weight or meal, its diary line.
+ * if nothing else is left in it), its body weight, its diary line.
  * Every number is computed from what remains, so nothing else needs restoring.
  */
 final readonly class RevertSmartLog
@@ -37,10 +36,6 @@ final readonly class RevertSmartLog
                 $loggable->delete();
                 $latest = $user->bodyWeightLogs()->latest('logged_at')->first();
                 $user->update(['current_weight_kg' => $latest?->weight_kg]);
-            }
-
-            if ($loggable instanceof NutritionLog) {
-                $loggable->delete();
             }
 
             $log->diaryEntry()->delete();
