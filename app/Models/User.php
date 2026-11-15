@@ -114,6 +114,11 @@ class User extends Authenticatable
         return $this->hasMany(ProfileVersion::class)->latest('id');
     }
 
+    /**
+     * Newest first.
+     *
+     * @return HasMany<ActivityLog, $this>
+     */
     public function activityLogs(): HasMany
     {
         return $this->hasMany(ActivityLog::class)->latest();

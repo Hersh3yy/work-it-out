@@ -7,7 +7,6 @@ namespace App\Actions\SmartLog;
 use App\Interpretation\NumberReply;
 use App\Models\ActivityLog;
 use App\Models\ExerciseEntry;
-use App\Models\User;
 
 /**
  * Fills in the value a log's open question asked for, without AI.
@@ -16,13 +15,11 @@ use App\Models\User;
  * "exercises.0.set_list.5.weight_kg"), so a reply like "30", "32.5 kg", "5k"
  * or "28 min" can be written straight into that entry or set. A unit that
  * does not fit the field ("12 kg" for reps) is not an answer. A sets-or-reps
- * question carries the two counts, so the answer fills both. Only the user's
- * latest log, and only for six hours.
+ * question carries the two counts, so the answer fills both.
+ * Which log is waiting is App\Conversation\Answers\OpenQuestions' call.
  */
 final readonly class AnswerOpenQuestion
 {
-    private const int OPEN_HOURS = 6;
-
     /** @var array<string, array{0: float, 1: float}> field => [min, max] */
     private const array RANGES = [
         'weight_kg' => [0.5, 500],
@@ -42,15 +39,6 @@ final readonly class AnswerOpenQuestion
     ];
 
     private const string FIELD = '/^exercises\.(\d+)\.(?:set_list\.(\d+)\.)?(weight_kg|sets|reps|duration_seconds|distance_meters)$/';
-
-    public function openFor(User $user): ?ActivityLog
-    {
-        $log = $user->activityLogs()
-            ->where('created_at', '>=', now()->subHours(self::OPEN_HOURS))
-            ->first();
-
-        return $log !== null && ! empty($log->questions) ? $log : null;
-    }
 
     /**
      * The updated entry, or null when the reply does not answer the question.

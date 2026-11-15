@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Conversation\Answers;
 
-use App\Actions\SmartLog\AnswerOpenQuestion;
 use App\Events\LogRecorded;
 use App\Limitations\RedFlagScreen;
 use App\Models\Limitation;
@@ -21,21 +20,22 @@ final readonly class RedFlagScreenAnswer implements AnswerHandler
     private const array NO = ['no', 'n', 'nope', 'none', 'nee', 'nothing', 'not really', '2'];
 
     public function __construct(
-        private AnswerOpenQuestion $answers,
+        private OpenQuestions $openQuestions,
     ) {}
 
     public function handle(User $user, string $text): ?Answer
     {
-        $open = $this->answers->openFor($user);
+        $open = $this->openQuestions->for($user);
+        $limitation = $open?->log->limitation;
 
-        if ($open === null || ($open->questions[0]['field'] ?? null) !== RedFlagScreen::FIELD || $open->limitation === null) {
+        if ($open === null || ! $open->is(OpenQuestionKind::RedFlagCheck) || $limitation === null) {
             return null;
         }
 
         $answer = mb_strtolower(trim($text, " \t\n\r.!"));
 
         if (in_array($answer, ['skip', '/skip'], true)) {
-            $open->update(['questions' => null]);
+            $open->log->update(['questions' => null]);
 
             return new Answer('OK, skipped.');
         }
@@ -50,9 +50,9 @@ final readonly class RedFlagScreenAnswer implements AnswerHandler
             return null;
         }
 
-        $open->limitation->update(['red_flags' => $result]);
-        $open->update(['questions' => null]);
-        LogRecorded::dispatch($open);
+        $limitation->update(['red_flags' => $result]);
+        $open->log->update(['questions' => null]);
+        LogRecorded::dispatch($open->log);
 
         return new Answer($result === Limitation::RED_FLAGS_FLAGGED ? RedFlagScreen::FLAGGED_REPLY : RedFlagScreen::CLEAR_REPLY);
     }

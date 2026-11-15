@@ -18,26 +18,27 @@ use App\Models\User;
 final readonly class ExerciseQuestionAnswer implements AnswerHandler
 {
     public function __construct(
+        private OpenQuestions $openQuestions,
         private AnswerOpenQuestion $answers,
         private ReplyComposer $replies,
     ) {}
 
     public function handle(User $user, string $text): ?Answer
     {
-        $open = $this->answers->openFor($user);
+        $open = $this->openQuestions->for($user);
 
-        if ($open === null || ! str_starts_with((string) ($open->questions[0]['field'] ?? ''), 'exercises.')) {
+        if ($open === null || ! $open->is(OpenQuestionKind::ExerciseValue)) {
             return null;
         }
 
         if (in_array(mb_strtolower(trim($text)), ['skip', '/skip'], true)) {
-            $this->answers->skip($open);
+            $this->answers->skip($open->log);
 
             return new Answer('OK, left it empty.');
         }
 
         $reply = NumberReply::from($text);
-        $entry = $reply === null ? null : $this->answers->answer($open, $reply);
+        $entry = $reply === null ? null : $this->answers->answer($open->log, $reply);
 
         return $entry === null ? null : new Answer('Updated: '.$this->replies->entry($entry), $reply->followUp());
     }

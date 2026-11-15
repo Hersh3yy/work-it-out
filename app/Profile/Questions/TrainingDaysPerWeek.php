@@ -15,6 +15,9 @@ final class TrainingDaysPerWeek implements ProfileQuestion
 {
     private const array WORDS = ['one' => 1, 'two' => 2, 'three' => 3, 'four' => 4, 'five' => 5, 'six' => 6, 'seven' => 7];
 
+    /** "4", "four", "4 days", "3x a week"; "3 sets of squats at 100" is a log. */
+    private const string WHOLE_ANSWER = '/^(?<days>[1-7]|one|two|three|four|five|six|seven)(?:\s*(?:days?|x|times))?(?:\s*(?:a|per|each)\s+week)?$/';
+
     public function key(): string
     {
         return 'training_days_per_week';
@@ -32,13 +35,7 @@ final class TrainingDaysPerWeek implements ProfileQuestion
 
     public function answer(User $user, string $text): ?string
     {
-        $text = mb_strtolower(trim($text));
-
-        $days = match (true) {
-            (bool) preg_match('/^([1-7])\b/', $text, $m) => (int) $m[1],
-            (bool) preg_match('/^('.implode('|', array_keys(self::WORDS)).')\b/', $text, $m) => self::WORDS[$m[1]],
-            default => null,
-        };
+        $days = preg_match(self::WHOLE_ANSWER, mb_strtolower(trim($text, " \t\n\r.!")), $m) ? $this->days($m['days']) : null;
 
         if ($days === null) {
             return null;
@@ -48,5 +45,10 @@ final class TrainingDaysPerWeek implements ProfileQuestion
         UpdateUserStats::dispatch($user);
 
         return "Saved: you plan to train {$days} ".($days === 1 ? 'day' : 'days').' a week.';
+    }
+
+    private function days(string $number): int
+    {
+        return self::WORDS[$number] ?? (int) $number;
     }
 }
