@@ -84,13 +84,6 @@ final readonly class UsageReport
     /** USD, or null when the model has no price in config. */
     private function costOf(AiCallRecord $call): ?float
     {
-        $price = config('ai.prices')[$call->model] ?? null;
-
-        if (! is_array($price) || ! is_numeric($price['input'] ?? null) || ! is_numeric($price['output'] ?? null)) {
-            return null;
-        }
-
-        return $call->input_tokens / 1_000_000 * (float) $price['input']
-            + $call->output_tokens / 1_000_000 * (float) $price['output'];
+        return ModelPrice::cost($call->model, $call->input_tokens, $call->output_tokens);
     }
 }
