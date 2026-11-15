@@ -49,7 +49,7 @@ final readonly class SendDailyCoaching
 
     private static function brief(): string
     {
-        return sprintf(self::BRIEF, now()->timezone((string) config('coach.daily.timezone'))->format('l'), today()->toDateString());
+        return sprintf(self::BRIEF, now()->format('l'), today()->toDateString());
     }
 
     /**

@@ -39,7 +39,7 @@ final readonly class DailyCommand implements ChatCommand
     {
         return $user->daily_coaching_hour === null
             ? 'Your morning message is off. /daily on brings it back, /daily 7 picks the hour.'
-            : sprintf('Your morning message comes at %02d:00 (%s). /daily 7 moves it, /daily off stops it.', $user->daily_coaching_hour, config('coach.daily.timezone'));
+            : sprintf('Your morning message comes at %02d:00 (%s). /daily 7 moves it, /daily off stops it.', $user->daily_coaching_hour, config('app.timezone'));
     }
 
     private function setHour(User $user, ?int $hour): string
@@ -48,6 +48,6 @@ final readonly class DailyCommand implements ChatCommand
 
         return $hour === null
             ? 'OK, no more morning messages. /daily on brings them back.'
-            : sprintf('OK, your morning message comes at %02d:00 (%s).', $hour, config('coach.daily.timezone'));
+            : sprintf('OK, your morning message comes at %02d:00 (%s).', $hour, config('app.timezone'));
     }
 }

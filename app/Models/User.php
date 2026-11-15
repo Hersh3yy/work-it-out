@@ -127,14 +127,14 @@ class User extends Authenticatable
 
     /**
      * Who gets the morning message now: linked to a chat, heard from within
-     * coach.daily.quiet_after_days, their hour in coach.daily.timezone, and
+     * coach.daily.quiet_after_days, their hour in the app timezone, and
      * not sent today.
      *
      * @param  Builder<User>  $query
      */
     public function scopeDueForMorningMessage(Builder $query): void
     {
-        $hour = (int) now()->timezone((string) config('coach.daily.timezone'))->format('G');
+        $hour = (int) now()->format('G');
         $heardSince = now()->subDays((int) config('coach.daily.quiet_after_days'));
 
         $query
