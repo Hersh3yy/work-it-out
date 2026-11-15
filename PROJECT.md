@@ -302,6 +302,12 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-11-15 — every saved message audited; replay as Opus and Sonnet; prompts from the misses
+- Hiren: recheck every message received, judge what was saved, replay them as Opus and as Sonnet. Production read read-only (ssh, Postgres with `default_transaction_read_only=on`). Report, raw dump and both replays in `storage/app/audit/audit-2026-11-15.md` and `storage/app/audit/2026-11-15/` (gitignored, personal data, this laptop only).
+- Worst saves: the 5 Nov session has no exercises; 7 Nov bench is 11 sets under two names; 21 Oct squat 5x90 instead of 90 then 4x80; back replies saved as logs before 12 Nov; on 15 Nov "was sick yesterday" and "the lower the better right?" filed as back updates. The app dates the back from 2 Nov (it was 26 Oct) and has no goal store.
+- Replay on master prompts: log reading ties flash-lite; the injury reader and the coach are where flash-lite fails. About 8 of 20 wrong saves come from routing and no model fixes them (injury inside a workout with nothing on file, coach questions skip the injury reader, the log reader has no session context, no goal store).
+- Hiren: "adjust the prompt". Branch `prompts-from-audit`, merged: injury reader (an illness that is over, "better" about a load), log reader (notes not rows for stretching and rehab, rep ranges, per side, assisted machines, one name per lift, goals in notes), coach (goals in words, no "Understood." opener, no claimed saves, keeps its safe variation, no resent skipped plan), morning brief, profile (goals and the real start date are not crowded out), `AsksTheCoach` tag questions. `PromptRulesTest`, 377 tests on SQLite and Postgres. Not yet run on a real model.
+
 ### 2026-11-14 (late) — CI green again; the audit's "fix first" list, test first
 - Hiren, on this laptop: "go for it, make sure we stick to design patterns". Branch `fix-first-2026-11-14`, merged to `master`.
 - CI (c8eea9f): `laravel/framework` 13.42 with the constraint `^13.40` for GHSA-63hm-g96r-2m2q; `composer audit --locked` moved to its own job so an advisory can no longer skip Pint and the SQLite suite.
