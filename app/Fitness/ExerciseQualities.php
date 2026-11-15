@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Fitness;
 
+use App\Enums\BodyArea;
 use App\Services\Exercises\ExerciseAliases;
 use App\Services\Stats\PersonalRecordService;
 
@@ -33,6 +34,16 @@ final class ExerciseQualities
         'mobility' => [Quality::Mobility], 'foamroll' => [Quality::Recovery],
     ];
 
+    /** @var array<string, list<BodyArea>> quality value => the areas its exercises load */
+    private const array AREAS = [
+        'strength' => [BodyArea::LowerBack, BodyArea::Hip, BodyArea::Knee, BodyArea::Shoulder, BodyArea::Chest, BodyArea::UpperBack, BodyArea::Elbow, BodyArea::Wrist],
+        'power' => [BodyArea::LowerBack, BodyArea::Hip, BodyArea::Knee, BodyArea::Ankle, BodyArea::Shoulder, BodyArea::Wrist],
+        'endurance' => [BodyArea::Hip, BodyArea::Knee, BodyArea::Ankle, BodyArea::Foot],
+        'core' => [BodyArea::LowerBack, BodyArea::Hip, BodyArea::Shoulder],
+        'mobility' => [],
+        'recovery' => [],
+    ];
+
     /** Shorter keywords only match the start of a word, so "crunch" is not a run. */
     private const int JOINED_KEYWORD_LENGTH = 6;
 
@@ -50,6 +61,14 @@ final class ExerciseQualities
         }
 
         return array_values(array_unique($qualities, SORT_REGULAR));
+    }
+
+    /**
+     * @return list<BodyArea>
+     */
+    public static function areasLoadedBy(Quality $quality): array
+    {
+        return self::AREAS[$quality->value];
     }
 
     public static function trains(string $exerciseName, Quality $quality): bool

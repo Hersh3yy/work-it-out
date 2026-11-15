@@ -50,4 +50,18 @@ return [
         ],
     ],
 
+    'readiness' => [
+        // Convention, about 48 to 72 hours between hard sessions for the same quality (ACSM guidance, from memory, to verify): readiness on the day it worked and the days after; full from then on.
+        'full' => 100,
+        'after_training' => [0 => 40, 1 => 40, 2 => 70],
+
+        // Convention (Feetness, 15 November): an active limitation caps the qualities that load its area, by severity (unknown counts as moderate); an illness caps every quality.
+        'limitation_cap' => [
+            'mild' => 80,
+            'moderate' => 60,
+            'severe' => 30,
+        ],
+        'illness_cap' => 50,
+    ],
+
 ];

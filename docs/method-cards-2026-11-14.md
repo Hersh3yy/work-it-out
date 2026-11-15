@@ -141,6 +141,7 @@ Each number in `config/fitness.php` cites one line here. "Convention" means comm
 - Cardio: 150 minutes a week (card 2, WHO 2020 guideline for adults).
 - Core: a two-minute plank and a farmer's carry at half body weight per hand count as the standard (card 4's tests, convention).
 - Recovery: two rest days in seven (convention); an active limitation takes 10, 25 or 50 percent off recovery when mild, moderate or severe, and an unknown severity counts as moderate (convention, Feetness 15 November).
+- Readiness, 0 to 100: 40 on the day a quality worked and the day after, 70 on the second day, full from the third (convention, about 48 to 72 hours between hard sessions for the same muscles, ACSM guidance from memory, to verify). Mobility and recovery are not tired by their own light work. An active limitation caps the qualities that load its area at 80, 60 or 30 when mild, moderate or severe; an illness caps every quality at 50 (convention, Feetness 15 November).
 
 ## Sources
 

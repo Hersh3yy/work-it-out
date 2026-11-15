@@ -34,6 +34,8 @@ final class Limitation extends Model
 
     public const string RED_FLAGS_FLAGGED = 'flagged';
 
+    private const string ILLNESS_WORDS = '/\b(sick|ill|illness|cold|flu|fever|covid|virus|infection|ziek|griep|verkouden|koorts)\b/i';
+
     protected function casts(): array
     {
         return [
@@ -52,6 +54,12 @@ final class Limitation extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->whereNull('resolved_at');
+    }
+
+    /** Not one body area but the whole person: a cold, the flu, a fever. */
+    public function isIllness(): bool
+    {
+        return in_array($this->body_area, [null, BodyArea::Other], true) && preg_match(self::ILLNESS_WORDS, $this->note) === 1;
     }
 
     public function areaLabel(): string

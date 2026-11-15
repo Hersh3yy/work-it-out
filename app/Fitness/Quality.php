@@ -43,4 +43,10 @@ enum Quality: string
             self::Power, self::Mobility => new NoTestYet,
         };
     }
+
+    /** Hard work leaves it spent for a day or two; light mobility and recovery work does not. */
+    public function tiresWhenTrained(): bool
+    {
+        return ! in_array($this, [self::Mobility, self::Recovery], true);
+    }
 }

@@ -42,7 +42,7 @@ final readonly class TrainingHistory
             $day,
             $sessions->flatMap(static fn ($session): Collection => $session->exerciseEntries->each->setRelation('workoutSession', $session))->values(),
             self::bodyWeightOn($user, $day),
-            $user->limitations()->where('started_on', '<=', $day->toDateString())
+            $user->limitations()->whereDate('started_on', '<=', $day->toDateString())
                 ->where(static fn ($q) => $q->whereNull('resolved_at')->orWhere('resolved_at', '>', $day->endOfDay()))
                 ->get(),
             $user->workoutSessions()->where('logged_at', '<=', $day->endOfDay())->exists(),
@@ -72,6 +72,14 @@ final readonly class TrainingHistory
         return (int) $entry->workoutSession->logged_at->copy()->startOfDay()->diffInDays($this->on);
     }
 
+    /** The newest day in this history the quality was trained, if any. */
+    public function lastTrained(Quality $quality): ?CarbonImmutable
+    {
+        $daysAgo = $this->training($quality, (int) config('fitness.history_days'))->map($this->daysAgo(...))->min();
+
+        return $daysAgo === null ? null : $this->on->subDays($daysAgo);
+    }
+
     /** Days in the last $days without a workout session. */
     public function restDaysIn(int $days): int
     {
@@ -82,7 +90,7 @@ final readonly class TrainingHistory
 
     private static function bodyWeightOn(User $user, CarbonImmutable $day): ?float
     {
-        $weighIn = $user->bodyWeightLogs()->where('logged_at', '<=', $day->toDateString())->latest('logged_at')->value('weight_kg');
+        $weighIn = $user->bodyWeightLogs()->whereDate('logged_at', '<=', $day->toDateString())->latest('logged_at')->value('weight_kg');
         $weight = $weighIn ?? $user->current_weight_kg;
 
         return $weight === null ? null : (float) $weight;
