@@ -31,6 +31,9 @@ jobs:
         run: composer install --no-interaction --prefer-dist --no-progress
       - name: Pint
         run: vendor/bin/pint --test
+      # Level 5 with a baseline of the 75 errors found on 15 Nov: only new ones fail.
+      - name: Larastan
+        run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress
       - name: Prepare env
         run: cp .env.example .env && php artisan key:generate
       - name: Pest

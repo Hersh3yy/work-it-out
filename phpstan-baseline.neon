@@ -1,0 +1,385 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\CoachTurn, App\\Models\\User\>\:\:waiting\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Actions/Conversation/KeepMessage.php
+
+		-
+			message: '#^Method App\\Actions\\Conversation\\KeepMessage\:\:handle\(\) should return App\\Models\\WaitingMessage but returns App\\Models\\CoachTurn\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Actions/Conversation/KeepMessage.php
+
+		-
+			message: '#^Parameter \#1 \$waiting of job class App\\Jobs\\ProcessWaitingMessage constructor expects App\\Models\\WaitingMessage in App\\Jobs\\ProcessWaitingMessage\:\:dispatch\(\), App\\Models\\CoachTurn given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Actions/Conversation/KeepMessage.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Actions/Limitations/RecordLimitation.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$summary\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Actions/Limitations/RecordLimitation.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:diaryEntry\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Actions/Limitations/RecordLimitation.php
+
+		-
+			message: '#^Offset ''candidates'' on array\{is_limitation\: bool, body_area\: string\|null, candidates\: list\<string\>, severity\: string\|null, duration_days\: int\|null, started_days_ago\: int\|null, note\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Actions/Limitations/RecordLimitation.php
+
+		-
+			message: '#^Offset ''note'' on array\{is_limitation\: bool, body_area\: string\|null, candidates\: list\<string\>, severity\: string\|null, duration_days\: int\|null, started_days_ago\: int\|null, note\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Actions/Limitations/RecordLimitation.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Actions/Limitations/RecordLimitationUpdate.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$summary\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Actions/Limitations/RecordLimitationUpdate.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:diaryEntry\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Actions/Limitations/RecordLimitationUpdate.php
+
+		-
+			message: '#^Call to function is_array\(\) with null will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Actions/SmartLog/AnswerOpenQuestion.php
+
+		-
+			message: '#^Method App\\Actions\\SmartLog\\AnswerOpenQuestion\:\:openFor\(\) should return App\\Models\\ActivityLog\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Actions/SmartLog/AnswerOpenQuestion.php
+
+		-
+			message: '#^Offset ''pair'' on array\{field\: string, question\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Actions/SmartLog/AnswerOpenQuestion.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between \*NEVER\* and mixed will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Actions/SmartLog/AnswerOpenQuestion.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$log_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Actions/SmartLog/RecordSmartLog.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:diaryEntry\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Actions/SmartLog/RecordSmartLog.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:loggable\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Actions/SmartLog/RecordSmartLog.php
+
+		-
+			message: '#^Parameter \#1 \$log of class App\\Actions\\SmartLog\\SmartLogResult constructor expects App\\Models\\ActivityLog, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Actions/SmartLog/RecordSmartLog.php
+
+		-
+			message: '#^Parameter \#2 \$log of method App\\Actions\\SmartLog\\RecordSmartLog\:\:recordWorkout\(\) expects App\\Models\\ActivityLog, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Actions/SmartLog/RecordSmartLog.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between Carbon\\CarbonImmutable\|null and false will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Actions/SmartLog/RecordSmartLog.php
+
+		-
+			message: '#^Call to an undefined method Laravel\\Ai\\Responses\\AgentResponse\:\:toArray\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Ai/SdkLimitationParser.php
+
+		-
+			message: '#^Call to an undefined method Laravel\\Ai\\Responses\\AgentResponse\:\:toArray\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Ai/SdkMessageClassifier.php
+
+		-
+			message: '#^Call to an undefined method Laravel\\Ai\\Responses\\AgentResponse\:\:toArray\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Ai/SdkProfileBuilder.php
+
+		-
+			message: '#^Call to an undefined method Laravel\\Ai\\Responses\\AgentResponse\:\:toArray\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Ai/SdkSmartLogParser.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Ai/Usage/UsageReport.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Ai/Usage/UsageReport.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\CoachTurn, App\\Models\\User\>\:\:waiting\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Coach/CoachContext.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\<string, mixed\>, Closure\(App\\Models\\ActivityLog\)\: array\<string, mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Coach/CoachContext.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>notes" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Coach/CoachContext.php
+
+		-
+			message: '#^Offset ''options'' on array\{field\: ''limitation\.body_area'', question\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Conversation/Answers/LimitationChoiceAnswer.php
+
+		-
+			message: '#^Offset int on array\{\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Conversation/Answers/LimitationChoiceAnswer.php
+
+		-
+			message: '#^Parameter \#1 \$array \(array\{\}\) to function array_filter is empty, call has no effect\.$#'
+			identifier: arrayFilter.empty
+			count: 1
+			path: app/Conversation/Answers/LimitationChoiceAnswer.php
+
+		-
+			message: '#^Parameter \#1 \$array \(array\{\}\) to function array_values is empty, call has no effect\.$#'
+			identifier: arrayValues.empty
+			count: 1
+			path: app/Conversation/Answers/LimitationChoiceAnswer.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$summary\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Conversation/Commands/UndoCommand.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:exerciseEntries\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Conversation/Commands/UndoCommand.php
+
+		-
+			message: '#^Parameter \#1 \$log of method App\\Actions\\SmartLog\\RevertSmartLog\:\:handle\(\) expects App\\Models\\ActivityLog, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Conversation/Commands/UndoCommand.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>notes" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Api/OverviewController.php
+
+		-
+			message: '#^Parameter \#1 \$log of method App\\Actions\\SmartLog\\AnswerOpenQuestion\:\:answer\(\) expects App\\Models\\ActivityLog, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Api/SmartLogController.php
+
+		-
+			message: '#^Parameter \#1 \$log of method App\\Actions\\SmartLog\\AnswerOpenQuestion\:\:skip\(\) expects App\\Models\\ActivityLog, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Api/SmartLogController.php
+
+		-
+			message: '#^Parameter \#1 \$log of method App\\Actions\\SmartLog\\RevertSmartLog\:\:handle\(\) expects App\\Models\\ActivityLog, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Api/SmartLogController.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Resources/BodyWeightLogResource.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Resources/WorkoutSessionResource.php
+
+		-
+			message: '#^Call to an undefined method Laravel\\Ai\\Responses\\AgentResponse\:\:toArray\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Interpretation/Lab/ClassifierLab.php
+
+		-
+			message: '#^Comparison operation "\>" between 0 and 0 is always false\.$#'
+			identifier: greater.alwaysFalse
+			count: 1
+			path: app/Interpretation/Lab/ClassifierLab.php
+
+		-
+			message: '#^Method App\\Jobs\\UpdateUserStats\:\:computeLastActiveAt\(\) never returns Carbon\\Carbon so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: app/Jobs/UpdateUserStats.php
+
+		-
+			message: '#^Method App\\Jobs\\UpdateUserStats\:\:computeLastActiveAt\(\) should return Carbon\\Carbon\|null but returns string\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Jobs/UpdateUserStats.php
+
+		-
+			message: '#^Instanceof between Laravel\\Ai\\Responses\\Data\\TextUsage and Laravel\\Ai\\Responses\\Data\\TextUsage will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 2
+			path: app/Listeners/RecordAiCall.php
+
+		-
+			message: '#^Parameter \#1 \$array \(list\<array\{reps\: int\|null, weight_kg\: float\|null\}\>\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
+			count: 1
+			path: app/Models/ExerciseEntry.php
+
+		-
+			message: '#^Method App\\Models\\User\:\:waitingMessages\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\CoachTurn, \$this\(App\\Models\\User\)\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\WaitingMessage, \$this\(App\\Models\\User\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Profile/ProfileFacts.php
+
+		-
+			message: '#^Cannot call method startOfDay\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Profile/ProfileFacts.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 3
+			path: app/Profile/ProfileFacts.php
+
+		-
+			message: '#^Constant App\\Profile\\Questions\\MainGoal\:\:CHOICES \(array\<string, App\\Enums\\PrimaryGoal\>\) does not accept value array\<int\|string, App\\Enums\\PrimaryGoal\:\:BuildMuscle\|App\\Enums\\PrimaryGoal\:\:GeneralFitness\|App\\Enums\\PrimaryGoal\:\:ImproveEndurance\|App\\Enums\\PrimaryGoal\:\:LoseFat\>\.$#'
+			identifier: classConstant.value
+			count: 1
+			path: app/Profile/Questions/MainGoal.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Profile/UpdateProfile.php
+
+		-
+			message: '#^Parameter \#1 \$logs of method App\\Profile\\UpdateProfile\:\:entries\(\) expects Illuminate\\Support\\Collection\<int, App\\Models\\ActivityLog\>, Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Profile/UpdateProfile.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>notes" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Profile/UpdateProfile.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Providers/AppServiceProvider.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 4
+			path: app/Services/Stats/PersonalRecordService.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Services/Stats/PersonalRecordService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<\(int\|string\),Illuminate\\Support\\Collection\<int, array\<string, App\\Models\\ExerciseEntry\|App\\Models\\WorkoutSession\>\>\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 2
+			path: app/Services/Stats/PersonalRecordService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<\(int\|string\),array\<string, mixed\>\>\:\:sortByDesc\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 2
+			path: app/Services/Stats/PersonalRecordService.php

@@ -37,6 +37,7 @@ The facade (`HandleInboundMessage`) only routes. If it grows a new private metho
 
 - A test per behaviour that runs with zero AI calls (fakes) on both engines: `vendor/bin/pest` and `vendor/bin/pest --configuration=phpunit.pgsql.xml`.
 - `vendor/bin/pint` clean.
+- `vendor/bin/phpstan analyse --memory-limit=1G` clean (Larastan level 5; the baseline only shrinks: fix an entry, then regenerate with `--generate-baseline`).
 - For model-facing changes, one real run through `php artisan log:simulate --user=1 "..."` and note what came back in the diary.
 
 ## 4. Report
