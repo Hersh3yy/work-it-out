@@ -128,10 +128,10 @@
 
 <!-- 3 -->
 <h2 id="journey">A message's journey</h2>
-<p class="prose">One workout message, from your phone to the receipt, and the profile rewrite it sets off two minutes later. Each numbered dot is a row in the table below; dashed arrows are the usage ledger (<code>ai_calls</code>), which records every model call with its tokens.</p>
+<p class="prose">One workout message, from your phone to the receipt, and the profile rewrite it sets off once the session is over (an hour after the last log). Each numbered dot is a row in the table below; dashed arrows are the usage ledger (<code>ai_calls</code>), which records every model call with its tokens.</p>
 <figure>
 <div class="card">
-<svg viewBox="0 0 980 890" width="100%" style="min-width:760px" role="img" aria-label="Sequence: a workout message goes from the phone to the chat core, the interpreter checks danger words, asks the classifier and the log reader (each AI call is recorded in ai_calls), the chat core saves the log in one transaction and replies; after commit the queue updates stats and, two minutes later, rewrites the profile with one more AI call.">
+<svg viewBox="0 0 980 890" width="100%" style="min-width:760px" role="img" aria-label="Sequence: a workout message goes from the phone to the chat core, the interpreter checks danger words, asks the classifier and the log reader (each AI call is recorded in ai_calls), the chat core saves the log in one transaction and replies; after commit the queue updates stats and, an hour after the last log, rewrites the profile with one more AI call.">
 <defs><marker id="seq" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-arrow" d="M0,0 L10,5 L0,10 z"/></marker></defs>
 <path class="d-line dash" style="opacity:.45" d="M70,70 V874"/>
 <path class="d-line dash" style="opacity:.45" d="M235,70 V874"/>
@@ -188,7 +188,7 @@
 <path class="d-line" marker-end="url(#seq)" d="M231,674 H76"/>
 <text class="d-label d-halo" x="152.5" y="667" text-anchor="middle">receipt + load check + one question</text>
 <circle cx="35.25" cy="663" r="9" fill="var(--accent)"/><text x="35.25" y="667" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">12</text>
-<path class="d-line dash" d="M20,718 H960" style="stroke:var(--amber)"/><text class="d-label d-halo" x="490" y="722" text-anchor="middle" style="fill:var(--amber);font-weight:700">about two minutes later, once per burst of messages</text>
+<path class="d-line dash" d="M20,718 H960" style="stroke:var(--amber)"/><text class="d-label d-halo" x="490" y="722" text-anchor="middle" style="fill:var(--amber);font-weight:700">an hour after the last log, once per gym session</text>
 <path class="d-line" marker-end="url(#seq)" d="M901,758 H751"/>
 <text class="d-label d-halo" x="825.0" y="751" text-anchor="middle">UpdateProfile reads facts, notes, last 10 entries</text>
 <circle cx="666.45" cy="747" r="9" fill="var(--accent)"/><text x="666.45" y="751" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">13</text>
@@ -216,7 +216,7 @@
   <tr><td>8</td><td>Named rules turn known traps into a question instead of a guess ("90 x3 x5": three sets or five?).</td><td><code>Interpreter::RULES</code>, <code>app/Interpretation/Rules</code></td></tr>
   <tr><td>9</td><td>The interpreter hands back what it made of the message.</td><td><code>Interpretation</code></td></tr>
   <tr><td>10</td><td>One transaction writes your words (<code>activity_logs</code>), the session, the entries and one row per set.</td><td><code>RecordSmartLog</code></td></tr>
-  <tr><td>11</td><td>After commit, <code>LogRecorded</code> fires. One listener queues the stats update; the other queues <code>BuildProfile</code> 120 seconds out, unique per user, so five messages in a row make one rewrite.</td><td><code>RefreshTrainingStats</code>, <code>RefreshProfile</code>, <code>UpdateUserStats</code></td></tr>
+  <tr><td>11</td><td>After commit, <code>LogRecorded</code> fires. One listener queues the stats update; the other queues <code>BuildProfile</code> for the end of the session (60 minutes after the last change, <code>ProfileChanges</code>), unique per user, so five messages in a row make one rewrite.</td><td><code>RefreshTrainingStats</code>, <code>RefreshProfile</code>, <code>UpdateUserStats</code></td></tr>
   <tr><td>12</td><td>The reply: the receipt ("Logged: Squat 5x5 @ 90, 80, 80, 80, 80 kg"), a load check for an active injury, and at most one profile question.</td><td><code>ReplyComposer::receipt</code>, <code>LimitationCheck</code>, <code>ProfileCheckIn</code></td></tr>
   <tr><td>13</td><td>The profile job collects the facts computed in PHP, the current notes and the last 10 entries (logs and coach questions).</td><td><code>BuildProfile</code>, <code>UpdateProfile</code>, <code>ProfileFacts</code></td></tr>
   <tr><td>14</td><td>The profile writer rewrites the notes on the profile model (Flash).</td><td><code>SdkProfileBuilder</code>, <code>ProfileAgent</code></td></tr>
@@ -394,7 +394,7 @@ open http://localhost:8088/lab/classify                  # the same in a browser
   <li><strong>The AI path.</strong> <code>RespondToText</code> asks the <code>Interpreter</code>: danger words first (<code>RedFlags</code>, plain code: "contact a doctor", nothing saved), then classify (plain rules such as "104.5kg", then the model), then parse with the parser for that kind, then the named rules that turn known traps into questions ("90 x3 x5": three sets or five?).</li>
   <li><strong>Act on it.</strong> A workout or weight goes to <code>RecordSmartLog</code>: one transaction writes the <code>activity_logs</code> row (your words), the session, entries and one row per set, then <code>LogRecorded</code> fires after commit. An injury goes to <code>LimitationConversation</code>; a question to <code>AnswerCoachQuestion</code>.</li>
   <li><strong>Reply.</strong> The receipt ("Logged: Squat 5x5 @ 90, 80, 80, 80, 80 kg, Run 1 km 6:30"), plus at most a load check for an active injury and one profile question.</li>
-  <li><strong>Afterwards.</strong> Listeners recompute stats and queue <code>BuildProfile</code> 120 seconds later (one AI call per burst of logs). <code>/undo</code> reverts exactly what this message saved.</li>
+  <li><strong>Afterwards.</strong> Listeners recompute stats and queue <code>BuildProfile</code> for the end of the session, 60 minutes after the last log (one AI call per gym session). <code>/undo</code> reverts exactly what this message saved.</li>
 </ol>
 
 <!-- 4 -->
