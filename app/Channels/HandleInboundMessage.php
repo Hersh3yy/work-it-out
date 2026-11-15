@@ -101,6 +101,10 @@ final readonly class HandleInboundMessage
     /** Needs the AI; when it is down the message is kept and answered later. */
     private function respondWithAi(User $user, InboundMessage $message, string $text): string
     {
+        if ($this->keep->isBeingHandled($user, $text)) {
+            return KeepMessage::BEING_HANDLED;
+        }
+
         $this->keep->markResent($user, $text);
 
         try {

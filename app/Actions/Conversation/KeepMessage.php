@@ -16,6 +16,10 @@ use App\Models\WaitingMessage;
  */
 final readonly class KeepMessage
 {
+    public const string BEING_HANDLED = 'I am answering that one right now; the reply comes here in a moment.';
+
+    private const int CLAIM_MINUTES = 5;
+
     public const string REPLY = 'The AI is busy right now. I kept your message and will answer here in a few minutes, no need to send it again.';
 
     public function handle(User $user, InboundMessage $message, string $text): WaitingMessage
@@ -31,6 +35,20 @@ final readonly class KeepMessage
         ProcessWaitingMessage::dispatch($waiting)->delay(now()->addSeconds(ProcessWaitingMessage::delayBefore(1)));
 
         return $waiting;
+    }
+
+    /**
+     * The same text sent again while a worker is handling its kept copy:
+     * answering it too would log it twice. A claim older than this is a
+     * worker that died, and the new copy is handled after all.
+     */
+    public function isBeingHandled(User $user, string $text): bool
+    {
+        return $user->waitingMessages()
+            ->where('status', WaitingMessage::PROCESSING)
+            ->where('text', $text)
+            ->where('updated_at', '>', now()->subMinutes(self::CLAIM_MINUTES))
+            ->exists();
     }
 
     /** The same text sent again while its kept copy waits: handle the new one, drop the old. */

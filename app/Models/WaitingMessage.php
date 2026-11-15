@@ -21,15 +21,22 @@ use Illuminate\Support\Carbon;
  * @property string $chat_id
  * @property LogSource $source
  * @property string $text
- * @property string $status waiting, done, failed or resent
+ * @property string|null $reply what is sent once it is handled, kept until the send succeeds
+ * @property string $status waiting, processing, answered, done, failed or resent
  * @property int $attempts
  * @property Carbon|null $handled_at
  * @property Carbon $created_at
  */
-#[Fillable(['user_id', 'provider', 'chat_id', 'source', 'text', 'status', 'attempts', 'handled_at'])]
+#[Fillable(['user_id', 'provider', 'chat_id', 'source', 'text', 'reply', 'status', 'attempts', 'handled_at'])]
 final class WaitingMessage extends Model
 {
     public const string WAITING = 'waiting';
+
+    /** A worker has it and is asking the AI. */
+    public const string PROCESSING = 'processing';
+
+    /** Handled and logged; the reply is stored but not sent yet. */
+    public const string ANSWERED = 'answered';
 
     public const string DONE = 'done';
 
@@ -55,6 +62,29 @@ final class WaitingMessage extends Model
     public function scopeWaiting(Builder $query): Builder
     {
         return $query->where('status', self::WAITING);
+    }
+
+    /**
+     * Takes the message for this worker, counting the try. False when it is
+     * no longer waiting (another worker has it, or it was resent or done).
+     */
+    public function claim(): bool
+    {
+        $claimed = self::query()
+            ->whereKey($this->id)
+            ->where('status', self::WAITING)
+            ->update(['status' => self::PROCESSING, 'attempts' => $this->attempts + 1, 'updated_at' => now()]) === 1;
+
+        if ($claimed) {
+            $this->refresh();
+        }
+
+        return $claimed;
+    }
+
+    public function isClosed(): bool
+    {
+        return in_array($this->status, [self::DONE, self::FAILED, self::RESENT], true);
     }
 
     /** The start of the text, to quote it back: "I did 3 more sets of bench…". */

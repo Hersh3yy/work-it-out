@@ -18,6 +18,9 @@ use Illuminate\Support\Facades\Event;
 use Laravel\Ai\Contracts\Providers\TextProvider;
 use Laravel\Ai\Events\AgentFailed;
 use Laravel\Ai\Events\AgentPrompted;
+use Laravel\Ai\Exceptions\ProviderConnectionException;
+use Laravel\Ai\Exceptions\ProviderOverloadedException;
+use Laravel\Ai\Exceptions\RateLimitedException;
 use Laravel\Ai\Prompts\AgentPrompt;
 use Laravel\Ai\Responses\AgentResponse;
 use Laravel\Ai\Responses\Data\Meta;
@@ -62,14 +65,14 @@ it('records a call with the user and job that AiCall tagged', function (): void 
         ->and($call->failed)->toBeFalse();
 });
 
-it('records a failed call with the error name and no tokens', function (): void {
+it('records a failed call with the error name and no tokens, and lets a bug through as itself', function (): void {
     $user = User::factory()->create();
 
     expect(fn () => app(AiCall::class)->run($user, CoachAgent::class, function (): never {
         event(new AgentFailed('inv-1', sdkPrompt(), new RuntimeException('boom')));
 
         throw new RuntimeException('boom');
-    }))->toThrow(AiUnavailable::class);
+    }))->toThrow(RuntimeException::class, 'boom');
 
     $call = AiCallRecord::sole();
     expect($call->failed)->toBeTrue()
@@ -129,3 +132,12 @@ it('schedules the weekly usage report', function (): void {
 
     expect($events)->toHaveCount(1);
 });
+
+it('turns an outage of the provider into AiUnavailable', function (Throwable $outage): void {
+    expect(fn () => app(AiCall::class)->run(User::factory()->create(), CoachAgent::class, fn () => throw $outage))
+        ->toThrow(AiUnavailable::class);
+})->with([
+    'overloaded' => fn (): Throwable => ProviderOverloadedException::forProvider('gemini'),
+    'rate limited' => fn (): Throwable => RateLimitedException::forProvider('gemini'),
+    'unreachable' => fn (): Throwable => ProviderConnectionException::forProvider('gemini'),
+]);

@@ -117,3 +117,81 @@ it('answers a kept message from a chat without a channel and sends nothing', fun
         ->and($waiting->fresh()->status)->toBe(WaitingMessage::DONE);
     $this->assertDatabaseCount('activity_logs', 1);
 });
+
+/*
+ * Safe to repeat (audit 2026-11-08 tier 1 item 5): the row is claimed before
+ * the AI is asked, the reply is stored before it is sent, a bug ends it with
+ * one message instead of ten silent retries.
+ */
+
+it('does nothing when another worker has already claimed the kept message', function (): void {
+    $waiting = aiDownForOneMessage();
+    $waiting->update(['status' => WaitingMessage::PROCESSING]);
+    $parser = fakeSmartLogParser(FakeSmartLogParser::workout());
+
+    expect(runRetry($waiting)->sent)->toBe([])
+        ->and($parser->calls)->toBe([]);
+    $this->assertDatabaseCount('activity_logs', 0);
+});
+
+it('answers a resend with "on it" while the kept copy is being handled', function (): void {
+    $waiting = aiDownForOneMessage();
+    $waiting->update(['status' => WaitingMessage::PROCESSING]);
+    $parser = fakeSmartLogParser(FakeSmartLogParser::workout());
+
+    $reply = app(HandleInboundMessage::class)->handle(telegramText('benched 100 3x5'));
+
+    expect($reply)->toBe(KeepMessage::BEING_HANDLED)
+        ->and($parser->calls)->toBe([]);
+});
+
+it('sends the stored reply again without logging again when only the send failed', function (): void {
+    $waiting = aiDownForOneMessage();
+    fakeSmartLogParser(FakeSmartLogParser::workout());
+    $down = (new FakeChatChannel)->down('4242');
+    app()->instance(TelegramChannel::class, $down);
+
+    app()->call([new ProcessWaitingMessage($waiting), 'handle']);
+    expect($down->sent)->toBe([])
+        ->and($waiting->fresh()->status)->toBe(WaitingMessage::ANSWERED);
+
+    $channel = runRetry($waiting);
+
+    expect($channel->sent)->toHaveCount(1)
+        ->and($channel->sent[0]['text'])->toStartWith("About \"benched 100 3x5\":\n\nLogged:")
+        ->and($waiting->fresh()->status)->toBe(WaitingMessage::DONE);
+    $this->assertDatabaseCount('activity_logs', 1);
+});
+
+it('tells the person once and stops when the retry hits a bug', function (): void {
+    $waiting = aiDownForOneMessage();
+    fakeSmartLogParser(FakeSmartLogParser::workout()->broken());
+    $channel = new FakeChatChannel;
+    app()->instance(TelegramChannel::class, $channel);
+    $job = new ProcessWaitingMessage($waiting);
+
+    expect(fn () => app()->call([$job, 'handle']))->toThrow(RuntimeException::class);
+    $job->failed(new RuntimeException('Fake bug'));
+
+    expect($waiting->fresh()->status)->toBe(WaitingMessage::FAILED)
+        ->and($channel->sent)->toHaveCount(1)
+        ->and($channel->sent[0]['text'])->toBe('I could not process "benched 100 3x5" because of a fault on my side. Send it again when you like.')
+        ->and($job->maxExceptions)->toBe(1);
+});
+
+it('does not tell the coach that the message it is answering is still waiting', function (): void {
+    $waiting = aiDownForOneMessage();
+    $waiting->update(['status' => WaitingMessage::PROCESSING]);
+
+    expect(CoachContext::for($waiting->user)->toArray()['messages_not_handled_yet'])->toBe([]);
+});
+
+it('does not keep a message when the parser has a bug, so it is not retried as an outage', function (): void {
+    Queue::fake();
+    linkedUser();
+    fakeSmartLogParser(FakeSmartLogParser::workout()->broken());
+
+    expect(fn () => app(HandleInboundMessage::class)->handle(telegramText('benched 100 3x5')))->toThrow(RuntimeException::class);
+    expect(WaitingMessage::count())->toBe(0);
+    Queue::assertNotPushed(ProcessWaitingMessage::class);
+});
