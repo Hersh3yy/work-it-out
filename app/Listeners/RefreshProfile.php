@@ -8,9 +8,11 @@ use App\Events\LogRecorded;
 use App\Events\LogReverted;
 use App\Jobs\BuildProfile;
 use App\Models\User;
+use App\Profile\ProfileChanges;
 
 /**
- * Updates the written profile shortly after any log is saved or undone.
+ * Marks a change whenever a log is saved or undone, and queues the profile
+ * update for the end of the session (ProfileChanges).
  */
 final class RefreshProfile
 {
@@ -26,8 +28,11 @@ final class RefreshProfile
 
     private function queue(User $user): void
     {
-        if (config('profile.rolling.enabled')) {
-            BuildProfile::dispatch($user)->delay(now()->addSeconds((int) config('profile.rolling.delay_seconds')));
+        if (! config('profile.rolling.enabled')) {
+            return;
         }
+
+        ProfileChanges::markNow($user);
+        BuildProfile::dispatch($user)->delay(ProfileChanges::sessionEndAfter(now()->toImmutable()));
     }
 }

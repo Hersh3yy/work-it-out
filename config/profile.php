@@ -30,7 +30,8 @@ return [
 
     /*
     | The written profile (notes about habits, strengths and gaps). After a
-    | log it waits delay_seconds so a burst of messages makes one update, then
+    | log it waits until session_gap_minutes have passed without another
+    | change (the session is over), so a gym session makes one update, then
     | rewrites the current notes from the last recent_logs logs and the last
     | recent_turns coach questions. Once a week a full rebuild starts fresh
     | from full_logs logs to reset any drift. An AI outage is retried after
@@ -38,7 +39,7 @@ return [
     */
     'rolling' => [
         'enabled' => (bool) env('PROFILE_ROLLING_ENABLED', true),
-        'delay_seconds' => 120,
+        'session_gap_minutes' => (int) env('PROFILE_SESSION_GAP_MINUTES', 60),
         'recent_logs' => 10,
         'full_logs' => 30,
         'recent_turns' => 5,

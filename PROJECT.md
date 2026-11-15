@@ -285,6 +285,12 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-11-15 (night) — model comparison on Hiren's messages; profile once per session; Mistral fixes
+- Hiren: compare the existing setup, Claude tiers and Mistral tiers on his own messages (quality, speed, cost). Every message replayed through `HandleInboundMessage` with the clock set per message, on a throwaway copy, EU endpoint; report and data in `storage/app/audit/model-comparison-2026-11-15.md` (gitignored, this laptop).
+- Mistral Large 4 always reasons (`reasoning_effort` none refused): 15 to 40 s per call, coach and profile time out at 60 s. Dropped. Medium 3.5 and Small 4 answer in 1 to 4 s; Medium reads logs and writes the profile well, its coach is formulaic; Small invents numbers. Gemini flash-lite on today's prompts reads logs as well as Medium. Claude coached best in the hand replay; not run through the app (no key).
+- Mistral refuses temperature 0 without top_p 1: `#[TopP(1)]` on `ClassifierAgent` and `LimitationAgent`. Today's "per side" line made Medium and Small store "10 kg dumbbell per hand" as 20 kg: dumbbells now stay per hand.
+- Hiren: rewrite the profile when the session is over, not after every burst (15 Nov: four rewrites in one session on the reasoning 3.5 flash, the largest AI cost). `App\Profile\ProfileChanges` marks each save or undo; `BuildProfile` runs `profile.rolling.session_gap_minutes` (60) after the last change, queues a fresh job when another log arrived meanwhile (so the AI-outage tries stay whole), does nothing when the profile was already written since, and writes at once on the sync queue. The full rebuild never waits. 385 tests on SQLite and Postgres.
+
 ### 2026-11-15 (evening) — MVP week 1 on `mvp-week1`, one commit per step
 - Hiren: "do all of week 1's tasks that are code/commitable (1 commit per step)". Plan: Week 1 of the MVP plan of 15 Nov. Branch `mvp-week1` from `master`, not pushed: Hiren pushes after his server steps.
 - Step 1, server details out (audit 2026-11-14 C5): the address, SSH login, app and database container names, bot name, port probe and a work email are gone from `PROJECT.md`, `docs/` and `docs/technical/`; the docs point at the private ops note `storage/app/ops.md` (ignored by git, written on this laptop). Git history is not rewritten: the old values stay public, so the firewall and key-only SSH (Hiren's step) are what protect the server.
