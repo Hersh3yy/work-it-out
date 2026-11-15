@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Ai\AiJob;
+
 test('the configured text model reaches every provider we use', function (): void {
     expect(config('ai.model'))->toBeNull()
         ->and(config('ai.providers.openai.models.text.default'))->toBe(env('AI_TEXT_MODEL'))
@@ -9,8 +11,7 @@ test('the configured text model reaches every provider we use', function (): voi
         ->and(config('ai.conversations.generate_title'))->toBeFalse();
 });
 
-it('has one provider and model slot per AI job, empty by default', function (): void {
-    foreach (['log', 'chat', 'profile'] as $job) {
-        expect(config("ai.jobs.{$job}"))->toHaveKeys(['provider', 'model']);
-    }
-});
+it('has a provider, a model and a timeout for every AI job', function (AiJob $job): void {
+    expect(config("ai.jobs.{$job->value}"))->toHaveKeys(['provider', 'model', 'timeout'])
+        ->and($job->timeout())->toBeGreaterThan(0);
+})->with(AiJob::cases());

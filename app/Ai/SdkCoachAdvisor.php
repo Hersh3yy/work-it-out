@@ -12,8 +12,8 @@ use App\Enums\TrainerPersona;
 use App\Exceptions\AiUnavailable;
 
 /**
- * Laravel AI SDK adapter for the CoachAdvisor port. Runs on the chat job's
- * model chain (config ai.jobs.chat, then the log job's, then ai.fallbacks)
+ * Laravel AI SDK adapter for the CoachAdvisor port. Runs on the coach job's
+ * model chain (config ai.jobs.coach, then the log job's, then ai.fallbacks)
  * and remembers which model answered.
  */
 final class SdkCoachAdvisor implements CoachAdvisor
@@ -26,7 +26,7 @@ final class SdkCoachAdvisor implements CoachAdvisor
     public function answer(CoachContext $context, TrainerPersona $persona, string $question, AnswerDepth $depth): string
     {
         $agent = new CoachAgent($persona, $context->toJson(), $depth);
-        $answer = trim(ModelChain::ask('chat', function (?string $provider, ?string $model) use ($agent, $question): string {
+        $answer = trim(ModelChain::ask(AiJob::Coach, function (?string $provider, ?string $model) use ($agent, $question): string {
             $this->usedModel = $model;
 
             return (string) $agent->prompt($question, provider: $provider, model: $model);
@@ -41,6 +41,6 @@ final class SdkCoachAdvisor implements CoachAdvisor
 
     public function modelName(): ?string
     {
-        return $this->usedModel ?? ModelChain::for('chat')[0]['model'];
+        return $this->usedModel ?? ModelChain::for(AiJob::Coach)[0]['model'];
     }
 }

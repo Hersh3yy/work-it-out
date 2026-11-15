@@ -31,7 +31,7 @@ final readonly class SdkMessageClassifier implements MessageClassifier
             return $byRules;
         }
 
-        $raw = ModelChain::ask('log', fn (?string $provider, ?string $model): array => (new ClassifierAgent)->prompt(
+        $raw = ModelChain::ask(AiJob::Classify, fn (?string $provider, ?string $model): array => (new ClassifierAgent)->prompt(
             $text,
             provider: $provider,
             model: $model,

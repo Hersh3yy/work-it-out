@@ -22,10 +22,10 @@ final class ModelChain
     /**
      * @return list<array{provider: string|null, model: string|null}>
      */
-    public static function for(string $job): array
+    public static function for(AiJob $job): array
     {
-        $log = self::link(config('ai.jobs.log.provider'), config('ai.jobs.log.model'));
-        $own = self::link(config("ai.jobs.{$job}.provider") ?: $log['provider'], config("ai.jobs.{$job}.model") ?: $log['model']);
+        $log = self::link(AiJob::Log->provider(), AiJob::Log->model());
+        $own = self::link($job->provider() ?? $log['provider'], $job->model() ?? $log['model']);
         $chain = [$own, $log];
 
         foreach (config('ai.fallbacks', []) as $entry) {
@@ -46,7 +46,7 @@ final class ModelChain
      *
      * @throws FailoverableException when every model in the chain fails that way
      */
-    public static function ask(string $job, Closure $ask): mixed
+    public static function ask(AiJob $job, Closure $ask): mixed
     {
         $chain = self::for($job);
 
@@ -60,7 +60,7 @@ final class ModelChain
             }
         }
 
-        throw new LogicException("No models configured for the {$job} job.");
+        throw new LogicException("No models configured for the {$job->value} job.");
     }
 
     /**

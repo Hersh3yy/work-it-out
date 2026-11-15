@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
+use App\Ai\AiJob;
 use App\Profile\NoteLabel;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Temperature;
@@ -21,10 +22,9 @@ final class ProfileAgent implements Agent, HasStructuredOutput
 {
     use Promptable;
 
-    /** Seconds before this call counts as an outage (config/ai.php timeouts). */
     public function timeout(): int
     {
-        return (int) config('ai.timeouts.profile');
+        return AiJob::Profile->timeout();
     }
 
     public function instructions(): string

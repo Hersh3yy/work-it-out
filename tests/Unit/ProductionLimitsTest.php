@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Ai\AiJob;
+
 /*
  * Production hardening (audit 2026-11-08 tier 1 items 8 and 12): the worker
  * can be stopped and timed out (pcntl), a hung model cannot outlast the
@@ -20,7 +22,7 @@ it('builds the production image with pcntl, so redeploys stop the worker and the
 });
 
 it('lets every AI call of a job time out, twice over for the fallback, before the worker does', function (): void {
-    $slowestPath = array_sum(config('ai.timeouts')) * 2;
+    $slowestPath = array_sum(array_map(static fn (AiJob $job): int => $job->timeout(), AiJob::cases())) * 2;
 
     expect(workerTimeout())->toBeGreaterThan($slowestPath)
         ->and(config('queue.connections.database.retry_after'))->toBeGreaterThan(workerTimeout());

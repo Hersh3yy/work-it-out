@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
+use App\Ai\AiJob;
 use App\Enums\BodyArea;
 use App\Enums\LimitationSeverity;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -22,10 +23,9 @@ final class LimitationAgent implements Agent, HasStructuredOutput
 {
     use Promptable;
 
-    /** Seconds before this call counts as an outage (config/ai.php timeouts). */
     public function timeout(): int
     {
-        return (int) config('ai.timeouts.limitation');
+        return AiJob::Limitation->timeout();
     }
 
     public function instructions(): string

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Ai\AiJob;
 use App\Ai\ModelChain;
 use App\Ai\SdkProfileBuilder;
 use Laravel\Ai\Exceptions\ProviderConnectionException;
@@ -11,7 +12,7 @@ beforeEach(function (): void {
     config([
         'ai.jobs.log' => ['provider' => 'gemini', 'model' => 'gemini-3.5-flash-lite'],
         'ai.jobs.profile' => ['provider' => null, 'model' => 'gemini-3.5-flash'],
-        'ai.jobs.chat' => ['provider' => null, 'model' => null],
+        'ai.jobs.coach' => ['provider' => null, 'model' => null],
         'ai.fallbacks' => [],
     ]);
 });
@@ -19,11 +20,11 @@ beforeEach(function (): void {
 it('orders a job\'s own model, then the log model, then the fallbacks, once each', function (): void {
     config(['ai.fallbacks' => ['gemini:gemini-3.5-flash', 'deepseek:deepseek-flash']]);
 
-    expect(ModelChain::for('profile'))->toBe([
+    expect(ModelChain::for(AiJob::Profile))->toBe([
         ['provider' => 'gemini', 'model' => 'gemini-3.5-flash'],
         ['provider' => 'gemini', 'model' => 'gemini-3.5-flash-lite'],
         ['provider' => 'deepseek', 'model' => 'deepseek-flash'],
-    ])->and(ModelChain::for('chat'))->toBe([
+    ])->and(ModelChain::for(AiJob::Coach))->toBe([
         ['provider' => 'gemini', 'model' => 'gemini-3.5-flash-lite'],
         ['provider' => 'gemini', 'model' => 'gemini-3.5-flash'],
         ['provider' => 'deepseek', 'model' => 'deepseek-flash'],
@@ -34,7 +35,7 @@ it('moves on when a model is overloaded or unreachable, and stops at the first a
     config(['ai.fallbacks' => ['gemini:gemini-3.5-flash']]);
     $asked = [];
 
-    $answer = ModelChain::ask('log', function (?string $provider, ?string $model) use (&$asked): string {
+    $answer = ModelChain::ask(AiJob::Log, function (?string $provider, ?string $model) use (&$asked): string {
         $asked[] = $model;
 
         return match (count($asked)) {
@@ -48,7 +49,7 @@ it('moves on when a model is overloaded or unreachable, and stops at the first a
 });
 
 it('rethrows when every model fails', function (): void {
-    ModelChain::ask('log', fn (): never => throw new ProviderConnectionException('timeout'));
+    ModelChain::ask(AiJob::Log, fn (): never => throw new ProviderConnectionException('timeout'));
 })->throws(ProviderConnectionException::class);
 
 it('does not swallow errors that are not about availability', function (): void {
@@ -60,6 +61,6 @@ it('does not swallow errors that are not about availability', function (): void 
         throw new RuntimeException('bad payload');
     };
 
-    expect(fn () => ModelChain::ask('log', $ask))->toThrow(RuntimeException::class)
+    expect(fn () => ModelChain::ask(AiJob::Log, $ask))->toThrow(RuntimeException::class)
         ->and($asked)->toBe(1);
 });

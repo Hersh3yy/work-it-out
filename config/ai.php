@@ -19,45 +19,51 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | One model per job
+    | One model per job (App\Ai\AiJob)
     |--------------------------------------------------------------------------
     |
-    | Each AI job may run on its own provider and model (PLAN.md section 4,
-    | 2026-10-04). "log" is the classifier, the log reader and the injury
-    | reader; "chat" is the coach (questions and the morning message);
-    | "profile" is the written profile. An empty chat or profile job uses the
-    | log job's provider and model (App\Ai\ModelChain).
+    | classify: what kind of message this is (only with AI_CLASSIFIER=llm).
+    | log: the log reader, which turns a message into exercises and sets.
+    | limitation: the injury reader. coach: answers and the morning message.
+    | profile: the written profile.
+    |
+    | A job asks its own model first, then the log job's model, then each of
+    | the fallbacks below (App\Ai\ModelChain). An empty provider or model
+    | is skipped in favour of the log job's; when the log job is empty too,
+    | the default provider (AI_DEFAULT_PROVIDER) and its default text model
+    | answer. timeout is in seconds; the library's own default is 60, and one
+    | hung model held the poller and everyone behind it for that long. The
+    | queue worker's --timeout (docker/supervisor/supervisord.conf) outlasts
+    | all of them twice over.
     |
     */
 
     'jobs' => [
+        'classify' => [
+            'provider' => env('AI_CLASSIFY_PROVIDER'),
+            'model' => env('AI_CLASSIFY_MODEL'),
+            'timeout' => (int) env('AI_CLASSIFY_TIMEOUT', 15),
+        ],
         'log' => [
             'provider' => env('AI_LOG_PROVIDER'),
             'model' => env('AI_LOG_MODEL'),
+            'timeout' => (int) env('AI_LOG_TIMEOUT', 30),
         ],
-        'chat' => [
-            'provider' => env('AI_CHAT_PROVIDER'),
-            'model' => env('AI_CHAT_MODEL'),
+        'limitation' => [
+            'provider' => env('AI_LIMITATION_PROVIDER'),
+            'model' => env('AI_LIMITATION_MODEL'),
+            'timeout' => (int) env('AI_LIMITATION_TIMEOUT', 20),
+        ],
+        'coach' => [
+            'provider' => env('AI_COACH_PROVIDER'),
+            'model' => env('AI_COACH_MODEL'),
+            'timeout' => (int) env('AI_COACH_TIMEOUT', 45),
         ],
         'profile' => [
             'provider' => env('AI_PROFILE_PROVIDER'),
             'model' => env('AI_PROFILE_MODEL'),
+            'timeout' => (int) env('AI_PROFILE_TIMEOUT', 60),
         ],
-    ],
-
-    /*
-    | Seconds each agent waits for a model before the call counts as an
-    | outage and the next model in the chain is asked. The library's default
-    | is 60 s; one hung model then held the poller, and everyone behind it,
-    | for a minute per try. The queue worker's --timeout
-    | (docker/supervisor/supervisord.conf) outlasts all of them twice over.
-    */
-    'timeouts' => [
-        'classify' => (int) env('AI_CLASSIFY_TIMEOUT', 15),
-        'log' => (int) env('AI_LOG_TIMEOUT', 30),
-        'limitation' => (int) env('AI_LIMITATION_TIMEOUT', 20),
-        'coach' => (int) env('AI_COACH_TIMEOUT', 45),
-        'profile' => (int) env('AI_PROFILE_TIMEOUT', 60),
     ],
 
     /*

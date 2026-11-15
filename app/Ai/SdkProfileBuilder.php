@@ -28,7 +28,7 @@ final class SdkProfileBuilder implements ProfileBuilder
             'RECENT ENTRIES' => $recentEntries,
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
-        $raw = ModelChain::ask('profile', function (?string $provider, ?string $model) use ($prompt): array {
+        $raw = ModelChain::ask(AiJob::Profile, function (?string $provider, ?string $model) use ($prompt): array {
             $this->usedModel = $model;
 
             return (new ProfileAgent)->prompt($prompt, provider: $provider, model: $model)->toArray();
@@ -43,7 +43,7 @@ final class SdkProfileBuilder implements ProfileBuilder
 
     public function modelName(): ?string
     {
-        return $this->usedModel ?? ModelChain::for('profile')[0]['model'];
+        return $this->usedModel ?? ModelChain::for(AiJob::Profile)[0]['model'];
     }
 
     /**

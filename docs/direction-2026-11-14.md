@@ -19,7 +19,7 @@ So a stronger model is one of three causes. The other two are the prompt and con
 
 ## A better model for the coach, no code
 
-`laravel/ai` already has a DeepSeek driver and `config/ai.php` already reads `DEEPSEEK_API_KEY`. The coach job reads `AI_CHAT_PROVIDER` and `AI_CHAT_MODEL`. Logging stays on flash-lite: the parse was tested there and a bigger model dropped exercises on 11 October.
+`laravel/ai` already has a DeepSeek driver and `config/ai.php` already reads `DEEPSEEK_API_KEY`. The coach job reads `AI_COACH_PROVIDER` and `AI_COACH_MODEL` (named `AI_CHAT_*` until 15 Nov). Logging stays on flash-lite: the parse was tested there and a bigger model dropped exercises on 11 October.
 
 Prices per million tokens. DeepSeek and Google were read from their own pricing pages on 12 November. Kimi comes from price aggregators and is not verified. The cost per answer assumes 4,000 tokens in (measured) and 1,500 out including thinking (assumed).
 
@@ -37,8 +37,8 @@ Hiren's steps, in Coolify on the API, then redeploy:
 
 ```
 DEEPSEEK_API_KEY=<key from platform.deepseek.com>
-AI_CHAT_PROVIDER=deepseek
-AI_CHAT_MODEL=deepseek-v4-pro
+AI_COACH_PROVIDER=deepseek
+AI_COACH_MODEL=deepseek-v4-pro
 COACH_TOKENS_QUICK=4000
 COACH_TOKENS_PLAN=6000
 COACH_TOKENS_EXPLAIN=8000

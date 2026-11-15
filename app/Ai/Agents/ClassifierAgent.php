@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
+use App\Ai\AiJob;
 use App\Enums\MessageKind;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Temperature;
@@ -19,10 +20,9 @@ final class ClassifierAgent implements Agent, HasStructuredOutput
 {
     use Promptable;
 
-    /** Seconds before this call counts as an outage (config/ai.php timeouts). */
     public function timeout(): int
     {
-        return (int) config('ai.timeouts.classify');
+        return AiJob::Classify->timeout();
     }
 
     public function instructions(): string

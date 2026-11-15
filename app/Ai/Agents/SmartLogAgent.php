@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
+use App\Ai\AiJob;
 use App\Enums\LogType;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Temperature;
@@ -31,10 +32,9 @@ final class SmartLogAgent implements Agent, HasStructuredOutput
         private readonly string $today,
     ) {}
 
-    /** Seconds before this call counts as an outage (config/ai.php timeouts). */
     public function timeout(): int
     {
-        return (int) config('ai.timeouts.log');
+        return AiJob::Log->timeout();
     }
 
     public function instructions(): string

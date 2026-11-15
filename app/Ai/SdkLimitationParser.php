@@ -17,7 +17,7 @@ final readonly class SdkLimitationParser implements LimitationParser
 {
     public function parse(string $text, array $context = []): array
     {
-        $raw = ModelChain::ask('log', fn (?string $provider, ?string $model): array => (new LimitationAgent)->prompt(
+        $raw = ModelChain::ask(AiJob::Limitation, fn (?string $provider, ?string $model): array => (new LimitationAgent)->prompt(
             self::prompt($text, $context),
             provider: $provider,
             model: $model,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Interpretation\Lab;
 
 use App\Ai\Agents\ClassifierAgent;
+use App\Ai\AiJob;
 use App\Ai\SystemOne\SystemOneClient;
 use App\Ai\SystemOneMessageClassifier;
 use App\Contracts\Ai\MessageClassifier;
@@ -122,8 +123,8 @@ final readonly class ClassifierLab
     {
         $raw = (new ClassifierAgent)->prompt(
             $text,
-            provider: config('ai.jobs.log.provider'),
-            model: config('ai.jobs.log.model'),
+            provider: AiJob::Classify->provider() ?? AiJob::Log->provider(),
+            model: AiJob::Classify->model() ?? AiJob::Log->model(),
         )->toArray();
 
         return [(string) ($raw['kind'] ?? ''), is_numeric($raw['confidence'] ?? null) ? (float) $raw['confidence'] : null, []];

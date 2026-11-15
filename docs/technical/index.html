@@ -457,7 +457,7 @@ open http://localhost:8088/lab/classify                  # the same in a browser
   <tr><td><code>ProfileBuilder</code></td><td><code>SdkProfileBuilder</code></td><td><code>ProfileAgent</code></td><td>profile</td><td>UpdateProfile</td></tr>
 </table></div>
 <ul class="prose">
-  <li><strong>Jobs and models.</strong> Each job has a provider and model in <code>config/ai.php</code> (<code>AI_LOG_*</code>, <code>AI_CHAT_*</code>, <code>AI_PROFILE_*</code>); empty means the log job's.</li>
+  <li><strong>Jobs and models.</strong> Each job has a provider and model in <code>config/ai.php</code> (<code>AI_LOG_*</code>, <code>AI_CLASSIFY_*</code>, <code>AI_LIMITATION_*</code>, <code>AI_COACH_*</code>, <code>AI_PROFILE_*</code>); empty means the log job's.</li>
   <li><strong>Failover.</strong> <code>ModelChain::ask(job, ...)</code> tries the job's model, the log job's, then <code>AI_FALLBACKS</code>, moving on when a model is overloaded, rate limited or unreachable.</li>
   <li><strong>One seam.</strong> Every call runs through <code>AiCall</code>, which tags user and job and turns failures into <code>AiUnavailable</code>.</li>
   <li><strong>Usage and cost.</strong> <code>RecordAiCall</code> stores every call in <code>ai_calls</code> (tokens, model, duration, failure). <code>php artisan ai:usage --since=30d --by=user|job|model|day</code>; prices per model in <code>config/ai.php</code>.</li>
@@ -519,7 +519,7 @@ open http://localhost:8088/lab/classify                  # the same in a browser
   <tr><th>Variable</th><th>What</th></tr>
   <tr><td><code>GEMINI_API_KEY</code></td><td>The AI key (paid tier recommended before testers)</td></tr>
   <tr><td><code>AI_LOG_PROVIDER</code>, <code>AI_LOG_MODEL</code></td><td>Classify, read logs and injuries (gemini, gemini-3.5-flash-lite)</td></tr>
-  <tr><td><code>AI_CHAT_*</code>, <code>AI_PROFILE_*</code></td><td>Coach and profile models; empty means the log job's (profile on gemini-3.5-flash)</td></tr>
+  <tr><td><code>AI_CLASSIFY_*</code>, <code>AI_LIMITATION_*</code>, <code>AI_COACH_*</code>, <code>AI_PROFILE_*</code></td><td>Classifier, injury reader, coach and profile models; empty means the log job's (profile on gemini-3.5-flash)</td></tr>
   <tr><td><code>AI_FALLBACKS</code></td><td>Tried in order when a model fails: <code>gemini:gemini-3.5-flash,deepseek:deepseek-flash</code></td></tr>
   <tr><td><code>AI_MONTHLY_TOKENS_PER_USER</code></td><td>Coach questions pause after this many tokens in a month (0 = no cap)</td></tr>
   <tr><td><code>AI_CLASSIFIER</code></td><td><code>llm</code> (Gemini), <code>laya</code> or <code>jev</code></td></tr>

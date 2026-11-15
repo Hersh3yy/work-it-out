@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
+use App\Ai\AiJob;
 use App\Coach\AnswerDepth;
 use App\Enums\TrainerPersona;
 use Laravel\Ai\Attributes\Temperature;
@@ -33,10 +34,9 @@ final class CoachAgent implements Agent
         return $this->depth->maxTokens();
     }
 
-    /** Seconds before this call counts as an outage (config/ai.php timeouts). */
     public function timeout(): int
     {
-        return (int) config('ai.timeouts.coach');
+        return AiJob::Coach->timeout();
     }
 
     public function instructions(): string
