@@ -89,21 +89,37 @@ final readonly class SdkSmartLogParser implements SmartLogParser
             return null;
         }
 
-        return [
+        return self::setValues($item) + [
             'exercise_name' => $name,
             'sets' => self::int($item['sets'] ?? null),
-            'reps' => self::int($item['reps'] ?? null),
-            'weight_kg' => self::number($item['weight_kg'] ?? null),
-            'duration_seconds' => self::int($item['duration_seconds'] ?? null),
-            'distance_meters' => self::number($item['distance_meters'] ?? null),
+            'weight_lb' => self::number($item['weight_lb'] ?? null),
+            'per_side_kg' => self::number($item['per_side_kg'] ?? null),
+            'distance_miles' => self::number($item['distance_miles'] ?? null),
+            'pace_seconds_per_km' => self::int($item['pace_seconds_per_km'] ?? null),
+            'bodyweight' => (bool) ($item['bodyweight'] ?? false),
+            'assisted' => (bool) ($item['assisted'] ?? false),
+            'group' => self::text($item['group'] ?? null, 40),
             'notes' => self::text($item['notes'] ?? null, 255),
             'set_list' => array_slice(array_values(array_map(
-                static fn (mixed $set): array => [
-                    'reps' => is_array($set) ? self::int($set['reps'] ?? null) : null,
-                    'weight_kg' => is_array($set) ? self::number($set['weight_kg'] ?? null) : null,
-                ],
+                static fn (mixed $set): array => self::setValues(is_array($set) ? $set : []),
                 is_array($item['set_list'] ?? null) ? $item['set_list'] : [],
             )), 0, 50),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $set
+     * @return array{reps: int|null, weight_kg: float|null, duration_seconds: int|null, distance_meters: float|null, rpe: float|null, rir: int|null}
+     */
+    private static function setValues(array $set): array
+    {
+        return [
+            'reps' => self::int($set['reps'] ?? null),
+            'weight_kg' => self::number($set['weight_kg'] ?? null),
+            'duration_seconds' => self::int($set['duration_seconds'] ?? null),
+            'distance_meters' => self::number($set['distance_meters'] ?? null),
+            'rpe' => self::number($set['rpe'] ?? null),
+            'rir' => self::int($set['rir'] ?? null),
         ];
     }
 

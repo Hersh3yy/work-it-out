@@ -125,7 +125,7 @@ it('reads a set list through the real parser and drops junk sets', function (): 
 
     $parsed = app(SdkSmartLogParser::class)->parse(User::factory()->make(), 'squats');
 
-    expect($parsed['exercises'][0]['set_list'])->toBe([['reps' => 5, 'weight_kg' => 90.0], ['reps' => 5, 'weight_kg' => null]]);
+    expect(array_map(static fn (array $set): array => array_filter($set), $parsed['exercises'][0]['set_list']))->toBe([['reps' => 5, 'weight_kg' => 90.0], ['reps' => 5]]);
 });
 
 it('does not ask for reps when every listed set has them', function (): void {
