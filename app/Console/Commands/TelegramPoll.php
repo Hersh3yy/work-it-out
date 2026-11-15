@@ -11,6 +11,7 @@ use App\Channels\Telegram\TelegramUnavailable;
 use App\Contracts\Channels\ChatChannel;
 use App\Exceptions\ChatUnavailable;
 use Illuminate\Console\Command;
+use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Throwable;
@@ -22,7 +23,13 @@ use Throwable;
  */
 final class TelegramPoll extends Command
 {
+    public const string LOCK = 'telegram:poll:lock';
+
     private const string OFFSET_KEY = 'telegram:poll:offset';
+
+    private const int LEASE_SECONDS = 120;
+
+    private const int WAIT_SECONDS = 5;
 
     protected $signature = 'channel:telegram:poll
         {--once : Handle one batch of waiting updates and exit}
@@ -39,6 +46,61 @@ final class TelegramPoll extends Command
         }
 
         $once = (bool) $this->option('once');
+        $lease = $this->lease($once);
+
+        if ($lease === null) {
+            $this->error('Another poller is running for this bot; it holds the lock. Stop that one first.');
+
+            return self::FAILURE;
+        }
+
+        try {
+            $reached = $this->poll($telegram, $handler, $channel, $once, $lease);
+        } finally {
+            Cache::restoreLock(self::LOCK, $lease->owner())->release();
+        }
+
+        return $reached ? self::SUCCESS : self::FAILURE;
+    }
+
+    /**
+     * One poller per bot (audit 2026-11-14 C4): during a deploy the old and
+     * new container both start one. --once gives up at once; the long-running
+     * poller waits for the lock, so supervisor does not mark it failed and
+     * it takes over when the old container stops.
+     */
+    private function lease(bool $once): ?Lock
+    {
+        $lease = Cache::lock(self::LOCK, self::LEASE_SECONDS);
+        $waiting = false;
+
+        while (! $lease->get()) {
+            if ($once) {
+                return null;
+            }
+
+            if (! $waiting) {
+                $this->warn('Another poller holds the lock; waiting for it to stop.');
+                $waiting = true;
+            }
+
+            sleep(self::WAIT_SECONDS);
+        }
+
+        return $lease;
+    }
+
+    /** The lease ends after LEASE_SECONDS unless renewed, so a crashed poller frees it. */
+    private function renew(Lock $lease): bool
+    {
+        Cache::restoreLock(self::LOCK, $lease->owner())->release();
+
+        return Cache::lock(self::LOCK, self::LEASE_SECONDS, $lease->owner())->get();
+    }
+
+    /** False when --once could not reach Telegram. */
+    private function poll(TelegramClient $telegram, HandleInboundMessage $handler, ChatChannel $channel, bool $once, Lock $lease): bool
+    {
         $offset = Cache::get(self::OFFSET_KEY);
 
         if (! $once) {
@@ -52,10 +114,10 @@ final class TelegramPoll extends Command
                 $this->warn($e->getMessage());
 
                 if ($once) {
-                    return self::FAILURE;
+                    return false;
                 }
 
-                sleep(5);
+                sleep(self::WAIT_SECONDS);
 
                 continue;
             }
@@ -66,9 +128,9 @@ final class TelegramPoll extends Command
 
                 $this->process($update, $handler, $channel);
             }
-        } while (! $once);
+        } while (! $once && $this->renew($lease));
 
-        return self::SUCCESS;
+        return true;
     }
 
     /**

@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use App\Channels\HandleInboundMessage;
+use App\Console\Commands\TelegramPoll;
 use App\Models\ChannelIdentity;
 use App\Models\User;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\Fakes\FakeSmartLogParser;
 
@@ -85,4 +87,23 @@ it('links a Telegram id to a new user', function (): void {
 
     $user = User::query()->where('email', 'hiren@example.com')->firstOrFail();
     $this->assertDatabaseHas('channel_identities', ['user_id' => $user->id, 'provider' => 'telegram', 'external_id' => '4242']);
+});
+
+it('exits without asking Telegram while another poller holds the lock', function (): void {
+    Http::fake();
+    Cache::lock(TelegramPoll::LOCK, 120)->get();
+
+    $this->artisan('channel:telegram:poll --once')
+        ->expectsOutputToContain('Another poller is running')
+        ->assertFailed();
+
+    Http::assertNothingSent();
+});
+
+it('takes the lock and gives it back when it is done', function (): void {
+    Http::fake(['*/getUpdates' => Http::response(['ok' => true, 'result' => []])]);
+
+    $this->artisan('channel:telegram:poll --once')->assertSuccessful();
+
+    expect(Cache::lock(TelegramPoll::LOCK, 120)->get())->toBeTrue();
 });

@@ -25,6 +25,12 @@ return [
     'retry_delays' => [60, 180, 600, 1800],
 
     /*
+    | Messages that need the AI one person may send a minute before the
+    | friendly "send it again in a minute" (App\Conversation\ChatThrottle).
+    */
+    'ai_messages_per_minute' => (int) env('CHAT_AI_MESSAGES_PER_MINUTE', 6),
+
+    /*
     | The adapter that sends on each chat provider when the app writes first
     | or answers later. Providers left out are never sent to.
     */

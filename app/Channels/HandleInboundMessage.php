@@ -7,6 +7,7 @@ namespace App\Channels;
 use App\Actions\Conversation\KeepMessage;
 use App\Actions\Linking\RedeemLinkCode;
 use App\Conversation\Answers\AnswerChain;
+use App\Conversation\ChatThrottle;
 use App\Conversation\Commands\ChatCommands;
 use App\Conversation\Commands\HelpCommand;
 use App\Conversation\RespondToText;
@@ -48,6 +49,7 @@ final readonly class HandleInboundMessage
         private AnswerChain $answers,
         private RespondToText $respond,
         private KeepMessage $keep,
+        private ChatThrottle $throttle,
         private RedeemLinkCode $links,
     ) {}
 
@@ -103,6 +105,10 @@ final readonly class HandleInboundMessage
     {
         if ($this->keep->isBeingHandled($user, $text)) {
             return KeepMessage::BEING_HANDLED;
+        }
+
+        if (! $this->throttle->allows($user)) {
+            return ChatThrottle::REPLY;
         }
 
         $this->keep->markResent($user, $text);
