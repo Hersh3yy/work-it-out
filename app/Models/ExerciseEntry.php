@@ -12,6 +12,24 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * One exercise in a session, summarised from its set rows: the number of
+ * sets, the reps when every set matches, the top weight, the total time and
+ * distance. An assisted entry's weight is the machine's help, never load.
+ *
+ * @property string $id
+ * @property string $exercise_name
+ * @property int|null $sets
+ * @property int|null $reps
+ * @property string|null $weight_kg
+ * @property int|null $duration_seconds
+ * @property int|null $distance_meters
+ * @property string|null $notes
+ * @property bool $bodyweight
+ * @property bool $assisted
+ * @property string|null $group_label
+ * @property int $sort_order
+ */
 #[Fillable([
     'workout_session_id',
     'activity_log_id',
@@ -22,6 +40,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'duration_seconds',
     'distance_meters',
     'notes',
+    'bodyweight',
+    'assisted',
+    'group_label',
     'sort_order',
 ])]
 class ExerciseEntry extends Model
@@ -33,6 +54,8 @@ class ExerciseEntry extends Model
     {
         return [
             'weight_kg' => 'decimal:2',
+            'bodyweight' => 'boolean',
+            'assisted' => 'boolean',
         ];
     }
 
@@ -49,21 +72,16 @@ class ExerciseEntry extends Model
     }
 
     /**
-     * Replace this exercise's sets and refresh the summary columns: the number
-     * of sets, the reps when every set has the same reps, the top weight.
+     * Replace this exercise's sets and refresh the summary columns.
      *
-     * @param  list<array{reps: int|null, weight_kg: float|null}>  $sets
+     * @param  list<array<string, int|float|null>>  $sets  any of ExerciseSet::VALUES per set
      */
     public function replaceSets(array $sets): void
     {
         $this->setRows()->delete();
 
-        foreach (array_values($sets) as $index => $set) {
-            $this->setRows()->create([
-                'position' => $index + 1,
-                'reps' => $set['reps'],
-                'weight_kg' => $set['weight_kg'],
-            ]);
+        foreach ($sets as $index => $set) {
+            $this->setRows()->create(['position' => $index + 1] + array_intersect_key($set, array_flip(ExerciseSet::VALUES)));
         }
 
         $this->refreshSummary();
@@ -98,10 +116,15 @@ class ExerciseEntry extends Model
 
     /**
      * Total weight moved: the sum of reps times weight over the sets, or the
-     * summary columns for an entry without set rows.
+     * summary columns for an entry without set rows. Help on an assisted
+     * machine is not weight moved.
      */
     public function volumeKg(): float
     {
+        if ($this->assisted) {
+            return 0.0;
+        }
+
         $sets = $this->relationLoaded('setRows') ? $this->setRows : $this->setRows()->get();
 
         if ($sets->isEmpty()) {
@@ -109,6 +132,12 @@ class ExerciseEntry extends Model
         }
 
         return (float) $sets->sum(fn (ExerciseSet $set): float => (float) ($set->reps ?? 0) * (float) ($set->weight_kg ?? 0));
+    }
+
+    /** A lift that counts for a strength record: a real load, not help. */
+    public function isLoaded(): bool
+    {
+        return ! $this->assisted && (float) ($this->weight_kg ?? 0) > 0;
     }
 
     private function refreshSummary(): void
@@ -121,11 +150,15 @@ class ExerciseEntry extends Model
 
         $reps = $sets->pluck('reps')->unique();
         $weights = $sets->pluck('weight_kg')->filter(fn ($w): bool => $w !== null)->map(fn ($w): float => (float) $w);
+        $seconds = $sets->pluck('duration_seconds')->filter();
+        $meters = $sets->pluck('distance_meters')->filter();
 
         $this->update([
             'sets' => $sets->count(),
             'reps' => $reps->count() === 1 ? $reps->first() : null,
             'weight_kg' => $weights->isEmpty() ? null : $weights->max(),
+            'duration_seconds' => $seconds->isEmpty() ? $this->duration_seconds : (int) $seconds->sum(),
+            'distance_meters' => $meters->isEmpty() ? $this->distance_meters : (int) $meters->sum(),
         ]);
 
         $this->unsetRelation('setRows');

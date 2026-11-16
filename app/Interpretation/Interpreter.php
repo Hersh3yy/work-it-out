@@ -13,10 +13,16 @@ use App\Contracts\Ai\SmartLogParser;
 use App\Enums\MessageKind;
 use App\Exceptions\AiUnavailable;
 use App\Goals\GoalReader;
+use App\Interpretation\Rules\AssistedMachineKgIsHelp;
 use App\Interpretation\Rules\BareNumberIsNotBodyWeight;
+use App\Interpretation\Rules\BodyweightExerciseNeedsNoWeight;
 use App\Interpretation\Rules\GoalNeedsADate;
 use App\Interpretation\Rules\InterpretationRule;
+use App\Interpretation\Rules\PaceGivesTheTime;
+use App\Interpretation\Rules\PlatesPerSideMakeTheLoad;
+use App\Interpretation\Rules\PoundsAndMilesBecomeMetric;
 use App\Interpretation\Rules\RepsTimesSetsHasTwoReadings;
+use App\Interpretation\Rules\RoundsCountForEveryExerciseInTheGroup;
 use App\Interpretation\Rules\WeightedLiftNeedsSetsAndReps;
 use App\Interpretation\Rules\WorkoutNeedsAnExercise;
 use App\Limitations\LimitationContext;
@@ -46,6 +52,12 @@ final readonly class Interpreter
     private const array RULES = [
         BareNumberIsNotBodyWeight::class,
         RepsTimesSetsHasTwoReadings::class,
+        AssistedMachineKgIsHelp::class,
+        BodyweightExerciseNeedsNoWeight::class,
+        RoundsCountForEveryExerciseInTheGroup::class,
+        PoundsAndMilesBecomeMetric::class,
+        PlatesPerSideMakeTheLoad::class,
+        PaceGivesTheTime::class,
         WeightedLiftNeedsSetsAndReps::class,
         WorkoutNeedsAnExercise::class,
         GoalNeedsADate::class,

@@ -136,21 +136,24 @@ final readonly class RecordSmartLog
             $name = ExerciseAliases::canonical((string) ($exercise['exercise_name'] ?? ''), $knownNames);
             $knownNames[] = $name;
 
-            $distance = self::clamp($exercise['distance_meters'] ?? null, 1, 300_000);
+            $values = self::setValues($exercise);
 
             $entry = $session->exerciseEntries()->create([
                 'activity_log_id' => $log->id,
                 'exercise_name' => mb_substr($name !== '' ? $name : 'Unknown', 0, 100),
                 'sets' => self::clamp($exercise['sets'] ?? null, 1, 50),
-                'reps' => self::clamp($exercise['reps'] ?? null, 1, 255),
-                'weight_kg' => self::clamp($exercise['weight_kg'] ?? null, 0.5, 500),
-                'duration_seconds' => self::clamp($exercise['duration_seconds'] ?? null, 1, 86_400),
-                'distance_meters' => $distance === null ? null : (int) round($distance),
+                'reps' => $values['reps'],
+                'weight_kg' => $values['weight_kg'],
+                'duration_seconds' => $values['duration_seconds'],
+                'distance_meters' => $values['distance_meters'],
                 'notes' => $exercise['notes'] ?? null,
+                'bodyweight' => (bool) ($exercise['bodyweight'] ?? false),
+                'assisted' => (bool) ($exercise['assisted'] ?? false),
+                'group_label' => self::groupLabel($exercise['group'] ?? null),
                 'sort_order' => min($sortOrder++, 255),
             ]);
 
-            $sets = self::setsFor($exercise);
+            $sets = self::setsFor($exercise, $values);
 
             if ($sets !== []) {
                 $entry->replaceSets($sets);
@@ -199,28 +202,52 @@ final readonly class RecordSmartLog
 
     /**
      * The sets of one exercise: the listed sets when they differ, else the
-     * same reps and weight repeated for the number of sets. A listed set
-     * missing its reps or weight takes the exercise's value.
+     * exercise's own values repeated for the number of sets. A listed set
+     * missing a value takes the exercise's. With sets counted, the exercise's
+     * time and distance are per set ("3 x 45 s plank", "8x400m"); without,
+     * they are the whole ("ran 5k in 28") and need no rows.
      *
      * @param  array<string, mixed>  $exercise
-     * @return list<array{reps: int|null, weight_kg: float|null}>
+     * @param  array<string, int|float|null>  $values  the exercise's own, one key per ExerciseSet::VALUES
+     * @return list<array<string, int|float|null>>
      */
-    private static function setsFor(array $exercise): array
+    private static function setsFor(array $exercise, array $values): array
     {
-        $reps = self::clamp($exercise['reps'] ?? null, 1, 255);
-        $weight = self::clamp($exercise['weight_kg'] ?? null, 0.5, 500);
         $listed = is_array($exercise['set_list'] ?? null) ? $exercise['set_list'] : [];
 
         if ($listed !== []) {
-            return array_map(static fn (array $set): array => [
-                'reps' => self::clamp($set['reps'] ?? null, 1, 255) ?? $reps,
-                'weight_kg' => self::clamp($set['weight_kg'] ?? null, 0.5, 500) ?? $weight,
-            ], array_slice($listed, 0, 50));
+            return array_map(
+                static fn (array $set): array => array_replace($values, array_filter(self::setValues($set), static fn ($own): bool => $own !== null)),
+                array_slice($listed, 0, 50),
+            );
         }
 
         $count = self::clamp($exercise['sets'] ?? null, 1, 50);
 
-        return $count === null ? [] : array_fill(0, (int) $count, ['reps' => $reps, 'weight_kg' => $weight]);
+        return $count === null ? [] : array_fill(0, (int) $count, $values);
+    }
+
+    /**
+     * @param  array<string, mixed>  $set
+     * @return array<string, int|float|null>
+     */
+    private static function setValues(array $set): array
+    {
+        $distance = self::clamp($set['distance_meters'] ?? null, 1, 300_000);
+
+        return [
+            'reps' => self::clamp($set['reps'] ?? null, 1, 255),
+            'weight_kg' => self::clamp($set['weight_kg'] ?? null, 0.5, 500),
+            'duration_seconds' => self::clamp($set['duration_seconds'] ?? null, 1, 86_400),
+            'distance_meters' => $distance === null ? null : (int) round($distance),
+            'rpe' => self::clamp($set['rpe'] ?? null, 1, 10),
+            'rir' => self::clamp($set['rir'] ?? null, 0, 20),
+        ];
+    }
+
+    private static function groupLabel(mixed $group): ?string
+    {
+        return is_string($group) && trim($group) !== '' ? mb_substr(trim($group), 0, 40) : null;
     }
 
     /**

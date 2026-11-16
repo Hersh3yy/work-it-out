@@ -121,12 +121,6 @@ parameters:
 			path: app/Listeners/RecordAiCall.php
 
 		-
-			message: '#^Parameter \#1 \$array \(list\<array\{reps\: int\|null, weight_kg\: float\|null\}\>\) of array_values is already a list, call has no effect\.$#'
-			identifier: arrayValues.list
-			count: 1
-			path: app/Models/ExerciseEntry.php
-
-		-
 			message: '#^Cannot access property \$value on string\.$#'
 			identifier: property.nonObject
 			count: 2

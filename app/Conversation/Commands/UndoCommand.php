@@ -39,7 +39,7 @@ final readonly class UndoCommand implements ChatCommand
         $entries = $log->exerciseEntries()->orderBy('sort_order')->get();
         $removed = $entries->isEmpty()
             ? $log->summary
-            : $entries->map($this->replies->entry(...))->implode(', ');
+            : $this->replies->entries($entries);
 
         $this->revert->handle($log);
 

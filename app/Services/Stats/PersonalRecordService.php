@@ -56,7 +56,7 @@ final class PersonalRecordService implements PersonalRecords
     private function strengthRecords(Collection $entries): array
     {
         return $entries
-            ->filter(fn (array $row): bool => (float) ($row['entry']->weight_kg ?? 0) > 0)
+            ->filter(fn (array $row): bool => $row['entry']->isLoaded())
             ->groupBy(fn (array $row): string => ExerciseAliases::key($row['entry']->exercise_name))
             ->map(function (Collection $group): array {
                 /** @var array{entry: ExerciseEntry, session: WorkoutSession} $best */

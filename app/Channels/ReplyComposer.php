@@ -22,7 +22,7 @@ final readonly class ReplyComposer
 
         $lines = [match ($log->log_type) {
             LogType::Workout => ($result->addedToExisting ? "Added to today's session: " : 'Logged: ')
-                .($result->entries === [] ? $log->summary : implode(', ', array_map($this->entry(...), $result->entries))),
+                .($result->entries === [] ? $log->summary : $this->entries($result->entries)),
             LogType::Biometrics => $result->weight !== null
                 ? 'Logged weight: '.ExerciseLine::number($result->weight->weight_kg).' kg'
                 : 'Noted: '.$log->summary,
@@ -39,5 +39,15 @@ final readonly class ReplyComposer
     public function entry(ExerciseEntry $entry): string
     {
         return $this->lines->for($entry);
+    }
+
+    /**
+     * Several exercises in order, a superset or circuit as one line.
+     *
+     * @param  iterable<ExerciseEntry>  $entries
+     */
+    public function entries(iterable $entries): string
+    {
+        return implode(', ', $this->lines->forAll($entries));
     }
 }
