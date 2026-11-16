@@ -68,3 +68,15 @@ Signal works, unofficially. Signal has no bot interface. A bot runs through `sig
 WhatsApp is tougher and not free for what this bot does. It only goes through Meta's WhatsApp Business Platform: a Meta business account, a dedicated number, and approved templates for every message the bot sends first. Since July 2025 Meta bills per template message. Replies within 24 hours of the person's last message have been free (some sources say that changes on 1 October 2026; not confirmed). The 8 o'clock morning message is sent first, so it is a paid template unless the person wrote in the last 24 hours. And since 15 January 2026 Meta's terms ban general-purpose AI assistants from the platform; AI inside a business's own service is still allowed. A coach bot is arguably the second kind, but Meta decides. The EU has charged Meta over that rule and the outcome is open.
 
 So: Telegram stays the first door. Signal is a sensible second door once handle-only sign-up exists, because it suits people who care about privacy. WhatsApp comes last, if ever.
+
+## 15 November: the creature-collector idea
+
+Hiren's concept, decided on 15 November, on top of the direction above:
+
+- The person is a trainer. Their body qualities are the creatures they raise. A goal with a date is a battle, and each battle needs certain creatures levelled up, like a type matchup in a creature-collector game (the Pokémon loop is the reference).
+- The reference is the mechanic, never the look or the names: no Pokémon names, types, gym badges or art in the product. Original names only.
+- The three coaches are the three types, one master each, two creatures per type. Lt. Surge masters the energy that lifts (strength, power); Shen the energy that lasts (endurance, core); Latika the energy that heals (mobility, recovery). Hiren described them with fire and fighting, psychic and lightning, grass and water; those element words are a reference for the creatives, not product words. Working energy names: Heat, Current, Root.
+- Type interactions are real rules, each with a source in a method card: overload against recovery, the interference between hard strength and endurance work in one week, gains landing after rest.
+- Working creature names, direction A "the crew": Anvil, Flint, Drift, Keel, Willow, Ember.
+- Three numbers per creature. Level is training history and only goes up; rest and injury never cost it. Power is the current measure from a method card over a recent window and goes up and down. HP is today's readiness: it drops the day after that quality worked, recovers over a day or two, is lowered by poor sleep, illness and injury, and is owned by Latika; it never blocks training, it only lightens the day. Battle readiness reads power; promotions and the chronicle read level; the gap between the two is the comeback story.
+- The code keeps plain words (Energy, Quality, Goal, readiness); a theme words them at the edge later. Phase 2 on branch `game-foundation` builds that plain foundation.
