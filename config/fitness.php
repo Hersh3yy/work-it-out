@@ -69,4 +69,13 @@ return [
         'points_per_session' => 1,
     ],
 
+    'goals' => [
+        // Hiren, 15 November: inside two weeks taper and rest, further out build. Tapers of 8 to 14 days worked best (Bosquet and others 2007, from memory, to verify).
+        'taper_days' => 14,
+
+        // A demanded quality is ready at its standard (power 1.0), close from three quarters of it (convention).
+        'ready_at' => 1.0,
+        'close_at' => 0.75,
+    ],
+
 ];

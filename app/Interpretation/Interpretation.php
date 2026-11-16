@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Interpretation;
 
 use App\Enums\MessageKind;
+use App\Goals\GoalReading;
 
 /**
  * What the interpreter made of one message: the kind, the facts to record,
@@ -51,6 +52,14 @@ final readonly class Interpretation
     public function alsoAboutLimitation(): bool
     {
         return $this->shouldRecord() && $this->limitation !== null;
+    }
+
+    /** The goal the message states, when it states one. */
+    public function goal(): ?GoalReading
+    {
+        $goal = $this->parsed['goal'] ?? null;
+
+        return is_array($goal) ? GoalReading::fromArray($goal) : null;
     }
 
     /**

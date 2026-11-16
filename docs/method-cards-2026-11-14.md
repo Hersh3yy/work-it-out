@@ -143,6 +143,7 @@ Each number in `config/fitness.php` cites one line here. "Convention" means comm
 - Recovery: two rest days in seven (convention); an active limitation takes 10, 25 or 50 percent off recovery when mild, moderate or severe, and an unknown severity counts as moderate (convention, Feetness 15 November).
 - Readiness, 0 to 100: 40 on the day a quality worked and the day after, 70 on the second day, full from the third (convention, about 48 to 72 hours between hard sessions for the same muscles, ACSM guidance from memory, to verify). Mobility and recovery are not tired by their own light work. An active limitation caps the qualities that load its area at 80, 60 or 30 when mild, moderate or severe; an illness caps every quality at 50 (convention, Feetness 15 November).
 - Level: every session that trains a quality earns it one point; the level is the sum, so it only grows (convention, Feetness 15 November: level is training history, rest and injury never cost it).
+- Goals: inside 14 days the phase is taper (lighter, more rest), further out build (Hiren, 15 November; tapers of 8 to 14 days did best in Bosquet and others 2007, from memory, to verify). A demanded quality is ready at its standard (power 1.0), close from 0.75 (convention), not yet below, and "not measured yet" when it has no power: never ready. What each kind demands is card 4's needs analysis: an event endurance, recovery and mobility; a distance endurance and recovery; a carry or a lift strength and core; a body-weight goal endurance and strength.
 
 ## Sources
 

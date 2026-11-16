@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace App\Conversation;
 
 use App\Actions\Coach\AnswerCoachQuestion;
+use App\Actions\Goals\RecordGoal;
 use App\Actions\SmartLog\RecordSmartLog;
 use App\Channels\ReplyComposer;
 use App\Coach\AsksTheCoach;
 use App\Enums\LogSource;
 use App\Exceptions\AiUnavailable;
+use App\Goals\GoalReply;
+use App\Interpretation\Interpretation;
 use App\Interpretation\Interpreter;
 use App\Limitations\LimitationCheck;
+use App\Models\ActivityLog;
 use App\Models\User;
 use App\Profile\ProfileCheckIn;
 
@@ -36,6 +40,7 @@ final readonly class RespondToText
         private ProfileCheckIn $checkIn,
         private LimitationConversation $limitations,
         private AnswerCoachQuestion $coach,
+        private RecordGoal $goals,
     ) {}
 
     /**
@@ -63,6 +68,7 @@ final readonly class RespondToText
             ? $this->limitations->noteOnLog($user, $text, $interpretation->limitation, $source, $result->log)
             : null;
         $lines[] = $limitationNote;
+        $lines[] = $this->goalLine($user, $interpretation, $result->log);
 
         if ($result->log->questions === null || $result->log->questions === []) {
             $lines[] = $limitationNote === null ? $this->limitationCheck->for($user, $result->entries) : null;
@@ -70,6 +76,19 @@ final readonly class RespondToText
         }
 
         return $this->thenTheCoach($user, $text, implode("\n\n", array_filter($lines)));
+    }
+
+    private function goalLine(User $user, Interpretation $interpretation, ActivityLog $log): ?string
+    {
+        $reading = $interpretation->goal();
+
+        if ($reading === null) {
+            return null;
+        }
+
+        $goal = $this->goals->handle($user, $log, $reading);
+
+        return $goal->target_on === null ? null : GoalReply::saved($goal);
     }
 
     /**

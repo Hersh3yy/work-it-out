@@ -82,6 +82,12 @@ final class ActivityLog extends Model
         return $this->hasMany(ExerciseEntry::class);
     }
 
+    /** @return HasOne<Goal, $this> */
+    public function goal(): HasOne
+    {
+        return $this->hasOne(Goal::class);
+    }
+
     /** @return HasOne<Limitation, $this> */
     public function limitation(): HasOne
     {

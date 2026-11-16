@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 use App\Channels\Telegram\TelegramChannel;
 use App\Conversation\Answers\ExerciseQuestionAnswer;
+use App\Conversation\Answers\GoalDateAnswer;
 use App\Conversation\Answers\LimitationChoiceAnswer;
 use App\Conversation\Answers\ProfileQuestionAnswer;
 use App\Conversation\Answers\RedFlagScreenAnswer;
 use App\Conversation\Commands\BetterCommand;
 use App\Conversation\Commands\DailyCommand;
+use App\Conversation\Commands\GoalsCommand;
 use App\Conversation\Commands\HelpCommand;
 use App\Conversation\Commands\LoginCommand;
 use App\Conversation\Commands\ProfileCommand;
@@ -46,6 +48,7 @@ return [
         HelpCommand::class,
         UndoCommand::class,
         ProfileCommand::class,
+        GoalsCommand::class,
         LoginCommand::class,
         BetterCommand::class,
         DailyCommand::class,
@@ -59,6 +62,7 @@ return [
         ExerciseQuestionAnswer::class,
         LimitationChoiceAnswer::class,
         RedFlagScreenAnswer::class,
+        GoalDateAnswer::class,
         ProfileQuestionAnswer::class,
     ],
 

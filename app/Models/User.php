@@ -125,6 +125,12 @@ class User extends Authenticatable
         return $this->hasMany(DiaryEntry::class)->latest();
     }
 
+    /** @return HasMany<Goal, $this> */
+    public function goals(): HasMany
+    {
+        return $this->hasMany(Goal::class);
+    }
+
     /** @return HasMany<QualitySnapshot, $this> */
     public function qualitySnapshots(): HasMany
     {

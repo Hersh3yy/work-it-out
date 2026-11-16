@@ -12,7 +12,9 @@ use App\Contracts\Ai\MessageClassifier;
 use App\Contracts\Ai\SmartLogParser;
 use App\Enums\MessageKind;
 use App\Exceptions\AiUnavailable;
+use App\Goals\GoalReader;
 use App\Interpretation\Rules\BareNumberIsNotBodyWeight;
+use App\Interpretation\Rules\GoalNeedsADate;
 use App\Interpretation\Rules\InterpretationRule;
 use App\Interpretation\Rules\RepsTimesSetsHasTwoReadings;
 use App\Interpretation\Rules\WeightedLiftNeedsSetsAndReps;
@@ -46,6 +48,7 @@ final readonly class Interpreter
         RepsTimesSetsHasTwoReadings::class,
         WeightedLiftNeedsSetsAndReps::class,
         WorkoutNeedsAnExercise::class,
+        GoalNeedsADate::class,
     ];
 
     public function __construct(
@@ -91,6 +94,12 @@ final readonly class Interpreter
         $parsed = $classification->kind === MessageKind::BodyWeight && $classification->decidedBy === 'rules'
             ? self::weightFromRules($text)
             : $this->ai->run($user, SmartLogAgent::class, fn (): array => $this->parser->parse($user, $text));
+
+        $goal = $classification->kind === MessageKind::GoalOrInfo ? GoalReader::read($text) : null;
+
+        if ($goal !== null) {
+            $parsed['goal'] = $goal->toArray();
+        }
 
         foreach (self::RULES as $rule) {
             $result = app($rule)->apply($text, $parsed);
