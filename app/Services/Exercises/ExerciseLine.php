@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Exercises;
 
+use App\Fitness\ExerciseQualities;
+use App\Fitness\Quality;
 use App\Models\ExerciseEntry;
 use App\Models\ExerciseSet;
 use Illuminate\Support\Collection;
@@ -95,6 +97,25 @@ final readonly class ExerciseLine
     }
 
     /** "80.5", never "80.50" or "80.00". */
+    /**
+     * "Trained: strength, core" for the qualities these exercises worked, in
+     * the order the qualities are listed; null when none is known.
+     *
+     * @param  iterable<ExerciseEntry>  $entries
+     */
+    public static function trained(iterable $entries): ?string
+    {
+        $worked = [];
+
+        foreach ($entries as $entry) {
+            $worked = [...$worked, ...ExerciseQualities::of($entry->exercise_name)];
+        }
+
+        $names = array_column(array_filter(Quality::cases(), static fn (Quality $quality): bool => in_array($quality, $worked, true)), 'value');
+
+        return $names === [] ? null : 'Trained: '.implode(', ', $names);
+    }
+
     public static function number(mixed $value): string
     {
         return rtrim(rtrim(number_format((float) $value, 2, '.', ''), '0'), '.');

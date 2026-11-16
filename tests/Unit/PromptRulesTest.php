@@ -46,6 +46,14 @@ it('makes the coach answer first, keep goals in words and never claim a save', f
         ->toContain('never send it again unchanged');
 });
 
+it('tells the coach what level, power, readiness and a goal\'s phase mean, and never to number an unmeasured quality', function (): void {
+    expect((new CoachAgent(TrainerPersona::Shen, '{}'))->instructions())
+        ->toContain('level is training history and only grows')
+        ->toContain('null means not measured yet, so never give it a number')
+        ->toContain('lighten that quality today and train the fresh ones')
+        ->toContain('taper inside two weeks');
+});
+
 it('keeps stated goals and the real start of a limitation in the profile', function (): void {
     expect((new ProfileAgent)->instructions())
         ->toContain('Two things are never dropped');

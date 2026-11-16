@@ -25,7 +25,7 @@ it('adds one profile question to a log receipt and records the prompt', function
 
     $reply = app(HandleInboundMessage::class)->handle(telegramText('benched 100 3x5'));
 
-    expect($reply)->toBe("Logged: Bench Press 3x5 @ 100 kg\n\n".app(TrainingDaysPerWeek::class)->ask($user));
+    expect($reply)->toBe("Logged: Bench Press 3x5 @ 100 kg\nTrained: strength\n\n".app(TrainingDaysPerWeek::class)->ask($user));
     $this->assertDatabaseHas('profile_prompts', ['user_id' => $user->id, 'question_key' => 'training_days_per_week', 'answered_at' => null]);
 });
 

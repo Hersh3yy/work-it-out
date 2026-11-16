@@ -81,7 +81,7 @@ it('fills sets and reps from one answer to the two-readings question', function 
     $chat = app(HandleInboundMessage::class);
 
     expect($chat->handle(telegramText('I did deadlift: 90 x3 x 5')))
-        ->toBe("Logged: Deadlift @ 90 kg\nWas that 3 sets of 5 reps, or 5 sets of 3 reps? Reply with the number of sets.")
+        ->toBe("Logged: Deadlift @ 90 kg\nTrained: strength\nWas that 3 sets of 5 reps, or 5 sets of 3 reps? Reply with the number of sets.")
         ->and($chat->handle(telegramText('5')))->toBe('Updated: Deadlift 5x3 @ 90 kg');
 });
 

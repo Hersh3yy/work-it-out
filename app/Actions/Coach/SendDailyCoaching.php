@@ -11,6 +11,8 @@ use App\Enums\CoachTurnKind;
 use App\Exceptions\AiUnavailable;
 use App\Exceptions\ChatUnavailable;
 use App\Exceptions\RecipientUnreachable;
+use App\Fitness\QualitySheet;
+use App\Goals\GoalFacts;
 use App\Models\ChannelIdentity;
 use App\Models\User;
 
@@ -22,7 +24,7 @@ use App\Models\User;
  */
 final readonly class SendDailyCoaching
 {
-    private const string BRIEF = 'Morning message for %s, %s. Nobody asked; you write first. Say what today is for, given their plan (training days a week), what they trained in the last 7 days, their goal and their limitation: either one session they can walk in with, or a rest or walk instruction with its reason. A session has a warm-up line, then numbered exercises with sets x reps and a load in kg: a lift they did before moves one small step up (2.5 kg, or two reps) when its last sets were all completed, a new lift gets a starting load from a lift on record, and a lift they said they want back gets its next step and the sign that unlocks the step after. Up to 10 short lines. Start with the day, not with a greeting or their name. If the session you wrote first yesterday was not logged, do not send it again unchanged: say so and change it. End with exactly one question back, the first that applies and that your previous message did not end with: how the limitation feels today when one is active and how_it_is_going has nothing from the last 2 days; their body weight when none was logged in the last 7 days; otherwise none.';
+    private const string BRIEF = 'Morning message for %s, %s. Nobody asked; you write first. Say what today is for, given their plan (training days a week), what they trained in the last 7 days, their goal and their limitation: either one session they can walk in with, or a rest or walk instruction with its reason. A session has a warm-up line, then numbered exercises with sets x reps and a load in kg: a lift they did before moves one small step up (2.5 kg, or two reps) when its last sets were all completed, a new lift gets a starting load from a lift on record, and a lift they said they want back gets its next step and the sign that unlocks the step after. Up to 10 short lines. Start with the day, not with a greeting or their name. If the session you wrote first yesterday was not logged, do not send it again unchanged: say so and change it. End with exactly one question back, the first that applies and that your previous message did not end with: how the limitation feels today when one is active and how_it_is_going has nothing from the last 2 days; their body weight when none was logged in the last 7 days; otherwise none. Name the qualities today is for and the nearest goal from the lines the app adds below; their numbers are computed, quote them, never change them.';
 
     public function __construct(
         private TakeCoachTurn $coach,
@@ -41,15 +43,24 @@ final readonly class SendDailyCoaching
             return null;
         }
 
-        $message = $this->coach->handle($user, self::brief(), AnswerDepth::Plan, CoachTurnKind::Daily)->answer;
+        $message = $this->coach->handle($user, $this->brief($user), AnswerDepth::Plan, CoachTurnKind::Daily)->answer;
         $user->channelIdentities->each(fn (ChannelIdentity $identity) => $this->deliver($user, $identity, $message));
 
         return $message;
     }
 
-    private static function brief(): string
+    private function brief(User $user): string
     {
-        return sprintf(self::BRIEF, now()->format('l'), today()->toDateString());
+        return sprintf(self::BRIEF, now()->format('l'), today()->toDateString())."\n\n".$this->today($user);
+    }
+
+    /** What plain code says about today: which qualities are fresh, and the nearest goal. */
+    private function today(User $user): string
+    {
+        $qualities = QualitySheet::for($user);
+        $goal = GoalFacts::for($user, $qualities->power)->nearestLine();
+
+        return implode("\n", array_filter([$qualities->todayLine(), $goal]));
     }
 
     /**

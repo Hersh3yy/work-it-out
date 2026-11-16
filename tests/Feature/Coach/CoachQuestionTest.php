@@ -106,7 +106,7 @@ it('keeps the context the same size however long someone has logged', function (
 
     expect($context->toArray()['recent_logs'])->toHaveCount(config('coach.context.recent_logs'))
         ->and($context->toArray()['recent_exchanges'])->toHaveCount(config('coach.context.turns'))
-        ->and(mb_strlen($context->toJson()))->toBeLessThan(16000);
+        ->and(mb_strlen($context->toJson()))->toBeLessThan(17000);
 });
 
 it('leaves old exchanges out of the context', function (): void {

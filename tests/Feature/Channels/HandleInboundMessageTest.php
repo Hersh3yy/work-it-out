@@ -22,7 +22,7 @@ it('logs a workout from a chat message and replies with a receipt', function ():
 
     $reply = app(HandleInboundMessage::class)->handle(telegramText('benched 100 3x5'));
 
-    expect($reply)->toBe('Logged: Bench Press 3x5 @ 100 kg');
+    expect($reply)->toBe("Logged: Bench Press 3x5 @ 100 kg\nTrained: strength");
     $this->assertDatabaseHas('activity_logs', ['user_id' => $user->id, 'source' => 'telegram']);
     expect((float) $user->refresh()->weekly_adherence_rate)->toBe(25.0);
 });
@@ -33,7 +33,7 @@ it('asks for a missing value and fills it in from a bare number without AI', fun
     $chat = app(HandleInboundMessage::class);
 
     expect($chat->handle(telegramText('incline db press 3x10')))
-        ->toBe("Logged: Incline DB Press 3x10\nWhat weight for the incline press?")
+        ->toBe("Logged: Incline DB Press 3x10\nTrained: strength\nWhat weight for the incline press?")
         ->and($chat->handle(telegramText('30 kg')))->toBe('Updated: Incline DB Press 3x10 @ 30 kg')
         ->and($parser->calls)->toHaveCount(1)
         ->and($user->activityLogs()->first()->questions)->toBeNull();

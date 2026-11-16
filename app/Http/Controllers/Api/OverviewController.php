@@ -17,8 +17,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * What the app shows: the person, their computed facts, the written notes,
- * active limitations and their messages. Same data as /me in chat.
+ * What the app shows: the person, their computed facts, their qualities and
+ * goals, the written notes, active limitations and their messages. Same data as /me in chat.
  */
 final class OverviewController extends Controller
 {
@@ -27,10 +27,13 @@ final class OverviewController extends Controller
         /** @var User $user */
         $user = $request->user();
         $version = $user->profileVersions()->first();
+        $facts = ProfileFacts::for($user)->toArray();
 
         return response()->json([
             'user' => new UserResource($user),
-            'facts' => ProfileFacts::for($user)->toArray(),
+            'facts' => array_diff_key($facts, array_flip(['qualities', 'goals'])),
+            'qualities' => $facts['qualities'],
+            'goals' => $facts['goals'],
             'notes' => [
                 'updated_at' => $version?->created_at?->toIso8601String(),
                 'kind' => $version?->kind,

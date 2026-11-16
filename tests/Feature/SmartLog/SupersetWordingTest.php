@@ -27,7 +27,7 @@ it('words the superset as one line with its rounds in the receipt', function ():
     logHirensSuperset();
 
     expect(app(HandleInboundMessage::class)->handle(telegramText("Did a super set\n10 pushups\n12 lying leg raises for abs\n40 second plank\n\n4 of those")))
-        ->toBe('Logged: '.SUPERSET_LINE);
+        ->toBe('Logged: '.SUPERSET_LINE."\nTrained: strength, core");
 });
 
 it('shows the coach and the profile writer the same line', function (): void {
@@ -62,7 +62,7 @@ it('keeps a weighted lift after a superset on its own line', function (): void {
     ])));
 
     expect(app(HandleInboundMessage::class)->handle(telegramText('4 rounds of 8 kb swings 24 and 10 box jumps, then bench 3x8 80')))
-        ->toBe('Logged: Circuit x4: Kettlebell Swing 8 @ 24 kg, Box Jump 10, Bench Press 3x8 @ 80 kg');
+        ->toBe("Logged: Circuit x4: Kettlebell Swing 8 @ 24 kg, Box Jump 10, Bench Press 3x8 @ 80 kg\nTrained: strength, power");
 });
 
 it('counts no volume this week from bodyweight, timed or assisted sets', function (): void {

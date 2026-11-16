@@ -58,7 +58,7 @@ it('writes the sets in the receipt', function (): void {
     fakeSmartLogParser(new FakeSmartLogParser(squatPyramid()));
 
     expect(app(HandleInboundMessage::class)->handle(telegramText("Yesterday did squats 5x5\n90 80 80 80 80\n\nAnd ran 1k in 6:30")))
-        ->toBe('Logged: Squat 5x5 @ 90, 80, 80, 80, 80 kg, Run 1 km 6:30');
+        ->toBe("Logged: Squat 5x5 @ 90, 80, 80, 80, 80 kg, Run 1 km 6:30\nTrained: strength, endurance");
 });
 
 it('shows weight and reps per set when the reps differ too', function (): void {

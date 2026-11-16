@@ -29,11 +29,15 @@ final readonly class ReplyComposer
             default => 'Noted: '.$log->summary,
         }];
 
+        if ($log->log_type === LogType::Workout) {
+            $lines[] = ExerciseLine::trained($result->entries);
+        }
+
         foreach ($log->questions ?? [] as $question) {
             $lines[] = $question['question'];
         }
 
-        return implode("\n", $lines);
+        return implode("\n", array_filter($lines));
     }
 
     public function entry(ExerciseEntry $entry): string

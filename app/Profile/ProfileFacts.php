@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Profile;
 
 use App\Contracts\Stats\PersonalRecords;
+use App\Fitness\QualitySheet;
+use App\Goals\GoalFacts;
 use App\Models\User;
 
 /**
  * Everything about a user that plain code can work out: what they entered,
- * this week's score, records, body weight trend and totals. The profile
+ * this week's score, records, body weight trend, each quality's level, power
+ * and readiness, the goals ahead with how ready they are, and totals. The profile
  * writer may quote these numbers but never computes its own.
  */
 final readonly class ProfileFacts
@@ -26,6 +29,7 @@ final readonly class ProfileFacts
         $latest = $weights->last();
         $lastSession = $user->workoutSessions()->latest('logged_at')->first(['logged_at'])?->logged_at;
         $week = $user->weeklyStats();
+        $qualities = QualitySheet::for($user);
 
         return new self([
             'entered_by_user' => [
@@ -61,6 +65,8 @@ final readonly class ProfileFacts
                     'note' => $l->updates->first()->note,
                 ],
             ])->values()->all(),
+            'qualities' => $qualities->toArray(),
+            'goals' => GoalFacts::for($user, $qualities->power)->toArray(),
             'totals' => [
                 'workout_sessions' => $user->workoutSessions()->count(),
                 'logged_messages' => $user->activityLogs()->count(),

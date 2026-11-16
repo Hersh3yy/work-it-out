@@ -20,7 +20,7 @@ final class ExerciseQualities
         'squat' => [Quality::Strength], 'lunge' => [Quality::Strength], 'legpress' => [Quality::Strength],
         'goodmorning' => [Quality::Strength], 'row' => [Quality::Strength], 'bench' => [Quality::Strength],
         'press' => [Quality::Strength], 'dip' => [Quality::Strength], 'pullup' => [Quality::Strength],
-        'chinup' => [Quality::Strength], 'pulldown' => [Quality::Strength], 'curl' => [Quality::Strength],
+        'chinup' => [Quality::Strength], 'pulldown' => [Quality::Strength], 'curl' => [Quality::Strength], 'push' => [Quality::Strength],
         'clean' => [Quality::Strength, Quality::Power], 'snatch' => [Quality::Strength, Quality::Power],
         'jump' => [Quality::Power], 'box' => [Quality::Power], 'sprint' => [Quality::Power, Quality::Endurance],
         'swing' => [Quality::Power], 'throw' => [Quality::Power], 'slam' => [Quality::Power],
@@ -29,7 +29,7 @@ final class ExerciseQualities
         'hike' => [Quality::Endurance], 'elliptical' => [Quality::Endurance],
         'plank' => [Quality::Core], 'carry' => [Quality::Core], 'farmer' => [Quality::Core], 'hollow' => [Quality::Core],
         'deadbug' => [Quality::Core], 'pallof' => [Quality::Core], 'situp' => [Quality::Core], 'crunch' => [Quality::Core],
-        'rollout' => [Quality::Core], 'hold' => [Quality::Core],
+        'rollout' => [Quality::Core], 'hold' => [Quality::Core], 'legraise' => [Quality::Core],
         'stretch' => [Quality::Mobility, Quality::Recovery], 'yoga' => [Quality::Mobility, Quality::Recovery],
         'mobility' => [Quality::Mobility], 'foamroll' => [Quality::Recovery],
     ];

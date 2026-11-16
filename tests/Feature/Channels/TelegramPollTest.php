@@ -45,7 +45,7 @@ it('polls once, logs the message and sends the receipt back', function (): void 
 
     Http::assertSent(fn (Request $r): bool => str_ends_with($r->url(), '/sendMessage')
         && $r['chat_id'] === '4242'
-        && $r['text'] === 'Logged: Bench Press 3x5 @ 100 kg');
+        && $r['text'] === "Logged: Bench Press 3x5 @ 100 kg\nTrained: strength");
     Http::assertSentCount(2);
     $this->assertDatabaseCount('activity_logs', 1);
     expect(cache('telegram:poll:offset'))->toBe(12);
