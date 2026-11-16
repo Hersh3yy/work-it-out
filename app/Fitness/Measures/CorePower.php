@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Fitness\Measures;
 
+use App\Fitness\ExerciseCatalogue;
+use App\Fitness\MovementPattern;
 use App\Fitness\PowerReading;
 use App\Fitness\Quality;
 use App\Fitness\TrainingHistory;
@@ -36,6 +38,6 @@ final readonly class CorePower implements PowerMeasure
 
     private function isCarry(ExerciseEntry $entry): bool
     {
-        return (bool) preg_match('/carry|farmer/i', $entry->exercise_name);
+        return ExerciseCatalogue::hasPattern($entry->exercise_name, MovementPattern::Carry);
     }
 }

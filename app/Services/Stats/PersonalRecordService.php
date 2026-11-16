@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Stats;
 
 use App\Contracts\Stats\PersonalRecords;
+use App\Fitness\ExerciseCatalogue;
+use App\Fitness\MovementPattern;
 use App\Models\ExerciseEntry;
 use App\Models\User;
 use App\Models\WorkoutSession;
@@ -22,13 +24,6 @@ use Illuminate\Support\Collection;
 final class PersonalRecordService implements PersonalRecords
 {
     private const int MAX_STRENGTH_RECORDS = 8;
-
-    public const array RUN_KEYWORDS = ['run', 'jog', 'sprint', 'treadmill', '5k', '10k', 'marathon'];
-
-    public const array SPORT_KEYWORDS = [
-        'padel', 'tennis', 'squash', 'badminton', 'football', 'soccer',
-        'basketball', 'volleyball', 'climbing', 'boxing', 'swimming', 'cycling',
-    ];
 
     public function for(User $user): array
     {
@@ -86,7 +81,7 @@ final class PersonalRecordService implements PersonalRecords
         $runs = $entries->filter(function (array $row): bool {
             $hasDistance = (float) ($row['entry']->distance_meters ?? 0) > 0;
 
-            return $hasDistance || $this->nameMatches($row['entry']->exercise_name, self::RUN_KEYWORDS);
+            return $hasDistance || ExerciseCatalogue::hasPattern($row['entry']->exercise_name, MovementPattern::Run);
         });
 
         $withDistance = $runs->filter(
@@ -123,7 +118,7 @@ final class PersonalRecordService implements PersonalRecords
     private function sportRecords(Collection $entries): array
     {
         return $entries
-            ->filter(fn (array $row): bool => $this->nameMatches($row['entry']->exercise_name, self::SPORT_KEYWORDS))
+            ->filter(fn (array $row): bool => ExerciseCatalogue::hasPattern($row['entry']->exercise_name, MovementPattern::Sport))
             ->groupBy(fn (array $row): string => ExerciseAliases::key($row['entry']->exercise_name))
             ->map(function (Collection $group): array {
                 $durations = $group
@@ -143,22 +138,6 @@ final class PersonalRecordService implements PersonalRecords
             ->sortByDesc('sessions')
             ->values()
             ->all();
-    }
-
-    /**
-     * @param  list<string>  $keywords
-     */
-    private function nameMatches(string $exerciseName, array $keywords): bool
-    {
-        $normalized = mb_strtolower($exerciseName);
-
-        foreach ($keywords as $keyword) {
-            if (str_contains($normalized, $keyword)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**

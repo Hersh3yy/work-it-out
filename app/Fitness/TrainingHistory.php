@@ -64,7 +64,7 @@ final readonly class TrainingHistory
      */
     public function training(Quality $quality, int $days): Collection
     {
-        return $this->within($days)->filter(static fn (ExerciseEntry $entry): bool => ExerciseQualities::trains($entry->exercise_name, $quality))->values();
+        return $this->within($days)->filter(static fn (ExerciseEntry $entry): bool => ExerciseCatalogue::trains($entry->exercise_name, $quality))->values();
     }
 
     public function daysAgo(ExerciseEntry $entry): int

@@ -81,7 +81,7 @@ final readonly class QualityReadiness
             return (int) config('fitness.readiness.illness_cap');
         }
 
-        if ($limitation->body_area === null || ! in_array($limitation->body_area, ExerciseQualities::areasLoadedBy($quality), true)) {
+        if ($limitation->body_area === null || ! in_array($limitation->body_area, $quality->leansOn(), true)) {
             return null;
         }
 

@@ -2,7 +2,7 @@
 
 Kept current: updated at the end of every working session and whenever Hiren asks. The shareable copy is the private page "Feetness Elevator Pitch" on claude.ai (link in Hiren's notes); this file is the source.
 
-As of 15 November 2026.
+As of 16 November 2026.
 
 ## In 30 seconds
 
@@ -30,20 +30,25 @@ Live for one person (Hiren) since 18 October 2026. The first outside testers are
 | The written profile, rebuilt from logs with citations | live |
 | The app: home with facts, notes, injuries; the log history; sign-in by one-time link | runs locally; Netlify and HTTPS are the next steps |
 | Safety: no message lost when the AI is down, a per-person limit, a spend cap, danger words first | on the branch waiting to deploy |
-| The game layer: energies, crew, levels, jobs | designed on 15 November, nothing built yet |
+| Parsing every common way people text a workout: timed and distance sets, supersets with rounds, bodyweight, assisted help, effort, pounds and miles | on a branch, pushed, not deployed |
+| The game's foundation in plain words: three energies, six qualities each with a level, a power and today's readiness, one exercise catalogue, daily snapshots | on a branch, pushed, not deployed |
+| Goals with a date: "rave on 13 December" is saved and its date asked when missing; /goals shows build or taper and how ready each demanded quality is | on a branch, pushed, not deployed |
+| The coach, the morning message and the app read the qualities and goals; the receipt says what a workout trained | on a branch, pushed, not deployed |
+| The world on top: names, art, the roster and battle screens | designed, waits for the creative session |
 
-Measured: 401 automated tests, none of which call a model; about 3 seconds per message; about $0.65 a month in AI cost per person on the EU model.
+Measured: 531 automated tests on the newest branch, none of which call a model; about 3 seconds per message; about $0.65 a month in AI cost per person on the EU model.
 
 ## What comes next
 
-1. Push the safety and all-Mistral work, then the first two testers (week of 23 November).
-2. The parsing of every way people describe a workout (supersets, timed sets, bodyweight, circuits), so nothing is saved as "?".
-3. Phase 2, the game's foundation: one exercise catalogue, the six qualities with a level and a power each, goals with a date and their demands, readiness, all in plain words first.
-4. Phase 3, the world on top: names and art from the creative session, the roster and battle screens, promotions, the Sunday chronicle, talent points.
+1. Deploy: merge the safety, all-Mistral, parsing and game-foundation branches to master after Hiren's server steps, run the migrations and `quality:backfill --all` once, then the first two testers (week of 23 November).
+2. Measures for the two unscored qualities: a test the app can read for power (a jump or a sprint) and for mobility, so neither stays "not measured yet".
+3. Phase 3, the world on top: names and art from the creative session, the roster and battle screens in the app, promotions, the Sunday chronicle, talent points.
+4. Plans toward a goal: card 4's backwards plan from the date, the run cap of card 1 and the next load of card 3, computed in code.
 5. Later: a second chat app (Signal), voice notes, the body map.
 
 ## Change log
 
 | Date | What changed in the pitch |
 |---|---|
+| 2026-11-16 | Phase 2 built on branches and pushed: qualities with level, power and readiness, one exercise catalogue, dated goals with build or taper, the receipt and morning message naming what was trained; parsing of every common workout form. Power and mobility unscored until a test exists. |
 | 2026-11-15 | First version. The game model set: three energies with a coach each, six crew members, level, power and HP per member, dated goals as battles. EU-only models decided (Mistral). |

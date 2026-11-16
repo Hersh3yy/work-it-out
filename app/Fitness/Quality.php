@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Fitness;
 
+use App\Enums\BodyArea;
 use App\Fitness\Measures\CorePower;
 use App\Fitness\Measures\EndurancePower;
 use App\Fitness\Measures\NoTestYet;
@@ -48,5 +49,23 @@ enum Quality: string
     public function tiresWhenTrained(): bool
     {
         return ! in_array($this, [self::Mobility, self::Recovery], true);
+    }
+
+    /**
+     * The body areas this quality's main work leans on, so a limitation there
+     * lowers its readiness. Not every exercise's areas: a rowing machine loads
+     * the lower back, yet a back injury does not stop running.
+     *
+     * @return list<BodyArea>
+     */
+    public function leansOn(): array
+    {
+        return match ($this) {
+            self::Strength => [BodyArea::LowerBack, BodyArea::Hip, BodyArea::Knee, BodyArea::Shoulder, BodyArea::Chest, BodyArea::UpperBack, BodyArea::Elbow, BodyArea::Wrist],
+            self::Power => [BodyArea::LowerBack, BodyArea::Hip, BodyArea::Knee, BodyArea::Ankle, BodyArea::Shoulder, BodyArea::Wrist],
+            self::Endurance => [BodyArea::Hip, BodyArea::Knee, BodyArea::Ankle, BodyArea::Foot],
+            self::Core => [BodyArea::LowerBack, BodyArea::Hip, BodyArea::Shoulder],
+            self::Mobility, self::Recovery => [],
+        };
     }
 }

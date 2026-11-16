@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Exercises;
 
-use App\Fitness\ExerciseQualities;
+use App\Fitness\ExerciseCatalogue;
 use App\Fitness\Quality;
 use App\Models\ExerciseEntry;
 use App\Models\ExerciseSet;
@@ -108,7 +108,7 @@ final readonly class ExerciseLine
         $worked = [];
 
         foreach ($entries as $entry) {
-            $worked = [...$worked, ...ExerciseQualities::of($entry->exercise_name)];
+            $worked = [...$worked, ...ExerciseCatalogue::qualitiesOf($entry->exercise_name)];
         }
 
         $names = array_column(array_filter(Quality::cases(), static fn (Quality $quality): bool => in_array($quality, $worked, true)), 'value');
