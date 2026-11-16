@@ -65,6 +65,10 @@ final readonly class StrengthPower implements PowerMeasure
 
     private function bestOneRepMax(ExerciseEntry $entry): ?float
     {
+        if (! $entry->isLoaded()) {
+            return null;
+        }
+
         $sets = $entry->setRows->isNotEmpty()
             ? $entry->setRows->map(static fn (ExerciseSet $set): array => [(int) $set->reps, (float) $set->weight_kg])
             : collect([[(int) $entry->reps, (float) $entry->weight_kg]]);

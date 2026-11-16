@@ -31,6 +31,13 @@ it('counts only sets of up to ten reps toward the one-rep max', function (): voi
     expect(QualityPower::for($user)->of(Quality::Strength)?->measures['e1rm_kg'])->toBe(80.0);
 });
 
+it('never counts an assisted machine\'s help as load', function (): void {
+    $user = User::factory()->create(['current_weight_kg' => 80]);
+    trainedDaysAgo($user, 1, ['exercise_name' => 'Squat', 'assisted' => true, 'set_list' => [['reps' => 5, 'weight_kg' => 40]]]);
+
+    expect(QualityPower::for($user)->of(Quality::Strength))->toBeNull();
+});
+
 it('reads an entry without set rows from its summary columns', function (): void {
     $user = User::factory()->create(['current_weight_kg' => 100]);
     trainedDaysAgo($user, 1, ['exercise_name' => 'Squat', 'sets' => 3, 'reps' => 3, 'weight_kg' => 100]);
