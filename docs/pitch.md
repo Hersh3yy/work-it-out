@@ -42,8 +42,8 @@ Measured: 531 automated tests on the newest branch, none of which call a model; 
 
 1. Deploy: merge the safety, all-Mistral, parsing and game-foundation branches to master after Hiren's server steps, run the migrations and `quality:backfill --all` once, then the first two testers (week of 23 November).
 2. Measures for the two unscored qualities: a test the app can read for power (a jump or a sprint) and for mobility, so neither stays "not measured yet".
-3. Phase 3, the world on top: names and art from the creative session, the roster and battle screens in the app, promotions, the Sunday chronicle, talent points.
-4. Plans toward a goal: card 4's backwards plan from the date, the run cap of card 1 and the next load of card 3, computed in code.
+3. Plans toward a goal: card 4's backwards plan from the date, the run cap of card 1 and the next load of card 3, computed in code.
+4. Phase 3, the world on top: names and art from the creative session, the roster and battle screens in the app, promotions, the Sunday chronicle, talent points.
 5. Later: a second chat app (Signal), voice notes, the body map.
 
 ## Change log
