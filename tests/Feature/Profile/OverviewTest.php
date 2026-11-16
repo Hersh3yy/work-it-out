@@ -6,6 +6,7 @@ use App\Actions\SmartLog\RecordSmartLog;
 use App\Models\User;
 
 it('gives the app everything the home screen shows', function (): void {
+    $this->travelTo(now()->startOfWeek()->addDays(2)->setTime(12, 0));
     $user = User::factory()->create(['name' => 'Hiren', 'training_days_per_week' => 3]);
     app(RecordSmartLog::class)->handle($user, "Yesterday did squats 5x5\n90 80 80 80 80", workoutFacts([
         ['exercise_name' => 'Squat', 'sets' => 5, 'reps' => 5, 'set_list' => [
