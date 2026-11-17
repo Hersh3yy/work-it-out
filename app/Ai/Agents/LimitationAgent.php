@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
+use App\Ai\Agents\Concerns\ReasonsAsItsJobSays;
 use App\Ai\AiJob;
 use App\Enums\BodyArea;
 use App\Enums\LimitationSeverity;
@@ -11,6 +12,7 @@ use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\TopP;
 use Laravel\Ai\Contracts\Agent;
+use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Promptable;
 
@@ -21,13 +23,19 @@ use Laravel\Ai\Promptable;
  */
 #[Temperature(0)]
 #[TopP(1)]
-final class LimitationAgent implements Agent, HasStructuredOutput
+final class LimitationAgent implements Agent, HasProviderOptions, HasStructuredOutput
 {
     use Promptable;
+    use ReasonsAsItsJobSays;
 
     public function timeout(): int
     {
-        return AiJob::Limitation->timeout();
+        return $this->job()->timeout();
+    }
+
+    protected function job(): AiJob
+    {
+        return AiJob::Limitation;
     }
 
     public function instructions(): string

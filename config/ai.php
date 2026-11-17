@@ -43,26 +43,31 @@ return [
             'provider' => env('AI_CLASSIFY_PROVIDER'),
             'model' => env('AI_CLASSIFY_MODEL'),
             'timeout' => (int) env('AI_CLASSIFY_TIMEOUT', 15),
+            'reasoning' => env('AI_CLASSIFY_REASONING'),
         ],
         'log' => [
             'provider' => env('AI_LOG_PROVIDER'),
             'model' => env('AI_LOG_MODEL'),
             'timeout' => (int) env('AI_LOG_TIMEOUT', 30),
+            'reasoning' => env('AI_LOG_REASONING'),
         ],
         'limitation' => [
             'provider' => env('AI_LIMITATION_PROVIDER'),
             'model' => env('AI_LIMITATION_MODEL'),
             'timeout' => (int) env('AI_LIMITATION_TIMEOUT', 20),
+            'reasoning' => env('AI_LIMITATION_REASONING'),
         ],
         'coach' => [
             'provider' => env('AI_COACH_PROVIDER'),
             'model' => env('AI_COACH_MODEL'),
             'timeout' => (int) env('AI_COACH_TIMEOUT', 45),
+            'reasoning' => env('AI_COACH_REASONING'),
         ],
         'profile' => [
             'provider' => env('AI_PROFILE_PROVIDER'),
             'model' => env('AI_PROFILE_MODEL'),
             'timeout' => (int) env('AI_PROFILE_TIMEOUT', 60),
+            'reasoning' => env('AI_PROFILE_REASONING'),
         ],
     ],
 

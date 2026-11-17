@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
+use App\Ai\Agents\Concerns\ReasonsAsItsJobSays;
 use App\Ai\AiJob;
 use App\Profile\NoteLabel;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Contracts\Agent;
+use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Promptable;
 
@@ -18,13 +20,19 @@ use Laravel\Ai\Promptable;
  * what the data shows; it never computes numbers or diagnoses anything.
  */
 #[Temperature(0.2)]
-final class ProfileAgent implements Agent, HasStructuredOutput
+final class ProfileAgent implements Agent, HasProviderOptions, HasStructuredOutput
 {
     use Promptable;
+    use ReasonsAsItsJobSays;
 
     public function timeout(): int
     {
-        return AiJob::Profile->timeout();
+        return $this->job()->timeout();
+    }
+
+    protected function job(): AiJob
+    {
+        return AiJob::Profile;
     }
 
     public function instructions(): string

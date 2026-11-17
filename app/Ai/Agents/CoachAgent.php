@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
+use App\Ai\Agents\Concerns\ReasonsAsItsJobSays;
 use App\Ai\AiJob;
 use App\Coach\AnswerDepth;
 use App\Enums\TrainerPersona;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Contracts\Agent;
+use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Promptable;
 
 /**
@@ -18,9 +20,10 @@ use Laravel\Ai\Promptable;
  * length instruction and the output-token budget.
  */
 #[Temperature(0.4)]
-final class CoachAgent implements Agent
+final class CoachAgent implements Agent, HasProviderOptions
 {
     use Promptable;
+    use ReasonsAsItsJobSays;
 
     public function __construct(
         private readonly TrainerPersona $persona,
@@ -36,7 +39,12 @@ final class CoachAgent implements Agent
 
     public function timeout(): int
     {
-        return AiJob::Coach->timeout();
+        return $this->job()->timeout();
+    }
+
+    protected function job(): AiJob
+    {
+        return AiJob::Coach;
     }
 
     public function instructions(): string

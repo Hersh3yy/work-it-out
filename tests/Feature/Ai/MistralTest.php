@@ -84,3 +84,21 @@ it('reads an injury on Mistral Small, so injury notes stay in the EU', function 
     Http::assertSent(fn (Request $request): bool => $request->url() === MISTRAL_EU.'/chat/completions'
         && $request['model'] === 'mistral-small-2603');
 });
+
+it('sends each job\'s reasoning effort to Mistral, and none when the job sets none', function (): void {
+    useRealAdapter(CoachAdvisor::class);
+    useRealAdapter(ProfileBuilder::class);
+    config(['ai.jobs.coach.reasoning' => 'low']);
+    $notes = ['notes' => [['label' => 'gaps', 'text' => 'No runs yet.', 'cites' => ['facts']]]];
+    Http::fakeSequence(MISTRAL_EU.'/chat/completions')
+        ->push(mistralAnswer('Squat 3x5 at 62.5 kg.'))
+        ->push(mistralAnswer((string) json_encode($notes)));
+    $user = User::factory()->create();
+
+    app(CoachAdvisor::class)->answer(CoachContext::for($user), TrainerPersona::LtSurge, 'what now?', AnswerDepth::Quick);
+    app(ProfileBuilder::class)->build(ProfileFacts::for($user), [], []);
+
+    $sent = Http::recorded()->map(fn (array $pair): array => $pair[0]->data());
+    expect($sent[0]['reasoning_effort'] ?? null)->toBe('low')
+        ->and($sent[1])->not->toHaveKey('reasoning_effort');
+});

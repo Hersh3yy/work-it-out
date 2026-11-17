@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
+use App\Ai\Agents\Concerns\ReasonsAsItsJobSays;
 use App\Ai\AiJob;
 use App\Enums\LogType;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Contracts\Agent;
+use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Promptable;
 
@@ -26,9 +28,10 @@ use Laravel\Ai\Promptable;
  * Nothing about the user is sent; the message alone is enough to parse.
  */
 #[Temperature(0.1)]
-final class SmartLogAgent implements Agent, HasStructuredOutput
+final class SmartLogAgent implements Agent, HasProviderOptions, HasStructuredOutput
 {
     use Promptable;
+    use ReasonsAsItsJobSays;
 
     public function __construct(
         private readonly string $today,
@@ -36,7 +39,12 @@ final class SmartLogAgent implements Agent, HasStructuredOutput
 
     public function timeout(): int
     {
-        return AiJob::Log->timeout();
+        return $this->job()->timeout();
+    }
+
+    protected function job(): AiJob
+    {
+        return AiJob::Log;
     }
 
     public function instructions(): string

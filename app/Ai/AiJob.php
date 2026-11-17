@@ -33,6 +33,16 @@ enum AiJob: string
         return (int) config("ai.jobs.{$this->value}.timeout");
     }
 
+    /**
+     * How hard a reasoning model thinks before answering (Mistral's
+     * reasoning_effort: Large 4 takes low, medium or high), or null to send
+     * nothing and let the model decide.
+     */
+    public function reasoning(): ?string
+    {
+        return $this->setting('reasoning');
+    }
+
     private function setting(string $key): ?string
     {
         $value = config("ai.jobs.{$this->value}.{$key}");
