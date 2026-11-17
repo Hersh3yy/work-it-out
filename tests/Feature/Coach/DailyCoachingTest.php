@@ -195,3 +195,30 @@ it('never shows the morning message as something the person asked', function ():
     ])
         ->and(collect($profile->calls[0]['logs'])->where('type', 'coach_question')->pluck('message')->all())->toBe(['what next?']);
 });
+
+it('tries again in ten minutes when the AI is down, and says nothing yet', function (): void {
+    $user = activeLinkedUser();
+    fakeCoach()->failing();
+    $channel = fakeChannel();
+    $job = new SendDailyCoachingTo($user)->withFakeQueueInteractions();
+
+    app()->call($job->handle(...));
+
+    $job->assertReleased(delay: 600);
+    expect($channel->sent)->toBe([]);
+});
+
+it('tells the person once when the last try fails, instead of skipping the day in silence', function (): void {
+    $user = activeLinkedUser(chatId: '5151');
+    fakeCoach()->failing();
+    $channel = fakeChannel();
+    $job = new SendDailyCoachingTo($user)->withFakeQueueInteractions();
+    $job->job->attempts = 3;
+
+    app()->call($job->handle(...));
+
+    $job->assertNotReleased();
+    expect($channel->sent)->toHaveCount(1)
+        ->and($channel->sent[0]['chat_id'])->toBe('5151')
+        ->and($channel->sent[0]['text'])->toBe(SendDailyCoaching::COULD_NOT_WRITE);
+});
