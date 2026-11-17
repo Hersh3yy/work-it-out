@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\ChatProvider;
 use App\Enums\LogSource;
+use App\Jobs\ProcessWaitingMessage;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,6 +28,7 @@ use Illuminate\Support\Carbon;
  * @property int $attempts
  * @property Carbon|null $handled_at
  * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 #[Fillable(['user_id', 'provider', 'chat_id', 'source', 'text', 'reply', 'status', 'attempts', 'handled_at'])]
 final class WaitingMessage extends Model
@@ -87,6 +89,12 @@ final class WaitingMessage extends Model
     public function isClosed(): bool
     {
         return in_array($this->status, [self::DONE, self::FAILED, self::RESENT], true);
+    }
+
+    /** When the queued retry runs: the configured wait after the last try (or after it was kept). */
+    public function nextTryAt(): Carbon
+    {
+        return $this->updated_at->copy()->addSeconds(ProcessWaitingMessage::delayBefore($this->attempts + 1));
     }
 
     /** The start of the text, to quote it back: "I did 3 more sets of bench…". */

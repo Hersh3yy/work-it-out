@@ -7,6 +7,7 @@ use App\Channels\HandleInboundMessage;
 use App\Channels\Telegram\TelegramChannel;
 use App\Coach\CoachContext;
 use App\Enums\ChatProvider;
+use App\Enums\MessageKind;
 use App\Jobs\ProcessWaitingMessage;
 use App\Models\WaitingMessage;
 use Illuminate\Support\Facades\Queue;
@@ -194,4 +195,33 @@ it('does not keep a message when the parser has a bug, so it is not retried as a
     expect(fn () => app(HandleInboundMessage::class)->handle(telegramText('benched 100 3x5')))->toThrow(RuntimeException::class);
     expect(WaitingMessage::count())->toBe(0);
     Queue::assertNotPushed(ProcessWaitingMessage::class);
+});
+
+it('answers "still busy?" from the kept message, without asking the AI', function (string $asked): void {
+    $this->travelTo(now()->setTime(20, 47));
+    $waiting = aiDownForOneMessage();
+    $classifier = classifierSays(MessageKind::Workout);
+
+    $reply = app(HandleInboundMessage::class)->handle(telegramText($asked));
+
+    expect($reply)->toBe('Your message "benched 100 3x5" from 20:47 is kept: the AI was busy. I try again at 20:48 and answer here, no need to send it again.')
+        ->and($classifier->modelCalls)->toBe([])
+        ->and(WaitingMessage::query()->count())->toBe(1)
+        ->and($waiting->fresh()->status)->toBe(WaitingMessage::WAITING);
+})->with(['Still busy?', 'did you get it?', 'any update', 'hello?', 'you there']);
+
+it('says a kept message is being handled while a worker has it', function (): void {
+    $this->travelTo(now()->setTime(20, 47));
+    $waiting = aiDownForOneMessage();
+    $waiting->update(['status' => WaitingMessage::PROCESSING]);
+
+    expect(app(HandleInboundMessage::class)->handle(telegramText('still busy?')))
+        ->toBe('Your message "benched 100 3x5" from 20:47 is being handled right now; the answer comes here in a moment.');
+});
+
+it('sends "still busy?" the normal way when nothing is kept', function (): void {
+    linkedUser();
+    classifierSays(MessageKind::Unknown);
+
+    expect(app(HandleInboundMessage::class)->handle(telegramText('Still busy?')))->not->toContain('is kept');
 });

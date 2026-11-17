@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Channels\Telegram\TelegramChannel;
 use App\Conversation\Answers\ExerciseQuestionAnswer;
 use App\Conversation\Answers\GoalDateAnswer;
+use App\Conversation\Answers\KeptMessageStatusAnswer;
 use App\Conversation\Answers\LimitationChoiceAnswer;
 use App\Conversation\Answers\ProfileQuestionAnswer;
 use App\Conversation\Answers\RedFlagScreenAnswer;
@@ -64,6 +65,7 @@ return [
         RedFlagScreenAnswer::class,
         GoalDateAnswer::class,
         ProfileQuestionAnswer::class,
+        KeptMessageStatusAnswer::class,
     ],
 
 ];
