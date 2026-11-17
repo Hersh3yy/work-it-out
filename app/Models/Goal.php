@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Goals\GoalKind;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -39,7 +40,8 @@ final class Goal extends Model
      * @param  Builder<Goal>  $query
      * @return Builder<Goal>
      */
-    public function scopeAhead(Builder $query): Builder
+    #[Scope]
+    protected function ahead(Builder $query): Builder
     {
         return $query->where(static fn (Builder $q) => $q->whereNull('target_on')->orWhereDate('target_on', '>=', today()->toDateString()))
             ->orderByRaw('target_on is null')

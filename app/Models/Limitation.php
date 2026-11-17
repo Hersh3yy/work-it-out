@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\BodyArea;
 use App\Enums\LimitationSeverity;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -51,7 +52,8 @@ final class Limitation extends Model
      * @param  Builder<Limitation>  $query
      * @return Builder<Limitation>
      */
-    public function scopeActive(Builder $query): Builder
+    #[Scope]
+    protected function active(Builder $query): Builder
     {
         return $query->whereNull('resolved_at');
     }

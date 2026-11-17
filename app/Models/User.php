@@ -10,6 +10,7 @@ use App\Enums\TrainerPersona;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -144,7 +145,8 @@ class User extends Authenticatable
      *
      * @param  Builder<User>  $query
      */
-    public function scopeDueForMorningMessage(Builder $query): void
+    #[Scope]
+    protected function dueForMorningMessage(Builder $query): void
     {
         $hour = (int) now()->format('G');
         $heardSince = now()->subDays((int) config('coach.daily.quiet_after_days'));

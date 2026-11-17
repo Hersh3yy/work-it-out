@@ -47,7 +47,7 @@ it('queues one delayed update per user however many logs arrive', function (): v
 });
 
 it('holds the one-job lock for the whole session gap', function (): void {
-    expect((new BuildProfile(User::factory()->create()))->uniqueFor())->toBe(70 * 60);
+    expect(new BuildProfile(User::factory()->create())->uniqueFor())->toBe(70 * 60);
 });
 
 it('waits for the session to end: the update is due an hour after the log', function (): void {
@@ -69,7 +69,7 @@ it('comes back at the new session end when another log arrived meanwhile, withou
     logFor($user, 'curls 3x10 12');
     $this->travel(20)->minutes();
 
-    $job = (new BuildProfile($user))->withFakeQueueInteractions();
+    $job = new BuildProfile($user)->withFakeQueueInteractions();
     Cache::lock(UniqueLock::getKey($job))->forceRelease();
     $job->handle(app(UpdateProfile::class));
 
@@ -84,7 +84,7 @@ it('writes once the session has been quiet for an hour', function (): void {
     logFor($user);
     $this->travel(61)->minutes();
 
-    (new BuildProfile($user))->handle(app(UpdateProfile::class));
+    new BuildProfile($user)->handle(app(UpdateProfile::class));
 
     expect($user->profileVersions()->count())->toBe(1);
 });
@@ -94,10 +94,10 @@ it('does nothing when the profile was already written after the last log', funct
     $user = User::factory()->create();
     logFor($user);
     $this->travel(61)->minutes();
-    (new BuildProfile($user))->handle(app(UpdateProfile::class));
+    new BuildProfile($user)->handle(app(UpdateProfile::class));
     $fake = fakeProfileBuilder();
 
-    (new BuildProfile($user))->handle(app(UpdateProfile::class));
+    new BuildProfile($user)->handle(app(UpdateProfile::class));
 
     expect($user->profileVersions()->count())->toBe(1)
         ->and($fake->calls)->toBe([]);
@@ -108,7 +108,7 @@ it('a full rebuild does not wait for the session to end', function (): void {
     $user = User::factory()->create();
     logFor($user);
 
-    (new BuildProfile($user, ProfileVersion::FULL))->handle(app(UpdateProfile::class));
+    new BuildProfile($user, ProfileVersion::FULL)->handle(app(UpdateProfile::class));
 
     expect($user->profileVersions()->first()->kind)->toBe(ProfileVersion::FULL);
 });
@@ -248,7 +248,7 @@ it('comes back later when the AI is overloaded', function (): void {
     $this->travel(61)->minutes();
     fakeProfileBuilder()->failing();
 
-    $job = (new BuildProfile($user))->withFakeQueueInteractions();
+    $job = new BuildProfile($user)->withFakeQueueInteractions();
     $job->handle(app(UpdateProfile::class));
 
     $job->assertReleased(config('profile.rolling.retry_seconds'));
@@ -281,7 +281,7 @@ it('saves nothing when the AI is down, and the job swallows the outage', functio
     expect(fn () => app(UpdateProfile::class)->handle($user))->toThrow(AiUnavailable::class);
     $this->travel(61)->minutes();
 
-    (new BuildProfile($user))->handle(app(UpdateProfile::class));
+    new BuildProfile($user)->handle(app(UpdateProfile::class));
 
     expect($user->profileVersions()->count())->toBe(0);
 });

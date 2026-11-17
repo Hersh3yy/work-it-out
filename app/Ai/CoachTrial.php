@@ -23,7 +23,7 @@ final readonly class CoachTrial
         $started = hrtime(true);
 
         try {
-            $response = (new CoachAgent($persona, $context->toJson(), AnswerDepth::for($question)))
+            $response = new CoachAgent($persona, $context->toJson(), AnswerDepth::for($question))
                 ->prompt($question, provider: $provider, model: $model);
         } catch (Throwable $e) {
             return CoachTrialAnswer::failed($label, $e::class.': '.$e->getMessage(), self::msSince($started));

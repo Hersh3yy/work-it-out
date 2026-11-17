@@ -34,6 +34,9 @@ jobs:
       # Level 5 with a baseline of the 75 errors found on 15 Nov: only new ones fail.
       - name: Larastan
         run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+      # Code written in an older PHP or Laravel style fails here; `make rector` rewrites it.
+      - name: Rector
+        run: vendor/bin/rector process --dry-run --no-progress-bar
       - name: Prepare env
         run: cp .env.example .env && php artisan key:generate
       - name: Pest

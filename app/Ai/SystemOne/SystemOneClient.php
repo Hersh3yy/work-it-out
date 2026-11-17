@@ -80,7 +80,7 @@ final readonly class SystemOneClient
             throw AiUnavailable::because("systemone:{$this->name}", 'answer missing a valid choice');
         }
 
-        $probabilities = array_map('floatval', array_intersect_key((array) ($answer['probabilities'] ?? []), $criteria));
+        $probabilities = array_map(floatval(...), array_intersect_key((array) ($answer['probabilities'] ?? []), $criteria));
         arsort($probabilities);
 
         // laya-serve's "confidence" is a separate act/abstain signal, not the

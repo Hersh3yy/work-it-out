@@ -30,12 +30,6 @@ final class RedFlags
 
     public static function matches(string $text): bool
     {
-        foreach (self::PATTERNS as $pattern) {
-            if (preg_match($pattern, $text)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any(self::PATTERNS, fn ($pattern) => preg_match($pattern, $text));
     }
 }

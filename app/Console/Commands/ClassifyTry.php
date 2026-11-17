@@ -6,6 +6,8 @@ namespace App\Console\Commands;
 
 use App\Interpretation\Lab\ClassifierLab;
 use App\Interpretation\Lab\LabResult;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
 /**
@@ -15,15 +17,13 @@ use Illuminate\Console\Command;
  *   php artisan classify:try "squat 90 90 95" --driver=laya --driver=llm
  *   php artisan classify:try --file=tests/Evals/classify.txt --driver=rules --driver=laya
  */
-final class ClassifyTry extends Command
-{
-    protected $signature = 'classify:try
+#[Description('Try the classify step alone, per model, and score it against labelled messages')]
+#[Signature('classify:try
         {text? : One message, as you would text it}
         {--driver=* : rules, llm, laya, jev, pipeline (default: all)}
-        {--file= : Labelled file, one "kind | message" per line, to score each driver}';
-
-    protected $description = 'Try the classify step alone, per model, and score it against labelled messages';
-
+        {--file= : Labelled file, one "kind | message" per line, to score each driver}')]
+final class ClassifyTry extends Command
+{
     public function handle(ClassifierLab $lab): int
     {
         $drivers = array_values(array_intersect($this->option('driver') ?: ClassifierLab::DRIVERS, ClassifierLab::DRIVERS));

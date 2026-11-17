@@ -16,7 +16,7 @@ it('computes weekly adherence rate correctly', function (): void {
         ]);
     }
 
-    (new UpdateUserStats($user))->handle();
+    new UpdateUserStats($user)->handle();
 
     $user->refresh();
 
@@ -31,7 +31,7 @@ it('counts two sessions on one day as one training day', function (): void {
         'logged_at' => now()->startOfWeek()->addDay(),
     ]);
 
-    (new UpdateUserStats($user))->handle();
+    new UpdateUserStats($user)->handle();
 
     expect((float) $user->refresh()->weekly_adherence_rate)->toBe(25.0);
 });
@@ -46,7 +46,7 @@ it('computes current streak correctly', function (): void {
         ]);
     }
 
-    (new UpdateUserStats($user))->handle();
+    new UpdateUserStats($user)->handle();
 
     $user->refresh();
 
@@ -56,7 +56,7 @@ it('computes current streak correctly', function (): void {
 it('returns zero streak when no sessions exist', function (): void {
     $user = User::factory()->create();
 
-    (new UpdateUserStats($user))->handle();
+    new UpdateUserStats($user)->handle();
 
     $user->refresh();
 
@@ -71,7 +71,7 @@ it('caps adherence rate at 100', function (): void {
         'logged_at' => now()->startOfWeek()->addDay(),
     ]);
 
-    (new UpdateUserStats($user))->handle();
+    new UpdateUserStats($user)->handle();
 
     $user->refresh();
 

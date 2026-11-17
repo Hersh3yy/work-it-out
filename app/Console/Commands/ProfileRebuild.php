@@ -8,14 +8,14 @@ use App\Exceptions\AiUnavailable;
 use App\Models\ProfileVersion;
 use App\Models\User;
 use App\Profile\UpdateProfile;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
+#[Description('Write a new version of the written profile now (one AI call per user)')]
+#[Signature('profile:rebuild {email? : One user; leave out with --all} {--all : Every user with at least one log} {--full : Start fresh from the last 30 logs instead of updating the current notes}')]
 final class ProfileRebuild extends Command
 {
-    protected $signature = 'profile:rebuild {email? : One user; leave out with --all} {--all : Every user with at least one log} {--full : Start fresh from the last 30 logs instead of updating the current notes}';
-
-    protected $description = 'Write a new version of the written profile now (one AI call per user)';
-
     public function handle(UpdateProfile $update): int
     {
         $kind = $this->option('full') ? ProfileVersion::FULL : ProfileVersion::ROLLING;

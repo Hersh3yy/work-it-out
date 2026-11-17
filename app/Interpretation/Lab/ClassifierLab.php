@@ -82,7 +82,7 @@ final readonly class ClassifierLab
                 continue;
             }
 
-            [$kind, $text] = array_map('trim', explode('|', $line, 2));
+            [$kind, $text] = array_map(trim(...), explode('|', $line, 2));
 
             if (MessageKind::tryFrom($kind) !== null && $text !== '') {
                 $cases[] = [$kind, $text];

@@ -1,4 +1,4 @@
-.PHONY: up down build restart logs shell test test-pg migrate fresh seed pint stan bot laya classify-eval
+.PHONY: up down build restart logs shell test test-pg migrate fresh seed pint stan rector bot laya classify-eval
 
 up:
 	docker compose up -d
@@ -23,6 +23,9 @@ test:
 
 stan:
 	docker compose exec app vendor/bin/phpstan analyse --memory-limit=1G
+
+rector:
+	docker compose exec app vendor/bin/rector process
 
 bot:
 	docker compose exec app php artisan channel:telegram:poll

@@ -8,6 +8,8 @@ use App\Actions\Linking\IssueLinkCode;
 use App\Channels\Telegram\TelegramClient;
 use App\Channels\Telegram\TelegramUnavailable;
 use App\Models\User;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -15,14 +17,12 @@ use Illuminate\Support\Str;
  * Invites someone: creates their user if the email is new and prints a
  * one-time Telegram link. Tapping it connects their Telegram account.
  */
+#[Description('Create a one-time Telegram invite link for a user')]
+#[Signature('channel:invite
+        {email : Their email (a user is created if it does not exist)}
+        {--name= : Name for a newly created user}')]
 final class ChannelInvite extends Command
 {
-    protected $signature = 'channel:invite
-        {email : Their email (a user is created if it does not exist)}
-        {--name= : Name for a newly created user}';
-
-    protected $description = 'Create a one-time Telegram invite link for a user';
-
     public function handle(IssueLinkCode $issue, TelegramClient $telegram): int
     {
         $email = mb_strtolower(trim((string) $this->argument('email')));

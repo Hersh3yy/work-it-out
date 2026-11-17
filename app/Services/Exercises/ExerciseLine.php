@@ -177,13 +177,7 @@ final readonly class ExerciseLine
      */
     private static function differ(Collection $sets): bool
     {
-        foreach (ExerciseSet::VALUES as $column) {
-            if ($sets->pluck($column)->unique()->count() > 1) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any(ExerciseSet::VALUES, fn ($column) => $sets->pluck($column)->unique()->count() > 1);
     }
 
     /**

@@ -9,6 +9,8 @@ use App\Interpretation\Interpreter;
 use App\Interpretation\Lab\ParsedWorkout;
 use App\Interpretation\RuleClassifier;
 use App\Models\User;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
 /**
@@ -18,16 +20,14 @@ use Illuminate\Console\Command;
  * tab, the shape it should save) and prints one line per message beside
  * what it expects, so a prompt or model change can be judged on all forms.
  */
-final class LogParse extends Command
-{
-    protected $signature = 'log:parse
+#[Description('Show what the interpreter makes of a message, without saving anything')]
+#[Signature('log:parse
         {text? : The message, as you would text it}
         {--rules-only : Only the plain-rule classifier, no AI call}
         {--file= : A catalogue, one "message<TAB>expected shape" per line ("\\n" is a line break)}
-        {--pause=0 : Seconds between messages of a catalogue, to stay under a rate limit}';
-
-    protected $description = 'Show what the interpreter makes of a message, without saving anything';
-
+        {--pause=0 : Seconds between messages of a catalogue, to stay under a rate limit}')]
+final class LogParse extends Command
+{
     public function handle(Interpreter $interpreter, RuleClassifier $rules): int
     {
         if ($this->option('file') !== null) {

@@ -17,7 +17,7 @@ it('keeps an illness that is over and a word about a load out of the injury read
 });
 
 it('tells the log reader what is not an exercise and what assistance is', function (): void {
-    expect((new SmartLogAgent('2026-11-15'))->instructions())
+    expect(new SmartLogAgent('2026-11-15')->instructions())
         ->toContain('is not an exercise: put it in workout_notes')
         ->toContain('assisted true with weight_kg the help (45)')
         ->toContain('"bench press barbell" are both "Bench Press"')
@@ -25,7 +25,7 @@ it('tells the log reader what is not an exercise and what assistance is', functi
 });
 
 it('tells the log reader every way a workout is texted, and to leave the sums to the app', function (): void {
-    expect((new SmartLogAgent('2026-11-15'))->instructions())
+    expect(new SmartLogAgent('2026-11-15')->instructions())
         ->toContain('Sets, reps and weight come in any order and any words')
         ->toContain('"5 keer 10 met 60 kg" is sets 5, reps 10, weight 60')
         ->toContain('bodyweight: true for an exercise done with the body alone')
@@ -39,7 +39,7 @@ it('tells the log reader every way a workout is texted, and to leave the sums to
 });
 
 it('makes the coach answer first, keep goals in words and never claim a save', function (): void {
-    expect((new CoachAgent(TrainerPersona::LtSurge, '{}'))->instructions())
+    expect(new CoachAgent(TrainerPersona::LtSurge, '{}')->instructions())
         ->toContain('never with "Understood."')
         ->toContain('Goals are not only facts.main_goal')
         ->toContain('Never say it was saved when CONTEXT does not show it')
@@ -47,7 +47,7 @@ it('makes the coach answer first, keep goals in words and never claim a save', f
 });
 
 it('tells the coach what level, power, readiness and a goal\'s phase mean, and never to number an unmeasured quality', function (): void {
-    expect((new CoachAgent(TrainerPersona::Shen, '{}'))->instructions())
+    expect(new CoachAgent(TrainerPersona::Shen, '{}')->instructions())
         ->toContain('level is training history and only grows')
         ->toContain('null means not measured yet, so never give it a number')
         ->toContain('lighten that quality today and train the fresh ones')
@@ -60,7 +60,7 @@ it('keeps stated goals and the real start of a limitation in the profile', funct
 });
 
 it('sends top_p 1 with temperature 0, which Mistral requires for greedy sampling', function (string $agent): void {
-    $attributes = (new ReflectionClass($agent))->getAttributes(TopP::class);
+    $attributes = new ReflectionClass($agent)->getAttributes(TopP::class);
 
     expect($attributes)->toHaveCount(1)
         ->and($attributes[0]->newInstance()->value)->toEqual(1.0);

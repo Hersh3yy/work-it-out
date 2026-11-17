@@ -170,7 +170,7 @@ it('tells the person once and stops when the retry hits a bug', function (): voi
     app()->instance(TelegramChannel::class, $channel);
     $job = new ProcessWaitingMessage($waiting);
 
-    expect(fn () => app()->call([$job, 'handle']))->toThrow(RuntimeException::class);
+    expect(fn () => app()->call($job->handle(...)))->toThrow(RuntimeException::class);
     $job->failed(new RuntimeException('Fake bug'));
 
     expect($waiting->fresh()->status)->toBe(WaitingMessage::FAILED)

@@ -6,6 +6,8 @@ namespace App\Console\Commands;
 
 use App\Enums\ChatProvider;
 use App\Models\User;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
 /**
@@ -13,14 +15,12 @@ use Illuminate\Console\Command;
  * account, or a link that went to the wrong person. Their logs stay; a new
  * invite connects them again.
  */
+#[Description('Disconnect a user\'s Telegram (or other chat) accounts; their logs stay')]
+#[Signature('channel:unlink
+        {email : The user whose chat accounts to disconnect}
+        {--provider=telegram}')]
 final class ChannelUnlink extends Command
 {
-    protected $signature = 'channel:unlink
-        {email : The user whose chat accounts to disconnect}
-        {--provider=telegram}';
-
-    protected $description = 'Disconnect a user\'s Telegram (or other chat) accounts; their logs stay';
-
     public function handle(): int
     {
         $provider = ChatProvider::tryFrom((string) $this->option('provider'));

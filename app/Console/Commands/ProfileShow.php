@@ -7,14 +7,14 @@ namespace App\Console\Commands;
 use App\Models\User;
 use App\Profile\ProfileFacts;
 use App\Profile\ProfileSummary;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
+#[Description('Print one user\'s profile: numbers, written notes and their sources (read-only)')]
+#[Signature('profile:show {email} {--facts : Also print the computed facts as JSON} {--versions=1 : How many written versions to print}')]
 final class ProfileShow extends Command
 {
-    protected $signature = 'profile:show {email} {--facts : Also print the computed facts as JSON} {--versions=1 : How many written versions to print}';
-
-    protected $description = 'Print one user\'s profile: numbers, written notes and their sources (read-only)';
-
     public function handle(ProfileSummary $summary): int
     {
         $user = User::query()->where('email', $this->argument('email'))->first();

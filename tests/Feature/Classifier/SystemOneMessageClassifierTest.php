@@ -67,7 +67,7 @@ it('is the bound classifier when the driver is laya', function (): void {
     config(['ai.classifier.driver' => 'laya']);
     $this->app->forgetInstance(MessageClassifier::class);
     $this->app->offsetUnset(MessageClassifier::class);
-    (new AppServiceProvider($this->app))->register();
+    new AppServiceProvider($this->app)->register();
 
     expect(app(MessageClassifier::class))->toBeInstanceOf(SystemOneMessageClassifier::class);
 });

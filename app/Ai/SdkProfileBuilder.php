@@ -60,8 +60,8 @@ final class SdkProfileBuilder implements ProfileBuilder
         $text = mb_substr(trim($note['text']), 0, 240);
 
         return [
-            'text' => $label === null ? $text : $label->prefix($text),
-            'cites' => array_slice(array_values(array_filter($cites, 'is_string')), 0, 10),
+            'text' => $label?->prefix($text) ?? $text,
+            'cites' => array_slice(array_values(array_filter($cites, is_string(...))), 0, 10),
         ];
     }
 }

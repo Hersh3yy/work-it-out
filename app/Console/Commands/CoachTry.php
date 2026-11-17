@@ -10,6 +10,8 @@ use App\Ai\CoachTrialAnswer;
 use App\Coach\CoachContext;
 use App\Enums\TrainerPersona;
 use App\Models\User;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Event;
 use Laravel\Ai\Events\AgentFailed;
@@ -21,15 +23,13 @@ use Laravel\Ai\Events\AgentPrompted;
  * coach turn, no log, and no ai_calls row (the usage listener is switched
  * off for this run; the tokens and cost are printed instead).
  */
-final class CoachTry extends Command
-{
-    protected $signature = 'coach:try
+#[Description('Ask the coach the same question on two or more models side by side; saves nothing')]
+#[Signature('coach:try
         {question : The question, as the person would text it}
         {--model=* : provider:model, e.g. mistral:mistral-large-4-0; a bare model uses the coach job\'s provider}
-        {--user= : Email or id whose history the coach reads; without it the coach sees an empty history}';
-
-    protected $description = 'Ask the coach the same question on two or more models side by side; saves nothing';
-
+        {--user= : Email or id whose history the coach reads; without it the coach sees an empty history}')]
+final class CoachTry extends Command
+{
     public function handle(CoachTrial $trial): int
     {
         $models = (array) $this->option('model');

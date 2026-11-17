@@ -59,18 +59,14 @@ class AppServiceProvider extends ServiceProvider
 
     private function configureRateLimiting(): void
     {
-        RateLimiter::for('api', function (Request $request): Limit {
-            return Limit::perMinute(60)
-                ->by($request->user()?->id ?? $request->ip());
-        });
+        RateLimiter::for('api', fn (Request $request): Limit => Limit::perMinute(60)
+            ->by($request->user()?->id ?? $request->ip()));
 
         // Sign-in links: five tries a minute per address.
         RateLimiter::for('login', fn (Request $request): Limit => Limit::perMinute(5)->by('login|'.$request->ip()));
 
         // The app's log door calls the AI: 20 messages per person per hour.
-        RateLimiter::for('smart-log', function (Request $request): Limit {
-            return Limit::perHour(20)
-                ->by($request->user()?->id ?? $request->ip());
-        });
+        RateLimiter::for('smart-log', fn (Request $request): Limit => Limit::perHour(20)
+            ->by($request->user()?->id ?? $request->ip()));
     }
 }

@@ -57,14 +57,14 @@ class DatabaseSeeder extends Seeder
                 continue;
             }
 
-            $completed = $i > 2 || rand(0, 10) > 3;
+            $completed = $i > 2 || random_int(0, 10) > 3;
 
             /** @var WorkoutSession $session */
             $session = $user->workoutSessions()->create([
                 'logged_at' => $day->setTime(7, 0),
-                'duration_minutes' => rand(45, 75),
-                'perceived_exertion' => rand(6, 9),
-                'energy_level' => rand(3, 5),
+                'duration_minutes' => random_int(45, 75),
+                'perceived_exertion' => random_int(6, 9),
+                'energy_level' => random_int(3, 5),
                 'completed_planned' => $completed,
                 'notes' => match ($i) {
                     0 => 'Felt strong today. New squat PR incoming.',

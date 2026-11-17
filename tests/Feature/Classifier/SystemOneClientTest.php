@@ -23,7 +23,7 @@ function layaAnswer(string $choice = 'workout', array $extra = []): array
 it('sends one typed choice question and reads the answer', function (): void {
     Http::fake(['laya.test/*' => Http::response(layaAnswer())]);
 
-    $answer = (new SystemOneClient('laya', 'http://laya.test', '/v1/systemone', model: 'laya-multilingual'))
+    $answer = new SystemOneClient('laya', 'http://laya.test', '/v1/systemone', model: 'laya-multilingual')
         ->choice('squat 90 90 95', 'What kind?', MessageKind::criteria());
 
     expect($answer->choice)->toBe('workout')
@@ -41,7 +41,7 @@ it('sends one typed choice question and reads the answer', function (): void {
 it('uses answer_confidence, not the act signal, as the confidence', function (): void {
     Http::fake(['*' => Http::response(layaAnswer(extra: ['answer_confidence' => 0.91, 'confidence' => 0.05]))]);
 
-    $answer = (new SystemOneClient('laya', 'http://laya.test', '/v1/systemone'))->choice('x', 'q', MessageKind::criteria());
+    $answer = new SystemOneClient('laya', 'http://laya.test', '/v1/systemone')->choice('x', 'q', MessageKind::criteria());
 
     expect($answer->confidence)->toBe(0.91);
 });
@@ -49,7 +49,7 @@ it('uses answer_confidence, not the act signal, as the confidence', function ():
 it('reads the TypeSafe shape and sends the key as a bearer token', function (): void {
     Http::fake(['*' => Http::response(['choices' => ['kind' => ['choice' => 'coach_question', 'confidence' => 0.88, 'probabilities' => ['coach_question' => 0.88]]]])]);
 
-    $answer = (new SystemOneClient('jev', 'https://api.typesafe.test', '/v1/systemone', apiKey: 'secret', model: 'jev'))
+    $answer = new SystemOneClient('jev', 'https://api.typesafe.test', '/v1/systemone', apiKey: 'secret', model: 'jev')
         ->choice('what should I train?', 'q', MessageKind::criteria());
 
     expect($answer->choice)->toBe('coach_question')->and($answer->confidence)->toBe(0.88);
@@ -59,7 +59,7 @@ it('reads the TypeSafe shape and sends the key as a bearer token', function (): 
 it('turns an unreachable server, an HTTP error or a junk answer into AiUnavailable', function (callable $fake): void {
     Http::fake(['*' => $fake]);
 
-    (new SystemOneClient('laya', 'http://laya.test', '/v1/systemone'))->choice('x', 'q', MessageKind::criteria());
+    new SystemOneClient('laya', 'http://laya.test', '/v1/systemone')->choice('x', 'q', MessageKind::criteria());
 })->with([
     'unreachable' => [fn () => fn () => throw new ConnectionException('down')],
     'http 500' => [fn () => Http::response('boom', 500)],

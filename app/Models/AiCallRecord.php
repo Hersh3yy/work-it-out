@@ -7,6 +7,8 @@ namespace App\Models;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,11 +33,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property Carbon $created_at
  */
 #[Fillable(['user_id', 'agent', 'provider', 'model', 'input_tokens', 'output_tokens', 'cached_input_tokens', 'reasoning_tokens', 'duration_ms', 'failed', 'error', 'created_at'])]
+#[Table(name: 'ai_calls')]
 final class AiCallRecord extends Model
 {
     public const null UPDATED_AT = null;
-
-    protected $table = 'ai_calls';
 
     protected function casts(): array
     {
@@ -51,7 +52,8 @@ final class AiCallRecord extends Model
     }
 
     /** @param  Builder<self>  $query */
-    public function scopeSince(Builder $query, CarbonInterface $since): void
+    #[Scope]
+    protected function since(Builder $query, CarbonInterface $since): void
     {
         $query->where('created_at', '>=', $since);
     }

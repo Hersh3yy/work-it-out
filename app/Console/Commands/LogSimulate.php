@@ -9,6 +9,8 @@ use App\Channels\InboundMessage;
 use App\Enums\ChatProvider;
 use App\Models\ChannelIdentity;
 use App\Models\User;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -18,15 +20,13 @@ use Illuminate\Support\Str;
  * as an argument, or a file with one message per line (# comments, blank
  * lines skipped) to replay a stored session.
  */
-final class LogSimulate extends Command
-{
-    protected $signature = 'log:simulate
+#[Description('Send messages through the chat path and print the replies, no Telegram')]
+#[Signature('log:simulate
         {text? : One message, as you would text it}
         {--user=1 : The user id to log as}
-        {--file= : Replay a file with one message per line}';
-
-    protected $description = 'Send messages through the chat path and print the replies, no Telegram';
-
+        {--file= : Replay a file with one message per line}')]
+final class LogSimulate extends Command
+{
     public function handle(HandleInboundMessage $handler): int
     {
         $user = User::query()->find((int) $this->option('user'));

@@ -7,6 +7,8 @@ namespace App\Console\Commands;
 use App\Enums\ChatProvider;
 use App\Models\ChannelIdentity;
 use App\Models\User;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -14,16 +16,14 @@ use Illuminate\Support\Str;
  * Links a chat account to a user, creating the user when the email is new.
  * Linking is the allowlist: unlinked senders are ignored.
  */
-final class ChannelLink extends Command
-{
-    protected $signature = 'channel:link
+#[Description('Link a chat account (Telegram user id) to a user')]
+#[Signature('channel:link
         {email : The user\'s email (created if it does not exist)}
         {external_id : The numeric chat user id, e.g. the Telegram user id}
         {--provider=telegram}
-        {--name= : Name for a newly created user}';
-
-    protected $description = 'Link a chat account (Telegram user id) to a user';
-
+        {--name= : Name for a newly created user}')]
+final class ChannelLink extends Command
+{
     public function handle(): int
     {
         $provider = ChatProvider::tryFrom((string) $this->option('provider'));

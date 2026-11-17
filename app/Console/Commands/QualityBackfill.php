@@ -8,14 +8,14 @@ use App\Jobs\WriteQualitySnapshots;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
+#[Description('Write the quality rows for every day someone trained, and today, so their level counts their whole history (safe to run again)')]
+#[Signature('quality:backfill {email? : One user; leave out with --all} {--all : Every user with a workout}')]
 final class QualityBackfill extends Command
 {
-    protected $signature = 'quality:backfill {email? : One user; leave out with --all} {--all : Every user with a workout}';
-
-    protected $description = 'Write the quality rows for every day someone trained, and today, so their level counts their whole history (safe to run again)';
-
     public function handle(): int
     {
         $users = match (true) {

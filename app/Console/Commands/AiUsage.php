@@ -6,14 +6,14 @@ namespace App\Console\Commands;
 
 use App\Ai\Usage\UsageReport;
 use Carbon\CarbonImmutable;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
+#[Description('Calls, tokens and estimated cost per user, job, model or day (read-only)')]
+#[Signature('ai:usage {--since=30d : A span like 7d, 24h, or a date} {--by=user : Group by user, job, model or day}')]
 final class AiUsage extends Command
 {
-    protected $signature = 'ai:usage {--since=30d : A span like 7d, 24h, or a date} {--by=user : Group by user, job, model or day}';
-
-    protected $description = 'Calls, tokens and estimated cost per user, job, model or day (read-only)';
-
     public function handle(UsageReport $report): int
     {
         $by = (string) $this->option('by');

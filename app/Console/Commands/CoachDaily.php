@@ -7,6 +7,8 @@ namespace App\Console\Commands;
 use App\Actions\Coach\SendDailyCoaching;
 use App\Jobs\SendDailyCoachingTo;
 use App\Models\User;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
 /**
@@ -14,12 +16,10 @@ use Illuminate\Console\Command;
  * person whose hour it is. With --user it sends to that one person now and
  * prints the message, whatever the hour.
  */
+#[Description('Queue the morning coaching message for everyone whose hour it is')]
+#[Signature('coach:daily {--user= : Send to this email now and print the message}')]
 final class CoachDaily extends Command
 {
-    protected $signature = 'coach:daily {--user= : Send to this email now and print the message}';
-
-    protected $description = 'Queue the morning coaching message for everyone whose hour it is';
-
     public function handle(SendDailyCoaching $send): int
     {
         if ($this->option('user') !== null) {

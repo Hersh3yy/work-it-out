@@ -7,18 +7,18 @@ namespace App\Console\Commands;
 use App\Channels\Telegram\TelegramClient;
 use App\Channels\Telegram\TelegramUnavailable;
 use App\Conversation\Commands\ChatCommands;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
 /**
  * Checks the bot token and sets the command menu Telegram shows next to the
  * message box, from the commands in config/conversation.php. Safe to run again.
  */
+#[Description('Check the Telegram bot token and set its command menu')]
+#[Signature('channel:telegram:setup')]
 final class TelegramSetup extends Command
 {
-    protected $signature = 'channel:telegram:setup';
-
-    protected $description = 'Check the Telegram bot token and set its command menu';
-
     public function handle(TelegramClient $telegram, ChatCommands $commands): int
     {
         if (blank(config('services.telegram.bot_token'))) {

@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\ChatProvider;
 use App\Enums\LogSource;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -59,7 +60,8 @@ final class WaitingMessage extends Model
      * @param  Builder<WaitingMessage>  $query
      * @return Builder<WaitingMessage>
      */
-    public function scopeWaiting(Builder $query): Builder
+    #[Scope]
+    protected function waiting(Builder $query): Builder
     {
         return $query->where('status', self::WAITING);
     }

@@ -77,7 +77,7 @@ return [
     | comma separated: AI_FALLBACKS=gemini:gemini-3.5-flash,deepseek:deepseek-flash
     | (App\Ai\ModelChain).
     */
-    'fallbacks' => array_values(array_filter(array_map('trim', explode(',', (string) env('AI_FALLBACKS', ''))))),
+    'fallbacks' => array_values(array_filter(array_map(trim(...), explode(',', (string) env('AI_FALLBACKS', ''))))),
 
     /*
     | Prices per million tokens in USD, keyed by model, from the provider's

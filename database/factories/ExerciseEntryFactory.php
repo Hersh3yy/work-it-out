@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 /** @extends Factory<ExerciseEntry> */
 class ExerciseEntryFactory extends Factory
 {
-    private const EXERCISES = [
+    private const array EXERCISES = [
         'Barbell Squat', 'Deadlift', 'Bench Press', 'Overhead Press',
         'Barbell Row', 'Pull-Up', 'Dumbbell Curl', 'Tricep Dip',
         'Leg Press', 'Romanian Deadlift', 'Incline Bench Press',

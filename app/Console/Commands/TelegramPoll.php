@@ -10,6 +10,8 @@ use App\Channels\Telegram\TelegramClient;
 use App\Channels\Telegram\TelegramUnavailable;
 use App\Contracts\Channels\ChatChannel;
 use App\Exceptions\ChatUnavailable;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Support\Facades\Cache;
@@ -21,6 +23,10 @@ use Throwable;
  * internet (the laptop, or a worker on the VPS); no public webhook needed.
  * Run exactly one poller per bot: Telegram refuses a second getUpdates.
  */
+#[Description('Receive Telegram messages by long polling and reply')]
+#[Signature('channel:telegram:poll
+        {--once : Handle one batch of waiting updates and exit}
+        {--timeout=30 : Long-poll timeout in seconds}')]
 final class TelegramPoll extends Command
 {
     public const string LOCK = 'telegram:poll:lock';
@@ -30,12 +36,6 @@ final class TelegramPoll extends Command
     private const int LEASE_SECONDS = 120;
 
     private const int WAIT_SECONDS = 5;
-
-    protected $signature = 'channel:telegram:poll
-        {--once : Handle one batch of waiting updates and exit}
-        {--timeout=30 : Long-poll timeout in seconds}';
-
-    protected $description = 'Receive Telegram messages by long polling and reply';
 
     public function handle(TelegramClient $telegram, HandleInboundMessage $handler, ChatChannel $channel): int
     {
