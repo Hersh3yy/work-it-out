@@ -288,6 +288,7 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 ### 2026-11-17 — MVP week 2 on `game-foundation`, then master
 - Hiren: "go for mvp week 2 and push it to main, i want it in use". Branches first: `mvp-week1`, `log-forms`, `pitch`, `mistral-coach`, `cleanup-legacy` deleted (all inside `game-foundation`; the legacy clean-up landed as f2a9c1e); `master`'s two new commits merged in. Two branches left: `master` and `game-foundation`.
 - Step 14, admin role: `users.is_admin` (migration `2026_11_17_000001`, additive; not mass-assignable), the `admin` gate, `php artisan user:admin email [--revoke]`. 534 tests on SQLite and Postgres.
+- Delete on request (the MVP's "Hiren can delete a tester's data"): `App\Actions\Accounts\DeleteUser` and `php artisan user:delete email [--force]` (asks first). The database cascades every user table; app tokens and web sessions go explicitly; AI call records keep their cost with the user id set to null. Test: every table with a `user_id` holds nothing for them afterwards, on SQLite and Postgres.
 
 ### 2026-11-15 (late night) — phase 2, the game's foundation, on `game-foundation`
 - Hiren: phase 2 step by step, one commit each, never pushed. Worktree `work-it-out-phase2`, branch `game-foundation` from `mvp-week1` with `origin/master` and `pitch` merged in (one conflict, this diary: both entries kept).
