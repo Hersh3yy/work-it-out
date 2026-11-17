@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Linking\IssueLinkCode;
 use App\Channels\HandleInboundMessage;
+use App\Conversation\PrivacyNotice;
 use App\Models\ChannelIdentity;
 use App\Models\ChannelLinkCode;
 use App\Models\User;
@@ -170,4 +171,23 @@ it('disconnects a person and keeps their logs; a new invite reconnects them', fu
 
 it('fails clearly when unlinking an unknown email', function (): void {
     $this->artisan('channel:unlink nobody@example.com')->assertFailed();
+});
+
+it('shows the privacy notice once, when the account is connected', function (): void {
+    $user = User::factory()->create(['name' => 'Sam']);
+    $code = inviteCodeFor($user);
+
+    $connected = app(HandleInboundMessage::class)->handle(telegramText("/start {$code}", '777'));
+    $again = app(HandleInboundMessage::class)->handle(telegramText("/start {$code}", '777'));
+
+    expect($connected)->toContain(PrivacyNotice::TEXT)
+        ->and($again)->not->toContain(PrivacyNotice::TEXT);
+});
+
+it('says what is stored, who can see it, that an AI reads it and how to get it deleted', function (): void {
+    expect(PrivacyNotice::TEXT)
+        ->toContain('stores')
+        ->toContain('Hiren')
+        ->toContain('AI model')
+        ->toContain('deleted');
 });

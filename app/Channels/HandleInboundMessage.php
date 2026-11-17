@@ -10,6 +10,7 @@ use App\Conversation\Answers\AnswerChain;
 use App\Conversation\ChatThrottle;
 use App\Conversation\Commands\ChatCommands;
 use App\Conversation\Commands\HelpCommand;
+use App\Conversation\PrivacyNotice;
 use App\Conversation\RespondToText;
 use App\Exceptions\AiUnavailable;
 use App\Limitations\RedFlags;
@@ -147,7 +148,7 @@ final readonly class HandleInboundMessage
 
             RateLimiter::clear($attempts);
 
-            return "Welcome, {$user->name}! Your account is connected.\n\n".HelpCommand::TEXT;
+            return "Welcome, {$user->name}! Your account is connected.\n\n".PrivacyNotice::TEXT."\n\n".HelpCommand::TEXT;
         }
 
         logger()->info('Chat message from unlinked sender', ['provider' => $message->provider->value, 'sender_id' => $message->senderId]);
