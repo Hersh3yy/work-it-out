@@ -23,9 +23,12 @@ return [
     /*
     | A message the AI could not handle is kept and retried after these many
     | seconds, one try each (App\Jobs\ProcessWaitingMessage); after the last
-    | one the person is told it did not go through.
+    | one the person is told it did not go through. Almost four hours in all:
+    | every job runs on one model with no fallback, the person was told there
+    | is no need to resend, and a log saved late is still a log (16 Nov: a
+    | workout was saved on the fourth and last try, 30 minutes late).
     */
-    'retry_delays' => [60, 180, 600, 1800],
+    'retry_delays' => [60, 180, 600, 1800, 3600, 7200],
 
     /*
     | Messages that need the AI one person may send a minute before the

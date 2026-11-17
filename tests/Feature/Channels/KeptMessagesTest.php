@@ -9,6 +9,7 @@ use App\Coach\CoachContext;
 use App\Enums\ChatProvider;
 use App\Enums\MessageKind;
 use App\Jobs\ProcessWaitingMessage;
+use App\Models\ExerciseEntry;
 use App\Models\WaitingMessage;
 use Illuminate\Support\Facades\Queue;
 use Tests\Fakes\FakeChatChannel;
@@ -224,4 +225,31 @@ it('sends "still busy?" the normal way when nothing is kept', function (): void 
     classifierSays(MessageKind::Unknown);
 
     expect(app(HandleInboundMessage::class)->handle(telegramText('Still busy?')))->not->toContain('is kept');
+});
+
+it('keeps trying for hours, since every job runs on one model and nothing is lost by waiting', function (): void {
+    expect(array_map(ProcessWaitingMessage::delayBefore(...), range(1, ProcessWaitingMessage::maxTries())))
+        ->toBe([60, 180, 600, 1800, 3600, 7200])
+        ->and(array_sum(config('conversation.retry_delays')))->toBeGreaterThan(3.5 * 3600);
+});
+
+it('saves a message once when the AI comes back after five outages in a row', function (): void {
+    $waiting = aiDownForOneMessage();
+    $waiting->update(['attempts' => 4]);
+
+    $stillDown = runRetry($waiting);
+
+    expect($stillDown->sent)->toBe([])
+        ->and($waiting->fresh()->status)->toBe(WaitingMessage::WAITING);
+
+    fakeSmartLogParser(FakeSmartLogParser::workout());
+    $back = runRetry($waiting->fresh());
+
+    expect($back->sent)->toHaveCount(1)
+        ->and($waiting->fresh()->status)->toBe(WaitingMessage::DONE)
+        ->and(ExerciseEntry::query()->count())->toBe(1);
+});
+
+it('gives the job enough tries for every retry and the sends after it', function (): void {
+    expect(new ProcessWaitingMessage(new WaitingMessage)->tries)->toBeGreaterThan(ProcessWaitingMessage::maxTries());
 });
