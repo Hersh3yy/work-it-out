@@ -285,6 +285,10 @@ Weekend cut (minimum to log from the phone, laptop running, no deploy): M0, M1, 
 
 <!-- Newest first. One entry per working session. Terse, factual, honest. Append only. -->
 
+### 2026-11-17 — MVP week 2 on `game-foundation`, then master
+- Hiren: "go for mvp week 2 and push it to main, i want it in use". Branches first: `mvp-week1`, `log-forms`, `pitch`, `mistral-coach`, `cleanup-legacy` deleted (all inside `game-foundation`; the legacy clean-up landed as f2a9c1e); `master`'s two new commits merged in. Two branches left: `master` and `game-foundation`.
+- Step 14, admin role: `users.is_admin` (migration `2026_11_17_000001`, additive; not mass-assignable), the `admin` gate, `php artisan user:admin email [--revoke]`. 534 tests on SQLite and Postgres.
+
 ### 2026-11-15 (late night) — phase 2, the game's foundation, on `game-foundation`
 - Hiren: phase 2 step by step, one commit each, never pushed. Worktree `work-it-out-phase2`, branch `game-foundation` from `mvp-week1` with `origin/master` and `pitch` merged in (one conflict, this diary: both entries kept).
 - Step 2: `App\Fitness\Energy` (lift, last, heal) and `Quality` (strength, power, endurance, core, mobility, recovery), each quality knows its energy; `TrainerPersona::energy()` replaces the unused `rpgCategory()`. 420 tests on SQLite and Postgres.

@@ -53,6 +53,7 @@ class User extends Authenticatable
             'goal_deadline' => 'date',
             'target_weight_kg' => 'decimal:2',
             'current_weight_kg' => 'decimal:2',
+            'is_admin' => 'boolean',
             'weekly_adherence_rate' => 'decimal:2',
             'last_active_at' => 'datetime',
         ];

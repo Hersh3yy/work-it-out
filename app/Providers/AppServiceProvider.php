@@ -21,9 +21,11 @@ use App\Contracts\Ai\SmartLogParser;
 use App\Contracts\Channels\ChatChannel;
 use App\Contracts\Stats\PersonalRecords;
 use App\Interpretation\RuleClassifier;
+use App\Models\User;
 use App\Services\Stats\PersonalRecordService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -55,6 +57,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureRateLimiting();
+        Gate::define('admin', static fn (User $user): bool => $user->is_admin);
     }
 
     private function configureRateLimiting(): void
