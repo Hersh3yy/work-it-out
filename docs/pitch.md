@@ -40,16 +40,18 @@ Measured: 531 automated tests on the newest branch, none of which call a model; 
 
 ## What comes next
 
-1. Switch production to Mistral Medium (EU) in Coolify, run `quality:backfill --all` once, then the first two testers (week of 23 November).
-2. Measures for the two unscored qualities: a test the app can read for power (a jump or a sprint) and for mobility, so neither stays "not measured yet".
-3. Plans toward a goal: card 4's backwards plan from the date, the run cap of card 1 and the next load of card 3, computed in code.
-4. Phase 3, the world on top: names and art from the creative session, the roster and battle screens in the app, promotions, the Sunday chronicle, talent points.
-5. Later: a second chat app (Signal), voice notes, the body map.
+1. Phase 3, all in on the game (brainstormed first, as a duo): the world on top of the foundation, names and art from the creative session, roster and battle screens in the app, promotions, the Sunday chronicle, talent points.
+2. Garmin as the start of it: the vívo's sleep, resting heart rate and activities pulled nightly through Garmin's free personal API into Root (recovery) and Current (endurance), so HP has last night's sleep in it.
+3. Other activities (padel, cycling, swimming, climbing, yoga, walks) with their qualities, and a better conversation: a coach that keeps a thread over days and answers from the person's own numbers.
+4. Still from the foundation: measures for power and mobility; plans toward a goal computed in code; the first two testers.
+5. Phase 4, once Feetness knocks Hiren's own socks off: a free tier and two paid tiers.
+6. Later: a second chat app (Signal), voice notes, the body map.
 
 ## Change log
 
 | Date | What changed in the pitch |
 |---|---|
+| 2026-11-17 | Next phase set by Hiren: all in on the game (brainstorm first), Garmin as the start, other activities and a better conversation; a free and two paid tiers come only after it impresses him. |
 | 2026-11-17 | Everything up to now is on master: MVP week 1, every workout form, the game's foundation, `user:delete` and a privacy notice. Production moves to Mistral once Hiren sets the variables. |
 | 2026-11-16 | Phase 2 built on branches and pushed: qualities with level, power and readiness, one exercise catalogue, dated goals with build or taper, the receipt and morning message naming what was trained; parsing of every common workout form. Power and mobility unscored until a test exists. |
 | 2026-11-15 | First version. The game model set: three energies with a coach each, six crew members, level, power and HP per member, dated goals as battles. EU-only models decided (Mistral). |
