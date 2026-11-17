@@ -15,3 +15,7 @@ it('has a provider, a model and a timeout for every AI job', function (AiJob $jo
     expect(config("ai.jobs.{$job->value}"))->toHaveKeys(['provider', 'model', 'timeout'])
         ->and($job->timeout())->toBeGreaterThan(0);
 })->with(AiJob::cases());
+
+it('prices the model every job runs on in production, at the EU rate', function (): void {
+    expect(config('ai.prices.mistral-medium-3-5'))->toBe(['input' => 1.65, 'output' => 8.25]);
+});

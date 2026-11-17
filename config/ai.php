@@ -89,6 +89,7 @@ return [
         'gemini-3.8-flash' => ['input' => 0.75, 'output' => 3.75],
         'deepseek-flash' => ['input' => 0.30, 'output' => 1.20],
         'deepseek-v4-pro' => ['input' => 1.32, 'output' => 3.96],
+        'mistral-medium-3-5' => ['input' => 1.65, 'output' => 8.25],
         'mistral-large-4-0' => ['input' => 0.77, 'output' => 2.31],
         'mistral-small-2603' => ['input' => 0.165, 'output' => 0.66],
     ],
